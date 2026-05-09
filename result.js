@@ -112,8 +112,8 @@ function getAccumulatedTitle(totalExp) {
   return result;
 }
 
-// ========== 데이터 로드 ==========
-async function loadData() {
+// ========== 데이터 로드 (JSONP 방식) ==========
+function loadData() {
   const loadingSection = document.getElementById('loadingSection');
   const errorSection = document.getElementById('errorSection');
   const resultsSection = document.getElementById('resultsSection');
@@ -122,26 +122,45 @@ async function loadData() {
   errorSection.style.display = 'none';
   resultsSection.style.display = 'none';
 
-  try {
-    const response = await fetch(API_URL);
-    if (!response.ok) throw new Error('데이터를 불러올 수 없습니다.');
+  // 기존 스크립트 제거
+  const oldScript = document.getElementById('jsonpScript');
+  if (oldScript) oldScript.remove();
 
-    resultData = await response.json();
+  // JSONP 콜백 함수 정의
+  window.handleData = function(data) {
+    try {
+      if (data.error) {
+        throw new Error(data.error);
+      }
 
-    if (!resultData || !resultData.members) {
-      throw new Error('유효하지 않은 데이터입니다.');
+      resultData = data;
+
+      if (!resultData || !resultData.members) {
+        throw new Error('유효하지 않은 데이터입니다.');
+      }
+
+      loadingSection.style.display = 'none';
+      resultsSection.style.display = 'block';
+
+      displayResults();
+    } catch (error) {
+      console.error('데이터 처리 오류:', error);
+      loadingSection.style.display = 'none';
+      errorSection.style.display = 'block';
+      document.getElementById('errorMessage').textContent = error.message;
     }
+  };
 
-    loadingSection.style.display = 'none';
-    resultsSection.style.display = 'block';
-
-    displayResults();
-  } catch (error) {
-    console.error('데이터 로드 오류:', error);
+  // JSONP 스크립트 태그 생성
+  const script = document.createElement('script');
+  script.id = 'jsonpScript';
+  script.src = API_URL + '?callback=handleData';
+  script.onerror = function() {
     loadingSection.style.display = 'none';
     errorSection.style.display = 'block';
-    document.getElementById('errorMessage').textContent = error.message;
-  }
+    document.getElementById('errorMessage').textContent = '데이터를 불러올 수 없습니다.';
+  };
+  document.body.appendChild(script);
 }
 
 // ========== 결과 표시 ==========
