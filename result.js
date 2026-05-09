@@ -12,7 +12,7 @@ const CERT_CATEGORIES = {
   cleaning: { name: '청소', emoji: '🧹', exp: 2 },
   exercise: { name: '운동', emoji: '🏃', exp: 2 },
   morning: { name: '기상', emoji: '⏰', exp: 1 },
-  planning: { name: '계획', emoji: '📋', exp: 3 },
+  planning: { name: '계획', emoji: '📋', exp: 6 },
   study: { name: '공부', emoji: '📚', exp: 2 },
   medicine: { name: '약', emoji: '💊', exp: 1 },
 };
