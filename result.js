@@ -271,12 +271,16 @@ function displaySeasonSection() {
   const section = document.getElementById('seasonSection');
   if (!section || !resultData) return;
 
-  // 시즌 기본 정보
-  document.getElementById('seasonName').textContent = SEASON_CONFIG.name;
-  document.getElementById('seasonPeriod').textContent = formatSeasonPeriod();
+  // 시즌 기본 정보 (요소가 없으면 스킵)
+  const seasonName = document.getElementById('seasonName');
+  const seasonPeriod = document.getElementById('seasonPeriod');
+  const seasonDaysLeft = document.getElementById('seasonDaysLeft');
+
+  if (seasonName) seasonName.textContent = SEASON_CONFIG.name;
+  if (seasonPeriod) seasonPeriod.textContent = formatSeasonPeriod();
 
   const daysLeft = getSeasonDaysLeft();
-  document.getElementById('seasonDaysLeft').textContent = daysLeft > 0 ? `D-${daysLeft}` : '종료됨';
+  if (seasonDaysLeft) seasonDaysLeft.textContent = daysLeft > 0 ? `D-${daysLeft}` : '종료됨';
 
   // 시즌 데이터 계산 (임시 - 실제로는 서버에서 받아야 함)
   displaySeasonMyStatus();
@@ -286,6 +290,10 @@ function displaySeasonSection() {
 }
 
 function displaySeasonMyStatus() {
+  // 필수 요소 확인
+  const seasonLevelEmoji = document.getElementById('seasonLevelEmoji');
+  if (!seasonLevelEmoji) return; // 요소가 없으면 스킵
+
   // 모든 멤버의 시즌 EXP 계산 (임시로 월간 데이터 기반으로 시뮬레이션)
   const members = Object.entries(resultData.members || {});
   if (members.length === 0) return;
@@ -300,20 +308,27 @@ function displaySeasonMyStatus() {
   const currentLevel = getSeasonLevel(simulatedSeasonExp);
   const nextLevel = getNextSeasonLevel(simulatedSeasonExp);
 
-  document.getElementById('seasonLevelEmoji').textContent = currentLevel.emoji;
-  document.getElementById('seasonLevelName').textContent = `Lv.${currentLevel.level} ${currentLevel.title}`;
-  document.getElementById('seasonLevelDesc').textContent = currentLevel.desc;
-  document.getElementById('seasonExpValue').textContent = simulatedSeasonExp;
+  seasonLevelEmoji.textContent = currentLevel.emoji;
+  const levelName = document.getElementById('seasonLevelName');
+  const levelDesc = document.getElementById('seasonLevelDesc');
+  const expValue = document.getElementById('seasonExpValue');
+  if (levelName) levelName.textContent = `Lv.${currentLevel.level} ${currentLevel.title}`;
+  if (levelDesc) levelDesc.textContent = currentLevel.desc;
+  if (expValue) expValue.textContent = simulatedSeasonExp;
+
+  const progressFill = document.getElementById('seasonProgressFill');
+  const expCurrent = document.getElementById('seasonExpCurrent');
+  const nextLevelEl = document.getElementById('seasonNextLevel');
 
   if (nextLevel) {
     const progress = ((simulatedSeasonExp - currentLevel.minExp) / (nextLevel.minExp - currentLevel.minExp)) * 100;
-    document.getElementById('seasonProgressFill').style.width = `${Math.max(0, Math.min(100, progress))}%`;
-    document.getElementById('seasonExpCurrent').textContent = `${simulatedSeasonExp} / ${nextLevel.minExp} EXP`;
-    document.getElementById('seasonNextLevel').textContent = `다음: Lv.${nextLevel.level} ${nextLevel.title}`;
+    if (progressFill) progressFill.style.width = `${Math.max(0, Math.min(100, progress))}%`;
+    if (expCurrent) expCurrent.textContent = `${simulatedSeasonExp} / ${nextLevel.minExp} EXP`;
+    if (nextLevelEl) nextLevelEl.textContent = `다음: Lv.${nextLevel.level} ${nextLevel.title}`;
   } else {
-    document.getElementById('seasonProgressFill').style.width = '100%';
-    document.getElementById('seasonExpCurrent').textContent = `${simulatedSeasonExp} EXP (MAX)`;
-    document.getElementById('seasonNextLevel').textContent = '최고 레벨 달성!';
+    if (progressFill) progressFill.style.width = '100%';
+    if (expCurrent) expCurrent.textContent = `${simulatedSeasonExp} EXP (MAX)`;
+    if (nextLevelEl) nextLevelEl.textContent = '최고 레벨 달성!';
   }
 
   // 배지 표시
@@ -528,6 +543,11 @@ function displayWeeklyAlerts() {
   const alertSection = document.getElementById('weeklyAlertSection');
   const alertGrid = document.getElementById('alertGrid');
   const deadlineTimer = document.getElementById('deadlineTimer');
+
+  // 요소가 없으면 스킵
+  if (!alertSection || !alertGrid || !deadlineTimer) {
+    return;
+  }
 
   if (!resultData || !resultData.members) {
     alertSection.style.display = 'none';
