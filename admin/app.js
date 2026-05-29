@@ -97,62 +97,14 @@ function loadEventHistory() {
   }
 }
 
-// 이벤트 히스토리 저장하기 (localStorage + API)
+// 이벤트 히스토리 저장하기 (localStorage에 저장, 서버는 인증 데이터와 함께 저장됨)
 function saveEventHistory(events) {
   try {
-    // 로컬 저장 (백업)
     localStorage.setItem(EVENT_HISTORY_STORAGE_KEY, JSON.stringify(events));
     console.log('이벤트 히스토리 로컬 저장 완료:', events);
-
-    // API로 서버에 저장
-    saveEventsToServer(events);
+    console.log('서버 저장은 "결과 저장" 버튼 클릭 시 인증 데이터와 함께 저장됩니다.');
   } catch (e) {
     console.error('이벤트 히스토리 저장 실패:', e);
-  }
-}
-
-// 이벤트를 서버(Google Sheets)에 저장
-async function saveEventsToServer(events) {
-  try {
-    const password = sessionStorage.getItem('adminPassword') || localStorage.getItem('lurupl_admin_session');
-    if (!password) {
-      console.warn('관리자 비밀번호가 없어 서버 저장을 건너뜁니다.');
-      return;
-    }
-
-    // form submit 방식으로 저장 (인증 데이터와 동일한 방식)
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = API_URL;
-    form.target = 'eventSaveFrame';
-
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'data';
-    input.value = JSON.stringify({
-      type: 'events',
-      events: events,
-      password: password
-    });
-    form.appendChild(input);
-
-    // 숨겨진 iframe으로 제출
-    let iframe = document.getElementById('eventSaveFrame');
-    if (!iframe) {
-      iframe = document.createElement('iframe');
-      iframe.id = 'eventSaveFrame';
-      iframe.name = 'eventSaveFrame';
-      iframe.style.display = 'none';
-      document.body.appendChild(iframe);
-    }
-
-    document.body.appendChild(form);
-    form.submit();
-    form.remove();
-
-    console.log('이벤트 서버 저장 요청 완료');
-  } catch (e) {
-    console.error('이벤트 서버 저장 실패:', e);
   }
 }
 
@@ -2272,7 +2224,7 @@ function saveToGoogleSheets() {
 
   const { year, month, today } = getCurrentMonthInfo();
 
-  // 저장할 데이터 구성
+  // 저장할 데이터 구성 (이벤트 데이터도 함께 저장)
   const dataToSave = {
     password: ADMIN_PASSWORD,
     lastUpdated: `${year}년 ${month + 1}월 ${today}일 ${new Date().toLocaleTimeString('ko-KR')}`,
@@ -2283,6 +2235,7 @@ function saveToGoogleSheets() {
     weeklyData: getWeeklyDataForSave(),
     monthlyRankings: getMonthlyRankingsForSave(),
     members: getMembersForSave(),
+    events: loadEventHistory(),
   };
 
   const saveBtn = document.getElementById('saveToSheetsBtn');
