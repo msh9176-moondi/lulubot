@@ -1966,7 +1966,7 @@ function exportToTxt() {
 
 // Google Apps Script 웹앱 URL (배포 후 여기에 입력)
 const API_URL =
-  'https://script.google.com/macros/s/AKfycby5wWEQhcTH6UCTc8qlSxXUZGtvR7rnyYyNYFyiIpCCAt4Q8JsHwtA66Rtv_UUAIkuj/exec';
+  'https://script.google.com/macros/s/AKfycbyV9HfgAi-Mxrj-xtJboFHqCcmffyC31BqEgz5hh8Mp4qpMIGWUxM9O46R5xuvRB-8/exec';
 
 // 관리자 비밀번호 (실제 배포 시 변경 필요)
 const ADMIN_PASSWORD = 'lurupl2024';
