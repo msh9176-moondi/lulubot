@@ -125,19 +125,21 @@ async function saveEventsToServer(events) {
     form.method = 'POST';
     form.action = API_URL;
     form.target = 'eventSaveFrame';
-    form.acceptCharset = 'UTF-8';
-    form.enctype = 'application/x-www-form-urlencoded';
 
     const input = document.createElement('input');
     input.type = 'hidden';
     input.name = 'data';
-    // Base64 인코딩으로 한글/이모지 보존
+    // 유니코드 이스케이프로 한글/이모지 보존
     const jsonData = JSON.stringify({
       type: 'events',
       events: events,
       password: password
     });
-    input.value = btoa(unescape(encodeURIComponent(jsonData)));
+    // 비ASCII 문자를 \uXXXX 형식으로 변환
+    const escaped = jsonData.replace(/[\u0080-\uffff]/g, (ch) => {
+      return '\\u' + ('0000' + ch.charCodeAt(0).toString(16)).slice(-4);
+    });
+    input.value = escaped;
     form.appendChild(input);
 
     // 숨겨진 iframe으로 제출
