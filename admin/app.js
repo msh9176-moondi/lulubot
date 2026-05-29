@@ -120,7 +120,7 @@ async function saveEventsToServer(events) {
       return;
     }
 
-    // form submit 방식으로 저장 (CORS 우회)
+    // form submit 방식으로 저장 (인증 데이터와 동일한 방식)
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = API_URL;
@@ -129,17 +129,11 @@ async function saveEventsToServer(events) {
     const input = document.createElement('input');
     input.type = 'hidden';
     input.name = 'data';
-    // 유니코드 이스케이프로 한글/이모지 보존
-    const jsonData = JSON.stringify({
+    input.value = JSON.stringify({
       type: 'events',
       events: events,
       password: password
     });
-    // 비ASCII 문자를 \uXXXX 형식으로 변환
-    const escaped = jsonData.replace(/[\u0080-\uffff]/g, (ch) => {
-      return '\\u' + ('0000' + ch.charCodeAt(0).toString(16)).slice(-4);
-    });
-    input.value = escaped;
     form.appendChild(input);
 
     // 숨겨진 iframe으로 제출
