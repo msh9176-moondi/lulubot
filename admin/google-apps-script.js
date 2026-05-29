@@ -77,8 +77,16 @@ function doPost(e) {
     // form data 또는 JSON 파싱
     let data;
     if (e.parameter && e.parameter.data) {
-      // form 방식
-      data = JSON.parse(e.parameter.data);
+      // form 방식 - Base64 디코딩 시도
+      let rawData = e.parameter.data;
+      try {
+        // Base64 디코딩 시도
+        const decoded = Utilities.newBlob(Utilities.base64Decode(rawData)).getDataAsString('UTF-8');
+        data = JSON.parse(decoded);
+      } catch (decodeErr) {
+        // Base64가 아니면 직접 파싱
+        data = JSON.parse(rawData);
+      }
     } else if (e.postData && e.postData.contents) {
       // JSON 방식
       data = JSON.parse(e.postData.contents);
