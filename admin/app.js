@@ -120,16 +120,35 @@ async function saveEventsToServer(events) {
       return;
     }
 
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'data=' + encodeURIComponent(JSON.stringify({
-        type: 'events',
-        events: events,
-        password: password
-      }))
+    // form submit 방식으로 저장 (CORS 우회)
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = API_URL;
+    form.target = 'eventSaveFrame';
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'data';
+    input.value = JSON.stringify({
+      type: 'events',
+      events: events,
+      password: password
     });
+    form.appendChild(input);
+
+    // 숨겨진 iframe으로 제출
+    let iframe = document.getElementById('eventSaveFrame');
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = 'eventSaveFrame';
+      iframe.name = 'eventSaveFrame';
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+    }
+
+    document.body.appendChild(form);
+    form.submit();
+    form.remove();
 
     console.log('이벤트 서버 저장 요청 완료');
   } catch (e) {
