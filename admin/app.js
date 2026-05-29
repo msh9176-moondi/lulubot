@@ -1973,6 +1973,7 @@ function handleLogin() {
     adminLoginSection.style.display = 'none';
     adminArea.style.display = 'block';
     sessionStorage.setItem('isAdmin', 'true');
+    sessionStorage.setItem('adminPassword', password);
   } else {
     alert('비밀번호가 올바르지 않습니다.');
     adminPassword.value = '';
