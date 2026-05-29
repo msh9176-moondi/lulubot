@@ -24,7 +24,24 @@ const ADMIN_PASSWORD = 'lurupl2024'; // 관리자 비밀번호
 function doGet(e) {
   try {
     const callback = e.parameter.callback; // JSONP 콜백
-    const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Data');
+    const type = e.parameter.type || 'data'; // 'data' 또는 'events'
+    const spreadsheet = SpreadsheetApp.openById(SHEET_ID);
+
+    // 이벤트 데이터 조회
+    if (type === 'events') {
+      const eventSheet = spreadsheet.getSheetByName('Events');
+      if (!eventSheet) {
+        return createResponse({ events: [] }, callback);
+      }
+      const eventData = eventSheet.getRange('A1').getValue();
+      if (!eventData) {
+        return createResponse({ events: [] }, callback);
+      }
+      return createResponse({ events: JSON.parse(eventData) }, callback);
+    }
+
+    // 기본: 인증 데이터 조회
+    const sheet = spreadsheet.getSheetByName('Data');
 
     if (!sheet) {
       return createResponse({ error: '데이터가 없습니다.' }, callback);
@@ -37,6 +54,16 @@ function doGet(e) {
     }
 
     const jsonData = JSON.parse(data);
+
+    // 이벤트 데이터도 함께 포함
+    const eventSheet = spreadsheet.getSheetByName('Events');
+    if (eventSheet) {
+      const eventData = eventSheet.getRange('A1').getValue();
+      if (eventData) {
+        jsonData.events = JSON.parse(eventData);
+      }
+    }
+
     return createResponse(jsonData, callback);
 
   } catch (error) {
@@ -68,6 +95,19 @@ function doPost(e) {
     delete data.password;
 
     const spreadsheet = SpreadsheetApp.openById(SHEET_ID);
+
+    // 이벤트 데이터 저장 요청
+    if (data.type === 'events') {
+      let eventSheet = spreadsheet.getSheetByName('Events');
+      if (!eventSheet) {
+        eventSheet = spreadsheet.insertSheet('Events');
+      }
+      eventSheet.getRange('A1').setValue(JSON.stringify(data.events));
+      eventSheet.getRange('B1').setValue(new Date().toISOString());
+      return createResponse({ success: true, message: '이벤트가 저장되었습니다.' });
+    }
+
+    // 기본: 인증 데이터 저장
     let sheet = spreadsheet.getSheetByName('Data');
 
     // Data 시트가 없으면 생성

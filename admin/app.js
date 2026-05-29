@@ -97,13 +97,43 @@ function loadEventHistory() {
   }
 }
 
-// 이벤트 히스토리 저장하기
+// 이벤트 히스토리 저장하기 (localStorage + API)
 function saveEventHistory(events) {
   try {
+    // 로컬 저장 (백업)
     localStorage.setItem(EVENT_HISTORY_STORAGE_KEY, JSON.stringify(events));
-    console.log('이벤트 히스토리 저장 완료:', events);
+    console.log('이벤트 히스토리 로컬 저장 완료:', events);
+
+    // API로 서버에 저장
+    saveEventsToServer(events);
   } catch (e) {
     console.error('이벤트 히스토리 저장 실패:', e);
+  }
+}
+
+// 이벤트를 서버(Google Sheets)에 저장
+async function saveEventsToServer(events) {
+  try {
+    const password = sessionStorage.getItem('adminPassword') || localStorage.getItem('lurupl_admin_session');
+    if (!password) {
+      console.warn('관리자 비밀번호가 없어 서버 저장을 건너뜁니다.');
+      return;
+    }
+
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'data=' + encodeURIComponent(JSON.stringify({
+        type: 'events',
+        events: events,
+        password: password
+      }))
+    });
+
+    console.log('이벤트 서버 저장 요청 완료');
+  } catch (e) {
+    console.error('이벤트 서버 저장 실패:', e);
   }
 }
 
@@ -1913,7 +1943,7 @@ function exportToTxt() {
 
 // Google Apps Script 웹앱 URL (배포 후 여기에 입력)
 const API_URL =
-  'https://script.google.com/macros/s/AKfycbwpoXQFMdlROUKD7s9uxWTBHBJGsLghi5XH_yIHexkGhn5b7CB5-hSb8eCQEKy7V7Yb/exec';
+  'https://script.google.com/macros/s/AKfycbxN_7BPPi_YrlKdYwvGwcx6n-OYvVD-iBQ7xgQQVmC70qCNuzIJDZNpKW6ic3J7PXMR/exec';
 
 // 관리자 비밀번호 (실제 배포 시 변경 필요)
 const ADMIN_PASSWORD = 'lurupl2024';

@@ -6,7 +6,7 @@
 // ========== 설정 ==========
 // Google Apps Script 웹앱 URL (배포 후 여기에 입력)
 const API_URL =
-  'https://script.google.com/macros/s/AKfycbwpoXQFMdlROUKD7s9uxWTBHBJGsLghi5XH_yIHexkGhn5b7CB5-hSb8eCQEKy7V7Yb/exec';
+  'https://script.google.com/macros/s/AKfycbxN_7BPPi_YrlKdYwvGwcx6n-OYvVD-iBQ7xgQQVmC70qCNuzIJDZNpKW6ic3J7PXMR/exec';
 
 // ========== 상수 ==========
 const CERT_CATEGORIES = {
@@ -25,6 +25,9 @@ const EXP_PER_LEVEL = 5;
 // ========== 이벤트 히스토리 ==========
 const EVENT_HISTORY_STORAGE_KEY = 'lurupl_event_history';
 
+// 서버에서 가져온 이벤트 캐시
+let cachedEvents = null;
+
 // 로컬 시간대 기준 날짜 문자열 (YYYY-MM-DD)
 function toLocalDateStr(date) {
   const year = date.getFullYear();
@@ -33,8 +36,20 @@ function toLocalDateStr(date) {
   return `${year}-${month}-${day}`;
 }
 
-// 저장된 이벤트 히스토리 불러오기
+// 저장된 이벤트 히스토리 불러오기 (서버 우선, 로컬 백업)
 function loadEventHistory() {
+  // 캐시된 이벤트가 있으면 사용
+  if (cachedEvents !== null) {
+    return cachedEvents;
+  }
+
+  // API 응답에 이벤트가 포함되어 있으면 사용
+  if (resultData && resultData.events) {
+    cachedEvents = resultData.events;
+    return cachedEvents;
+  }
+
+  // 로컬 스토리지 폴백
   try {
     const saved = localStorage.getItem(EVENT_HISTORY_STORAGE_KEY);
     return saved ? JSON.parse(saved) : [];
@@ -184,6 +199,12 @@ async function loadData() {
 
     if (!resultData || !resultData.members) {
       throw new Error('유효하지 않은 데이터입니다.');
+    }
+
+    // 서버에서 가져온 이벤트 데이터 캐시
+    if (resultData.events) {
+      cachedEvents = resultData.events;
+      console.log('서버에서 이벤트 로드 완료:', cachedEvents.length, '개');
     }
 
     loadingSection.style.display = 'none';
