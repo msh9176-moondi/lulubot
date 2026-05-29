@@ -6,7 +6,7 @@
 // ========== 설정 ==========
 // Google Apps Script 웹앱 URL (배포 후 여기에 입력)
 const API_URL =
-  'https://script.google.com/macros/s/AKfycbxN_7BPPi_YrlKdYwvGwcx6n-OYvVD-iBQ7xgQQVmC70qCNuzIJDZNpKW6ic3J7PXMR/exec';
+  'https://script.google.com/macros/s/AKfycby5wWEQhcTH6UCTc8qlSxXUZGtvR7rnyYyNYFyiIpCCAt4Q8JsHwtA66Rtv_UUAIkuj/exec';
 
 // ========== 상수 ==========
 const CERT_CATEGORIES = {
