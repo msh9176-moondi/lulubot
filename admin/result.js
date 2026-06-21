@@ -691,6 +691,7 @@ function displayCategories() {
     study: rawCategoryCount.study || 0,
     medicine: rawCategoryCount.medicine || 0,
     diary: rawCategoryCount.diary || 0,
+    meditation: rawCategoryCount.meditation || 0,
     comeback: rawCategoryCount.comeback || 0,
   };
   const colors = {
