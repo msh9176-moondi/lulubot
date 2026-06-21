@@ -2434,7 +2434,7 @@ function getMembersForSave() {
       penalty: monthly.penalty,
       totalExp: data.totalExp,
       totalCount: data.totalCount,
-      categoryCount: monthly.categoryCount,
+      categoryCount: data.categoryCount, // 전체 기간 누적
       weeklyCertCount: weeklyCertCount,
       hourlyCount: hourlyCount,
       dailyExp: dailyExp,
