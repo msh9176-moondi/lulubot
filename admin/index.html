@@ -41,12 +41,12 @@
         </section>
 
         <section class="science-info">
-            <h2>월간 랭킹 시스템</h2>
+            <h2>월간 성장 시스템</h2>
             <div class="science-grid">
                 <div class="science-card">
                     <span class="icon">📅</span>
                     <h3>월간 리셋</h3>
-                    <p>매월 새로운 시작, 누구나 1등 가능</p>
+                    <p>매월 새로운 시작, 꾸준히 성장</p>
                 </div>
                 <div class="science-card">
                     <span class="icon">🌱</span>
@@ -119,6 +119,7 @@
                                 <label><input type="checkbox" value="study" class="cat-item"> 📚 공부</label>
                                 <label><input type="checkbox" value="medicine" class="cat-item"> 💊 약</label>
                                 <label><input type="checkbox" value="diary" class="cat-item"> 📝 일기</label>
+                                <label><input type="checkbox" value="meditation" class="cat-item"> 🧘 명상</label>
                                 <label><input type="checkbox" value="comeback" class="cat-item"> 🔄 복귀</label>
                             </div>
                         </div>
@@ -132,7 +133,7 @@
 
             <!-- 기상 시간 설정 -->
             <h2>⏰ 멤버별 목표 기상 시간 설정</h2>
-            <p class="settings-desc">각 멤버의 목표 기상 시간을 설정하세요. 목표 시간 +-10분 이내 인증만 인정됩니다.</p>
+            <p class="settings-desc">각 멤버의 목표 기상 시간을 설정하세요. 목표 시간 +-30분 이내 인증만 인정됩니다.</p>
             <div class="member-settings" id="memberSettings"></div>
             <button class="analyze-btn" id="analyzeBtn">분석 시작</button>
         </section>
@@ -147,8 +148,8 @@
                     <button class="export-btn" id="exportAllPng" title="전체 결과를 이미지로 저장">
                         <span>🖼️</span> 전체 PNG
                     </button>
-                    <button class="export-btn" id="exportLeaderboardPng" title="랭킹만 이미지로 저장">
-                        <span>🏆</span> 랭킹 PNG
+                    <button class="export-btn" id="exportLeaderboardPng" title="성장 기록 이미지로 저장">
+                        <span>🌱</span> 성장 PNG
                     </button>
                     <button class="export-btn text" id="exportTxt" title="텍스트 파일로 저장">
                         <span>📄</span> TXT
@@ -182,15 +183,15 @@
             </div>
 
             <div class="history-section">
-                <h3>월간 랭킹 추이</h3>
+                <h3>월간 성장 추이</h3>
                 <div class="history-table-wrapper">
                     <table class="history-table" id="historyTable">
                         <thead>
                             <tr>
                                 <th>월</th>
-                                <th>🥇 1등</th>
-                                <th>🥈 2등</th>
-                                <th>🥉 3등</th>
+                                <th>🌟 MVP</th>
+                                <th>🌱 성장</th>
+                                <th>💪 도전</th>
                             </tr>
                         </thead>
                         <tbody id="historyBody"></tbody>
@@ -224,24 +225,13 @@
             </div>
 
             <div class="leaderboard-section" id="leaderboardSection">
-                <h3>이번 달 랭킹</h3>
+                <h3>이번 달 성장 기록</h3>
                 <div class="monthly-rewards">
-                    <div class="reward-card gold">
-                        <span class="reward-rank">🥇 1등</span>
-                        <span class="reward-prize">배민 쿠폰 1만원</span>
-                    </div>
-                    <div class="reward-card silver">
-                        <span class="reward-rank">🥈 2등</span>
-                        <span class="reward-prize">컴포즈 5천원</span>
-                    </div>
-                    <div class="reward-card bronze">
-                        <span class="reward-rank">🥉 3등</span>
-                        <span class="reward-prize">아메리카노</span>
-                    </div>
                     <div class="reward-card random">
-                        <span class="reward-rank">🎲 랜덤</span>
-                        <span class="reward-prize">깜짝 선물</span>
+                        <span class="reward-rank">🎁 보상</span>
+                        <span class="reward-prize">꾸준함에 대한 선물</span>
                     </div>
+                </div>
                 </div>
                 <div class="leaderboard" id="leaderboard"></div>
             </div>
@@ -263,6 +253,7 @@
                     <button class="filter-btn" data-filter="study">📚 공부</button>
                     <button class="filter-btn" data-filter="medicine">💊 약</button>
                     <button class="filter-btn" data-filter="diary">📝 일기</button>
+                    <button class="filter-btn" data-filter="meditation">🧘 명상</button>
                     <button class="filter-btn" data-filter="comeback">🔄 복귀</button>
                 </div>
                 <div class="records-list" id="recordsList"></div>
@@ -270,8 +261,8 @@
         </section>
 
             <footer>
-                <p>월간 랭킹 시스템 | 꾸준히 인증하고 성장하세요</p>
-                <p class="tip">"꾸준함이 실력이다. 매일 인증하고 1등을 노려보세요!"</p>
+                <p>꾸준히 인증하고 성장하세요</p>
+                <p class="tip">"오늘도 한 걸음 성장했어요"</p>
             </footer>
         </div><!-- adminArea 끝 -->
     </div>

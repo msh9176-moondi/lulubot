@@ -10,14 +10,15 @@ const API_URL =
 
 // ========== 상수 ==========
 const CERT_CATEGORIES = {
-  cleaning: { name: '청소', emoji: '🧹', exp: 1, dailyLimit: 3 },
-  exercise: { name: '운동', emoji: '🏃', exp: 4, dailyLimit: 3 },
+  cleaning: { name: '청소', emoji: '🧹', exp: 2, dailyLimit: 3 }, // 1→2: 생활 안정 행동 가치 상향
+  exercise: { name: '운동', emoji: '🏃', exp: 3, dailyLimit: 2 }, // 4→3, 3→2회: 고EXP 쏠림 완화
   morning: { name: '기상', emoji: '⏰', exp: 2, dailyLimit: 1 },
   planning: { name: '계획', emoji: '📋', exp: 3, dailyLimit: 1 },
-  study: { name: '공부', emoji: '📚', exp: 4, dailyLimit: 3 },
+  study: { name: '공부', emoji: '📚', exp: 3, dailyLimit: 3 }, // 4→3: 부담 감소
   medicine: { name: '약', emoji: '💊', exp: 1, dailyLimit: 1 },
-  diary: { name: '일기', emoji: '📝', exp: 1, dailyLimit: 1 },
-  comeback: { name: '복귀', emoji: '🔄', exp: 10, dailyLimit: 999, monthlyLimit: 1 },
+  diary: { name: '일기', emoji: '📝', exp: 2, dailyLimit: 1 }, // 1→2: 감정 조절 중요성
+  meditation: { name: '명상', emoji: '🧘', exp: 2, dailyLimit: 2 }, // 아침/저녁 명상 패턴 지원
+  comeback: { name: '복귀', emoji: '🔄', exp: 3, dailyLimit: 999, cooldownHours: 72 }, // 10→3+2 보너스
 };
 
 const EXP_PER_LEVEL = 5;
@@ -571,6 +572,7 @@ function displayTimeActivity() {
     study: '#4ade80',
     medicine: '#f87171',
     diary: '#fb923c',
+    meditation: '#c084fc',
     comeback: '#38bdf8',
   };
 
@@ -659,6 +661,7 @@ function displayCategories() {
     study: '#4ade80',
     medicine: '#f87171',
     diary: '#fb923c',
+    meditation: '#c084fc',
     comeback: '#38bdf8',
   };
 
@@ -674,16 +677,21 @@ function displayCategories() {
 
     console.log(`[DEBUG] 카테고리 카드 생성: ${category} (${data.name})`);
 
-    // 월간 제한이 있으면 월간으로, 아니면 일일로 표시
-    const limitText = data.monthlyLimit
-      ? `월간 ${data.monthlyLimit}회 제한`
+    // 72시간 쿨다운이 있으면 쿨다운으로, 아니면 일일로 표시
+    const limitText = data.cooldownHours
+      ? `${data.cooldownHours}시간 미인증 후 사용 가능`
       : `일일 ${data.dailyLimit}회 제한`;
+
+    // 복귀 카테고리는 보너스 EXP 표시
+    const expDisplay = category === 'comeback'
+      ? `+${data.exp}EXP (+2 보너스)`
+      : `+${data.exp}EXP`;
 
     const card = document.createElement('div');
     card.className = `category-card ${category}`;
     card.innerHTML = `
             <div class="emoji">${data.emoji}</div>
-            <div class="name">${data.name} <span class="exp-badge">+${data.exp}EXP</span></div>
+            <div class="name">${data.name} <span class="exp-badge">${expDisplay}</span></div>
             <div class="count">${count}회</div>
             <div class="exp-total">${totalExp} EXP</div>
             <div class="daily-limit">${limitText}</div>
@@ -763,6 +771,7 @@ function displayLeaderboard() {
                 <div class="member-categories">${data.monthlyCount || 0}회 (${data.certDays || 0}일)</div>
                 <div class="member-total">누적 ${totalExp} EXP</div>
             </div>
+            <button class="profile-btn" data-nickname="${nickname}" title="개인 통계 보기">상세</button>
         `;
     leaderboard.appendChild(item);
   });
@@ -805,4 +814,420 @@ function displayRankingHistory() {
 }
 
 // ========== 초기화 ==========
-document.addEventListener('DOMContentLoaded', loadData);
+document.addEventListener('DOMContentLoaded', () => {
+  loadData().then(() => {
+    initProfileModal();
+    handleHashChange();
+  });
+});
+
+// ========== 개인 프로필 모달 ==========
+
+// 프로필 모달 초기화
+function initProfileModal() {
+  const leaderboard = document.getElementById('leaderboard');
+
+  // 통계 버튼 클릭 이벤트
+  leaderboard.addEventListener('click', (e) => {
+    const btn = e.target.closest('.profile-btn');
+    if (btn) {
+      const nickname = btn.dataset.nickname;
+      openProfileModal(nickname);
+    }
+  });
+
+  // 탭 전환 이벤트
+  document.querySelectorAll('.profile-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.profile-tab-content').forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('tab' + capitalize(tab.dataset.tab)).classList.add('active');
+    });
+  });
+
+  // 성장 차트 기간 선택 이벤트
+  document.querySelectorAll('.period-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (currentProfileData) {
+        renderGrowthChart(currentProfileData, btn.dataset.period);
+      }
+    });
+  });
+
+  // 오버레이 클릭으로 닫기
+  document.getElementById('profileModalOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'profileModalOverlay') {
+      closeProfileModal();
+    }
+  });
+
+  // ESC 키로 닫기
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeProfileModal();
+    }
+  });
+}
+
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+// 현재 프로필 데이터 저장
+let currentProfileData = null;
+
+// 프로필 모달 열기
+function openProfileModal(nickname) {
+  const member = resultData.members[nickname];
+  if (!member) {
+    console.error('멤버를 찾을 수 없습니다:', nickname);
+    return;
+  }
+
+  // URL 해시 업데이트
+  window.location.hash = `profile=${encodeURIComponent(nickname)}`;
+
+  // 프로필 데이터 생성
+  currentProfileData = generateProfileData(nickname, member);
+  renderProfileModal(currentProfileData);
+
+  // 모달 표시
+  document.getElementById('profileModalOverlay').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+// 프로필 모달 닫기
+function closeProfileModal() {
+  document.getElementById('profileModalOverlay').style.display = 'none';
+  document.body.style.overflow = '';
+  history.pushState('', document.title, window.location.pathname + window.location.search);
+}
+
+// URL 해시 변경 처리
+function handleHashChange() {
+  const hash = window.location.hash;
+  const match = hash.match(/^#profile=(.+)$/);
+
+  if (match && resultData && resultData.members) {
+    const nickname = decodeURIComponent(match[1]);
+    if (resultData.members[nickname]) {
+      openProfileModal(nickname);
+    }
+  }
+}
+
+window.addEventListener('hashchange', handleHashChange);
+
+// 프로필 데이터 생성
+function generateProfileData(nickname, member) {
+  const records = member.records || [];
+
+  // 시간대별 집계 - 저장된 데이터 사용
+  const hourlyCount = member.hourlyCount || new Array(24).fill(0);
+
+  // 카테고리별 집계 - 저장된 데이터 사용
+  const categoryCount = member.categoryCount || { cleaning: 0, exercise: 0, morning: 0, planning: 0, study: 0, medicine: 0, diary: 0, meditation: 0, comeback: 0 };
+
+  // 일별 EXP - 저장된 데이터 사용 (전체 기간)
+  const dailyExp = member.dailyExp || {};
+
+  // 레벨 및 칭호
+  const netExp = member.netExp || 0;
+  const totalExp = member.totalExp || 0;
+  const level = getLevel(netExp);
+  const accTitle = getAccumulatedTitle(totalExp);
+
+  // 저번달 대비 성장
+  const lastMonthExp = member.lastMonthExp || 0;
+  const lastMonthCount = member.lastMonthCount || 0;
+  const monthlyExp = member.monthlyExp || netExp;
+  const monthlyCount = member.monthlyCount || 0;
+
+  const expGrowth = lastMonthExp > 0 ? Math.round((monthlyExp - lastMonthExp) / lastMonthExp * 100) : (monthlyExp > 0 ? 100 : 0);
+  const countGrowth = lastMonthCount > 0 ? Math.round((monthlyCount - lastMonthCount) / lastMonthCount * 100) : (monthlyCount > 0 ? 100 : 0);
+
+  return {
+    nickname,
+    level,
+    accTitle,
+    totalExp,
+    totalCount: member.totalCount || 0,
+    monthlyExp,
+    monthlyCount,
+    certDays: member.certDays || 0,
+    weeklyCount: member.weeklyCertCount || 0,
+    lastMonthExp,
+    lastMonthCount,
+    expGrowth,
+    countGrowth,
+    dailyExp,
+    hourlyCount,
+    categoryCount,
+    recentRecords: records.slice().reverse()
+  };
+}
+
+function formatDate(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function getWeekStart(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  return formatDate(d);
+}
+
+// 프로필 모달 렌더링
+function renderProfileModal(data) {
+  // 헤더
+  document.getElementById('profileAvatar').textContent = data.accTitle.icon;
+  document.getElementById('profileNickname').textContent = data.nickname;
+  document.getElementById('profileLevel').textContent = `Lv.${data.level.level}`;
+  document.getElementById('profileLevel').style.background = data.level.color;
+  document.getElementById('profileTitle').textContent = `${data.accTitle.icon} ${data.accTitle.title}`;
+
+  // 통계 카드
+  document.getElementById('profileMonthlyExp').textContent = `${data.monthlyExp} EXP`;
+  document.getElementById('profileMonthlyCount').textContent = `${data.monthlyCount}회 (${data.certDays}일)`;
+  document.getElementById('profileLastMonthExp').textContent = `${data.lastMonthExp} EXP`;
+  document.getElementById('profileLastMonthCount').textContent = `${data.lastMonthCount}회`;
+
+  const growthEl = document.getElementById('profileGrowth');
+  const growthSign = data.expGrowth >= 0 ? '+' : '';
+  growthEl.textContent = `${growthSign}${data.expGrowth}%`;
+  growthEl.classList.toggle('negative', data.expGrowth < 0);
+
+  document.getElementById('profileTotalExp').textContent = `${data.totalExp} EXP`;
+  document.getElementById('profileTotalCount').textContent = `${data.totalCount}회`;
+
+  // 개인화 피드백
+  const feedbacks = generatePersonalizedFeedback(data);
+  document.querySelector('.feedback-icon').textContent = feedbacks.icon;
+  document.getElementById('feedbackText').innerHTML = feedbacks.messages.join('<br>');
+
+  // 탭 초기화 (성장 추이 탭 활성화)
+  document.querySelectorAll('.profile-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+  document.querySelectorAll('.profile-tab-content').forEach((c, i) => c.classList.toggle('active', i === 0));
+  document.querySelectorAll('.period-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+
+  // 각 탭 렌더링
+  renderGrowthChart(data, 'daily');
+  renderCategoryPie(data);
+  renderTimeHeatmap(data);
+  renderRecentRecords(data);
+}
+
+// 성장 추이 차트
+function renderGrowthChart(data, period) {
+  const container = document.getElementById('profileGrowthChart');
+  container.innerHTML = '';
+
+  let entries;
+  if (period === 'daily') {
+    // 일별: 저장된 dailyExp 사용 (최근 30일만 표시)
+    const allEntries = Object.entries(data.dailyExp || {}).sort((a, b) => a[0].localeCompare(b[0]));
+    entries = allEntries.slice(-30);
+  } else {
+    // 주별: dailyExp를 주별로 집계
+    const weeklyAgg = {};
+    Object.entries(data.dailyExp || {}).forEach(([date, exp]) => {
+      const weekStart = getWeekStart(new Date(date));
+      weeklyAgg[weekStart] = (weeklyAgg[weekStart] || 0) + exp;
+    });
+    entries = Object.entries(weeklyAgg).sort((a, b) => a[0].localeCompare(b[0])).slice(-12);
+  }
+
+  if (entries.length === 0) {
+    container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 3rem;">데이터가 없습니다</div>';
+    return;
+  }
+
+  const maxExp = Math.max(...entries.map(e => e[1]), 1);
+
+  entries.forEach(([date, exp]) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'growth-bar-wrapper';
+
+    const heightPercent = (exp / maxExp) * 100;
+    const label = date.slice(5).replace('-', '/');
+
+    wrapper.innerHTML = `
+      <div class="growth-bar" style="height: ${Math.max(heightPercent, exp > 0 ? 5 : 2)}%">
+        <div class="growth-bar-tooltip">${date}<br>${exp} EXP</div>
+      </div>
+      <div class="growth-bar-label">${label}</div>
+    `;
+    container.appendChild(wrapper);
+  });
+}
+
+// 카테고리 파이차트
+function renderCategoryPie(data) {
+  const pieChart = document.getElementById('profilePieChart');
+  const pieLegend = document.getElementById('profilePieLegend');
+  const pieTotal = document.getElementById('profilePieTotal');
+
+  const colors = {
+    cleaning: '#f472b6', exercise: '#22d3ee', morning: '#fbbf24',
+    planning: '#a78bfa', study: '#4ade80', medicine: '#f87171',
+    diary: '#fb923c', meditation: '#c084fc', comeback: '#38bdf8'
+  };
+
+  const names = {
+    cleaning: '청소', exercise: '운동', morning: '기상',
+    planning: '계획', study: '공부', medicine: '약',
+    diary: '일기', meditation: '명상', comeback: '복귀'
+  };
+
+  const total = Object.values(data.categoryCount).reduce((a, b) => a + b, 0);
+  pieTotal.textContent = total;
+
+  if (total === 0) {
+    pieChart.style.background = 'var(--border)';
+    pieLegend.innerHTML = '<div style="color: var(--text-muted); text-align: center; grid-column: 1/-1;">인증 기록이 없습니다</div>';
+    return;
+  }
+
+  // 파이 차트 그라데이션
+  let currentAngle = 0;
+  const gradientParts = [];
+
+  Object.entries(data.categoryCount)
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([category, count]) => {
+      const angle = (count / total) * 360;
+      gradientParts.push(`${colors[category]} ${currentAngle}deg ${currentAngle + angle}deg`);
+      currentAngle += angle;
+    });
+
+  pieChart.style.background = `conic-gradient(${gradientParts.join(', ')})`;
+
+  // 범례
+  pieLegend.innerHTML = Object.entries(data.categoryCount)
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([category, count]) => `
+      <div class="profile-legend-item">
+        <span class="profile-legend-color" style="background: ${colors[category]}"></span>
+        <span>${names[category]} ${count}</span>
+      </div>
+    `).join('');
+}
+
+// 시간대 히트맵
+function renderTimeHeatmap(data) {
+  const container = document.getElementById('profileTimeHeatmap');
+  const insight = document.getElementById('profileTimeInsight');
+  container.innerHTML = '';
+
+  const maxCount = Math.max(...data.hourlyCount, 1);
+
+  for (let hour = 0; hour < 24; hour++) {
+    const count = data.hourlyCount[hour];
+    const level = count === 0 ? 0 : Math.ceil((count / maxCount) * 5);
+
+    const cell = document.createElement('div');
+    cell.className = `heatmap-cell level-${level}`;
+    cell.textContent = hour;
+    cell.title = `${hour}시: ${count}회`;
+    container.appendChild(cell);
+  }
+
+  // 피크 시간 분석
+  const peakHour = data.hourlyCount.indexOf(Math.max(...data.hourlyCount));
+  const morningCount = data.hourlyCount.slice(5, 12).reduce((a, b) => a + b, 0);
+  const eveningCount = data.hourlyCount.slice(18, 24).reduce((a, b) => a + b, 0);
+
+  let insightText = '';
+  if (data.hourlyCount[peakHour] > 0) {
+    insightText = `<strong>${peakHour}시</strong>에 가장 활발하게 인증합니다.`;
+    if (eveningCount > morningCount * 1.5) {
+      insightText += ' 저녁형 패턴이에요.';
+    } else if (morningCount > eveningCount * 1.5) {
+      insightText += ' 아침형 패턴이에요.';
+    }
+  } else {
+    insightText = '아직 인증 기록이 부족합니다.';
+  }
+  insight.innerHTML = insightText;
+}
+
+// 최근 기록 목록
+function renderRecentRecords(data) {
+  const container = document.getElementById('profileRecordsList');
+
+  const names = {
+    cleaning: '청소', exercise: '운동', morning: '기상',
+    planning: '계획', study: '공부', medicine: '약',
+    diary: '일기', meditation: '명상', comeback: '복귀'
+  };
+
+  if (data.recentRecords.length === 0) {
+    container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 2rem;">기록이 없습니다</div>';
+    return;
+  }
+
+  container.innerHTML = data.recentRecords.map(r => `
+    <div class="profile-record-item">
+      <span class="record-date">${r.date ? r.date.slice(5) : ''} ${r.time || ''}</span>
+      <span class="record-category-badge ${r.category}">${names[r.category] || r.category}</span>
+      <span class="record-message">${r.tag || ''}</span>
+      <span class="record-exp">+${r.exp}</span>
+    </div>
+  `).join('');
+}
+
+// 개인화 피드백 생성
+function generatePersonalizedFeedback(data) {
+  const messages = [];
+  let icon = '💡';
+
+  // 1. 시간대 분석
+  const hourlyCount = data.hourlyCount;
+  const morningCount = hourlyCount.slice(5, 12).reduce((a, b) => a + b, 0);
+  const eveningCount = hourlyCount.slice(18, 24).reduce((a, b) => a + b, 0);
+
+  if (eveningCount > morningCount * 1.5) {
+    messages.push(`${data.nickname}님은 아침보다 저녁 인증이 잘 맞는 편입니다.`);
+  } else if (morningCount > eveningCount * 1.5) {
+    messages.push(`${data.nickname}님은 아침형 인증 패턴을 보입니다.`);
+    icon = '🌅';
+  }
+
+  // 2. 주요 카테고리 분석
+  const sortedCategories = Object.entries(data.categoryCount)
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1]);
+
+  if (sortedCategories.length > 0) {
+    const names = { cleaning: '청소', exercise: '운동', morning: '기상', planning: '계획', study: '공부', medicine: '약', diary: '일기', meditation: '명상', comeback: '복귀' };
+    const topCategory = sortedCategories[0][0];
+    messages.push(`${names[topCategory]} 인증이 가장 활발합니다.`);
+  }
+
+  // 3. 인증 일수 분석
+  const currentDay = new Date().getDate();
+  const certRate = data.certDays > 0 ? (data.certDays / currentDay * 100).toFixed(0) : 0;
+
+  if (certRate >= 80) {
+    messages.push(`이번 달 인증률 ${certRate}%! 정말 꾸준해요.`);
+    icon = '🔥';
+  } else if (certRate >= 50) {
+    messages.push(`이번 달 절반 이상 인증하셨어요.`);
+  } else if (data.certDays > 0) {
+    messages.push(`다시 돌아온 것만으로도 충분합니다.`);
+    icon = '🌱';
+  }
+
+  if (messages.length === 0) {
+    messages.push('꾸준히 인증하며 성장하고 계세요.');
+  }
+
+  return { icon, messages: messages.slice(0, 2) };
+}

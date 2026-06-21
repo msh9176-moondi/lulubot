@@ -7,15 +7,15 @@ const CERT_CATEGORIES = {
   cleaning: {
     name: '청소',
     emoji: '🧹',
-    exp: 1,
+    exp: 2, // 1→2: 생활 안정 행동 가치 상향
     dailyLimit: 3,
     tags: ['#청소', '#방청소', '#정리', '#설거지', '#빨래', '#집안일'],
   },
   exercise: {
     name: '운동',
     emoji: '🏃',
-    exp: 4,
-    dailyLimit: 3,
+    exp: 3, // 4→3: 고EXP 쏠림 완화
+    dailyLimit: 2, // 3→2: 과몰입 방지
     tags: ['#운동', '#헬스', '#러닝', '#산책', '#식단'],
   },
   morning: {
@@ -35,7 +35,7 @@ const CERT_CATEGORIES = {
   study: {
     name: '공부',
     emoji: '📚',
-    exp: 4,
+    exp: 3, // 4→3: 부담 감소 및 고EXP 경쟁 완화
     dailyLimit: 3,
     tags: ['#공부', '#스터디', '#독서', '#학습'],
   },
@@ -49,16 +49,23 @@ const CERT_CATEGORIES = {
   diary: {
     name: '일기',
     emoji: '📝',
-    exp: 1,
+    exp: 2, // 1→2: 감정 조절과 자기관찰 중요성 반영
     dailyLimit: 1,
     tags: ['#일기', '#감사일기', '#하루기록', '#오늘하루', '#일상'],
+  },
+  meditation: {
+    name: '명상',
+    emoji: '🧘',
+    exp: 2,
+    dailyLimit: 2, // 아침/저녁 명상 패턴 지원
+    tags: ['#명상', '#마음챙김', '#호흡', '#묵상'],
   },
   comeback: {
     name: '복귀',
     emoji: '🔄',
-    exp: 10,
-    dailyLimit: 999, // 일일 제한 없음 (월간 제한으로 관리)
-    monthlyLimit: 1, // 월간 1회 제한
+    exp: 3, // 10→3: 복귀 자체 3 EXP (당일 추가 인증 시 2 EXP 보너스는 별도 로직)
+    dailyLimit: 999,
+    cooldownHours: 72, // 72시간 미인증 후 사용 가능
     tags: ['#복귀', '#컴백', '#돌아왔어'],
   },
 };
@@ -66,7 +73,7 @@ const CERT_CATEGORIES = {
 // 월간 레벨 시스템 (경험치 기반)
 const EXP_PER_LEVEL = 5; // 레벨당 필요 경험치 (한 달 최대 Lv.100)
 const PENALTY_PER_DAY = 0; // 페널티 비활성화
-const MORNING_TOLERANCE = 10; // 기상 인증 허용 오차 (분)
+const MORNING_TOLERANCE = 30; // 기상 인증 허용 오차 (분)
 
 // ========== 시즌 이벤트 설정 ==========
 const SEASON_EVENTS = [
@@ -448,6 +455,7 @@ function calculateMonthlyData(memberRecords, nickname) {
     study: 0,
     medicine: 0,
     diary: 0,
+    meditation: 0,
     comeback: 0,
   };
 
@@ -496,6 +504,7 @@ let analysisData = {
     study: 0,
     medicine: 0,
     diary: 0,
+    meditation: 0,
     comeback: 0,
   },
 };
@@ -719,6 +728,7 @@ function parseChat(content) {
       study: 0,
       medicine: 0,
       diary: 0,
+      meditation: 0,
       comeback: 0,
     },
   };
@@ -732,6 +742,12 @@ function parseChat(content) {
 
   // 일일 인증 횟수 추적: { "닉네임|날짜|카테고리": count }
   const dailyCertCounts = {};
+
+  // 각 사용자의 마지막 인증 시간 추적: { "닉네임": { date: "2024-01-01", time: "09:00" } }
+  const lastCertTime = {};
+
+  // 복귀 인증한 날짜 추적: { "닉네임|날짜": true }
+  const comebackDates = {};
 
   // 1차: 모든 기록 파싱
   lines.forEach((line) => {
@@ -805,23 +821,48 @@ function parseChat(content) {
       exp = 0; // 일일 제한 초과 시 경험치 0
     }
 
-    // 월간 제한 검증 (복귀 카테고리 등)
-    const monthlyLimit = CERT_CATEGORIES[category].monthlyLimit;
-    let isOverMonthlyLimit = false;
-    if (monthlyLimit) {
-      const yearMonth = currentDate.substring(0, 7); // "2024-01"
-      const monthlyKey = `${trimmedNickname}|${yearMonth}|${category}`;
-      if (!dailyCertCounts[monthlyKey]) {
-        dailyCertCounts[monthlyKey] = 0;
-      }
-      dailyCertCounts[monthlyKey]++;
+    // 72시간 쿨다운 검증 (복귀 카테고리)
+    const cooldownHours = CERT_CATEGORIES[category].cooldownHours;
+    let isValidComeback = true;
+    let comebackBonusExp = 0;
 
-      if (dailyCertCounts[monthlyKey] > monthlyLimit) {
-        isOverMonthlyLimit = true;
-        isOverDailyLimit = true; // UI 표시를 위해 같이 설정
-        exp = 0; // 월간 제한 초과 시 경험치 0
+    if (category === 'comeback') {
+      // 마지막 인증으로부터 72시간이 지났는지 확인
+      if (lastCertTime[trimmedNickname]) {
+        const lastDate = lastCertTime[trimmedNickname].date;
+        const lastTime = lastCertTime[trimmedNickname].time;
+        const lastDateTime = new Date(`${lastDate}T${lastTime}:00`);
+        const currentDateTime = new Date(`${currentDate}T${timeStr}:00`);
+        const hoursDiff = (currentDateTime - lastDateTime) / (1000 * 60 * 60);
+
+        if (hoursDiff < cooldownHours) {
+          isValidComeback = false;
+          isOverDailyLimit = true; // UI 표시를 위해 설정
+          exp = 0; // 72시간 미경과 시 경험치 0
+        }
       }
+
+      // 유효한 복귀인 경우 복귀 날짜 기록
+      if (isValidComeback && exp > 0) {
+        comebackDates[`${trimmedNickname}|${currentDate}`] = true;
+      }
+    } else {
+      // 복귀가 아닌 인증인 경우, 당일 복귀 완료 보너스 체크
+      if (comebackDates[`${trimmedNickname}|${currentDate}`]) {
+        // 복귀 후 첫 번째 추가 인증에만 보너스 지급
+        const bonusKey = `${trimmedNickname}|${currentDate}|comebackBonus`;
+        if (!dailyCertCounts[bonusKey]) {
+          dailyCertCounts[bonusKey] = true;
+          comebackBonusExp = 2; // 복귀 완료 보너스 2 EXP
+        }
+      }
+
+      // 마지막 인증 시간 업데이트 (복귀 제외)
+      lastCertTime[trimmedNickname] = { date: currentDate, time: timeStr };
     }
+
+    // 복귀 완료 보너스 추가
+    exp += comebackBonusExp;
 
     const record = {
       date: currentDate,
@@ -835,6 +876,8 @@ function parseChat(content) {
       exp: exp,
       isEventBoost: isEventBoost,
       isValidMorning: category === 'morning' ? isValidMorning : null,
+      isValidComeback: category === 'comeback' ? isValidComeback : null,
+      comebackBonusExp: comebackBonusExp, // 복귀 완료 보너스 EXP
       targetWakeTime:
         category === 'morning' ? memberWakeUpTimes[trimmedNickname] : null,
       isOverDailyLimit: isOverDailyLimit,
@@ -868,6 +911,8 @@ function parseChat(content) {
           study: 0,
           medicine: 0,
           diary: 0,
+          meditation: 0,
+          comeback: 0,
         },
       };
     }
@@ -1222,6 +1267,7 @@ function displayTimeActivity() {
       study: 0,
       medicine: 0,
       diary: 0,
+      meditation: 0,
       comeback: 0,
     };
   }
@@ -1248,6 +1294,7 @@ function displayTimeActivity() {
     study: '#4ade80',
     medicine: '#f87171',
     diary: '#fb923c',
+    meditation: '#c084fc', // 명상 - 라벤더
     comeback: '#38bdf8',
   };
 
@@ -1346,14 +1393,19 @@ function displayCategories() {
     const card = document.createElement('div');
     card.className = `category-card ${category}`;
 
-    // 월간 제한이 있으면 월간으로, 아니면 일일로 표시
-    const limitText = data.monthlyLimit
-      ? `월간 ${data.monthlyLimit}회 제한`
+    // 72시간 쿨다운이 있으면 쿨다운으로, 아니면 일일로 표시
+    const limitText = data.cooldownHours
+      ? `${data.cooldownHours}시간 미인증 후 사용 가능`
       : `일일 ${data.dailyLimit}회 제한`;
+
+    // 복귀 카테고리는 보너스 EXP 표시
+    const expDisplay = category === 'comeback'
+      ? `+${data.exp}EXP (+2 보너스)`
+      : `+${data.exp}EXP`;
 
     card.innerHTML = `
             <div class="emoji">${data.emoji}</div>
-            <div class="name">${data.name} <span class="exp-badge">+${data.exp}EXP</span></div>
+            <div class="name">${data.name} <span class="exp-badge">${expDisplay}</span></div>
             <div class="count">${count}회</div>
             <div class="exp-total">${totalExp} EXP</div>
             <div class="daily-limit">${limitText}</div>
@@ -1382,6 +1434,7 @@ function displayPieChart() {
     study: '#4ade80',
     medicine: '#f87171',
     diary: '#fb923c',
+    meditation: '#c084fc', // 명상 - 라벤더
     comeback: '#38bdf8',
   };
 
@@ -1835,7 +1888,7 @@ function exportLeaderboardToPng() {
   const { year, month } = getCurrentMonthInfo();
   const dateStr = `${year}년${month + 1}월`;
   const element = document.getElementById('leaderboardSection');
-  downloadPng(element, `루루플_랭킹_${dateStr}.png`, 'exportLeaderboardPng');
+  downloadPng(element, `루루플_성장기록_${dateStr}.png`, 'exportLeaderboardPng');
 }
 
 // 텍스트 파일 내보내기
@@ -1856,14 +1909,9 @@ function exportToTxt() {
   content += `총 멤버: ${sortedMembers.length}명\n`;
   content += '────────────────────────────────────────\n\n';
 
-  // 월간 보상 안내
-  content += '【 월간 보상 】\n';
-  content += '🥇 1등: 배민 쿠폰 2만원\n';
-  content += '🥈 2등: 컴포즈 커피 5천원\n';
-  content += '🥉 3등: 아이스 아메리카노\n\n';
 
-  // 이번 달 랭킹
-  content += '【 이번 달 랭킹 】\n';
+  // 이번 달 성장 기록
+  content += '【 이번 달 성장 기록 】\n';
   content += '────────────────────────────────────────\n';
 
   const rankEmojis = ['🥇', '🥈', '🥉'];
@@ -2335,11 +2383,48 @@ function getMonthlyRankingsForSave() {
 // 멤버 데이터 저장용
 function getMembersForSave() {
   const members = {};
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastMonthStr = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
 
   for (const [nickname, data] of Object.entries(analysisData.members)) {
     const monthly = data.monthly;
-    // 이번 주 인증 횟수 계산
     const weeklyCertCount = getWeeklyCertCount(data.records, nickname);
+
+    // 개인별 시간대 집계 (전체 기간)
+    const hourlyCount = new Array(24).fill(0);
+    data.records.forEach(r => {
+      if (r.exp > 0 && r.time) {
+        const hour = parseInt(r.time.split(':')[0]);
+        if (!isNaN(hour)) hourlyCount[hour]++;
+      }
+    });
+
+    // 일별 EXP 집계 (전체 기간)
+    const dailyExp = {};
+    data.records.forEach(r => {
+      if (r.exp > 0 && r.date) {
+        dailyExp[r.date] = (dailyExp[r.date] || 0) + r.exp;
+      }
+    });
+
+    // 저번달 통계
+    const lastMonthRecords = data.records.filter(r => r.date && r.date.startsWith(lastMonthStr) && r.exp > 0);
+    const lastMonthExp = lastMonthRecords.reduce((sum, r) => sum + r.exp, 0);
+    const lastMonthCount = lastMonthRecords.length;
+
+    // 전체 기록 저장 (최대 100개)
+    const allRecords = data.records
+      .filter(r => r.exp > 0)
+      .slice(-100)
+      .map(r => ({
+        date: r.date,
+        time: r.time,
+        category: r.category,
+        tag: r.tag,
+        exp: r.exp
+      }));
 
     members[nickname] = {
       netExp: monthly.netExp,
@@ -2348,8 +2433,14 @@ function getMembersForSave() {
       certDays: monthly.certDays,
       penalty: monthly.penalty,
       totalExp: data.totalExp,
+      totalCount: data.totalCount,
       categoryCount: monthly.categoryCount,
-      weeklyCertCount: weeklyCertCount, // 주간 인증 횟수 추가
+      weeklyCertCount: weeklyCertCount,
+      hourlyCount: hourlyCount,
+      dailyExp: dailyExp,
+      lastMonthExp: lastMonthExp,
+      lastMonthCount: lastMonthCount,
+      records: allRecords,
     };
   }
 

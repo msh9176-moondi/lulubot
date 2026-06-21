@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>루루플 인증 랭킹</title>
+    <title>루루플 성장 기록</title>
     <link rel="stylesheet" href="styles_result.css?v=2" />
   </head>
   <body>
     <div class="container">
       <header>
-        <h1>루루플 인증 랭킹</h1>
+        <h1>루루플 성장 기록</h1>
         <p class="subtitle">ADHD 실행력 향상을 위한 과학적 설계 기반</p>
       </header>
 
@@ -76,15 +76,15 @@
         </div>
 
         <div class="history-section">
-          <h3>월간 랭킹 추이</h3>
+          <h3>월간 성장 추이</h3>
           <div class="history-table-wrapper">
             <table class="history-table" id="historyTable">
               <thead>
                 <tr>
                   <th>월</th>
-                  <th>1등</th>
-                  <th>2등</th>
-                  <th>3등</th>
+                  <th>🌟 MVP</th>
+                  <th>🌱 성장</th>
+                  <th>💪 도전</th>
                 </tr>
               </thead>
               <tbody id="historyBody"></tbody>
@@ -120,23 +120,11 @@
         </div>
 
         <div class="leaderboard-section" id="leaderboardSection">
-          <h3>이번 달 랭킹</h3>
+          <h3>이번 달 성장 기록</h3>
           <div class="monthly-rewards">
-            <div class="reward-card gold">
-              <span class="reward-rank">🥇 1등</span>
-              <span class="reward-prize">배민 쿠폰 1만원</span>
-            </div>
-            <div class="reward-card silver">
-              <span class="reward-rank">🥈 2등</span>
-              <span class="reward-prize">컴포즈 5천원</span>
-            </div>
-            <div class="reward-card bronze">
-              <span class="reward-rank">🥉 3등</span>
-              <span class="reward-prize">아메리카노</span>
-            </div>
             <div class="reward-card random">
-              <span class="reward-rank">🎲 랜덤</span>
-              <span class="reward-prize">깜짝 선물</span>
+              <span class="reward-rank">🎁 보상</span>
+              <span class="reward-prize">꾸준함에 대한 선물</span>
             </div>
           </div>
           <div class="leaderboard" id="leaderboard"></div>
@@ -144,11 +132,104 @@
       </section>
 
       <footer>
-        <p>월간 랭킹 시스템 | 꾸준히 인증하고 성장하세요</p>
-        <p class="tip">"꾸준함이 실력이다. 매일 인증하고 1등을 노려보세요!"</p>
+        <p>꾸준히 인증하고 성장하세요</p>
+        <p class="tip">"오늘도 한 걸음 성장했어요"</p>
       </footer>
     </div>
 
-    <script src="result.js?v=2"></script>
+    <!-- 프로필 모달 -->
+    <div class="profile-modal-overlay" id="profileModalOverlay">
+      <div class="profile-modal">
+        <button class="profile-close-btn" onclick="closeProfileModal()">&times;</button>
+
+        <div class="profile-header">
+          <div class="profile-avatar" id="profileAvatar"></div>
+          <div class="profile-title-area">
+            <h2 class="profile-nickname" id="profileNickname">닉네임</h2>
+            <div class="profile-badges">
+              <span class="profile-level" id="profileLevel">Lv.1</span>
+              <span class="profile-title" id="profileTitle">뉴비</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 통계 요약 카드 -->
+        <div class="profile-stats-row">
+          <div class="profile-stat-card">
+            <span class="stat-label">이번 달</span>
+            <span class="stat-value" id="profileMonthlyExp">0</span>
+            <span class="stat-sub" id="profileMonthlyCount">0회</span>
+          </div>
+          <div class="profile-stat-card">
+            <span class="stat-label">저번 달</span>
+            <span class="stat-value" id="profileLastMonthExp">0</span>
+            <span class="stat-sub" id="profileLastMonthCount">0회</span>
+          </div>
+          <div class="profile-stat-card">
+            <span class="stat-label">성장률</span>
+            <span class="stat-value growth" id="profileGrowth">0%</span>
+          </div>
+          <div class="profile-stat-card">
+            <span class="stat-label">누적</span>
+            <span class="stat-value" id="profileTotalExp">0</span>
+            <span class="stat-sub" id="profileTotalCount">0회</span>
+          </div>
+        </div>
+
+        <!-- 개인화 피드백 -->
+        <div class="profile-feedback" id="profileFeedback">
+          <div class="feedback-icon"></div>
+          <div class="feedback-text" id="feedbackText">
+            피드백을 생성하는 중...
+          </div>
+        </div>
+
+        <!-- 탭 네비게이션 -->
+        <div class="profile-tabs">
+          <button class="profile-tab active" data-tab="growth">성장 추이</button>
+          <button class="profile-tab" data-tab="category">카테고리</button>
+          <button class="profile-tab" data-tab="time">시간대</button>
+          <button class="profile-tab" data-tab="records">기록</button>
+        </div>
+
+        <!-- 성장 추이 탭 -->
+        <div class="profile-tab-content active" id="tabGrowth">
+          <div class="growth-period-selector">
+            <button class="period-btn active" data-period="daily">일별</button>
+            <button class="period-btn" data-period="weekly">주별</button>
+          </div>
+          <div class="growth-chart-container">
+            <div class="growth-chart" id="profileGrowthChart"></div>
+          </div>
+        </div>
+
+        <!-- 카테고리 탭 -->
+        <div class="profile-tab-content" id="tabCategory">
+          <div class="profile-category-content">
+            <div class="profile-pie-container">
+              <div class="profile-pie-chart" id="profilePieChart"></div>
+              <div class="profile-pie-center">
+                <span class="pie-total" id="profilePieTotal">0</span>
+                <span class="pie-label">총 인증</span>
+              </div>
+            </div>
+            <div class="profile-pie-legend" id="profilePieLegend"></div>
+          </div>
+        </div>
+
+        <!-- 시간대 탭 -->
+        <div class="profile-tab-content" id="tabTime">
+          <div class="profile-time-heatmap" id="profileTimeHeatmap"></div>
+          <div class="profile-time-insight" id="profileTimeInsight"></div>
+        </div>
+
+        <!-- 기록 탭 -->
+        <div class="profile-tab-content" id="tabRecords">
+          <div class="profile-records-list" id="profileRecordsList"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="result.js?v=3"></script>
   </body>
 </html>
