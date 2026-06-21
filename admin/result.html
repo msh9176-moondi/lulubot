@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>루루플 성장 기록</title>
-    <link rel="stylesheet" href="styles_result.css?v=2" />
+    <link rel="stylesheet" href="styles_result.css?v=4" />
   </head>
   <body>
     <div class="container">
@@ -149,6 +149,7 @@
             <div class="profile-badges">
               <span class="profile-level" id="profileLevel">Lv.1</span>
               <span class="profile-title" id="profileTitle">뉴비</span>
+              <span class="profile-category-title" id="profileCategoryTitle" style="display: none;"></span>
             </div>
           </div>
         </div>
@@ -197,6 +198,7 @@
           <div class="growth-period-selector">
             <button class="period-btn active" data-period="daily">일별</button>
             <button class="period-btn" data-period="weekly">주별</button>
+            <button class="period-btn" data-period="monthly">월별</button>
           </div>
           <div class="growth-chart-container">
             <div class="growth-chart" id="profileGrowthChart"></div>
@@ -230,6 +232,6 @@
       </div>
     </div>
 
-    <script src="result.js?v=3"></script>
+    <script src="result.js?v=8"></script>
   </body>
 </html>

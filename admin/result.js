@@ -6,7 +6,7 @@
 // ========== 설정 ==========
 // Google Apps Script 웹앱 URL (배포 후 여기에 입력)
 const API_URL =
-  'https://script.google.com/macros/s/AKfycby1H56l1jG9YFZahPeyB6_hIFPSRloe8zIPPGjJZp-kcs4LNSUzcpaj8SXwUxVF9pEf/exec';
+  'https://script.google.com/macros/s/AKfycbzbaWTFihh3oH8YyNlX0hsx_kYKVtVgWcTBfWz9gpq8aA63IrlmNXfwXo01L0MVGyo3/exec';
 
 // ========== 상수 ==========
 const CERT_CATEGORIES = {
@@ -22,6 +22,46 @@ const CERT_CATEGORIES = {
 };
 
 const EXP_PER_LEVEL = 5;
+
+// ========== 카테고리별 칭호 ==========
+const CATEGORY_TITLES = {
+  cleaning: { title: '가정의 수호자', emoji: '🏠', minCount: 30 },
+  exercise: { title: '운동선수', emoji: '💪', minCount: 30 },
+  morning: { title: '얼리버드', emoji: '🌅', minCount: 20 },
+  planning: { title: '전략가', emoji: '🎯', minCount: 20 },
+  study: { title: '학자', emoji: '🎓', minCount: 30 },
+  medicine: { title: '건강지킴이', emoji: '❤️', minCount: 20 },
+  diary: { title: '기록왕', emoji: '✍️', minCount: 20 },
+  meditation: { title: '마음챙김 마스터', emoji: '🧘', minCount: 20 },
+  comeback: { title: '불사조', emoji: '🔥', minCount: 10 },
+};
+
+// 카테고리 칭호 계산
+function getCategoryTitle(categoryCount) {
+  if (!categoryCount) return null;
+
+  // 가장 많이 인증한 카테고리 찾기
+  let topCategory = null;
+  let maxCount = 0;
+
+  Object.entries(categoryCount).forEach(([category, count]) => {
+    if (count > maxCount && CATEGORY_TITLES[category]) {
+      maxCount = count;
+      topCategory = category;
+    }
+  });
+
+  // 최소 횟수 충족 확인
+  if (topCategory && maxCount >= CATEGORY_TITLES[topCategory].minCount) {
+    return {
+      category: topCategory,
+      ...CATEGORY_TITLES[topCategory],
+      count: maxCount
+    };
+  }
+
+  return null;
+}
 
 // ========== 이벤트 히스토리 ==========
 const EVENT_HISTORY_STORAGE_KEY = 'lurupl_event_history';
@@ -887,11 +927,23 @@ function openProfileModal(nickname) {
     return;
   }
 
+  // 디버깅: 저장된 데이터 확인
+  console.log('=== 프로필 데이터 디버깅 ===');
+  console.log('닉네임:', nickname);
+  console.log('member 객체:', member);
+  console.log('hourlyCount:', member.hourlyCount);
+  console.log('dailyExp:', member.dailyExp);
+  console.log('monthlyExpHistory:', member.monthlyExpHistory);
+  console.log('records:', member.records);
+  console.log('lastMonthExp:', member.lastMonthExp);
+  console.log('categoryCount:', member.categoryCount);
+
   // URL 해시 업데이트
   window.location.hash = `profile=${encodeURIComponent(nickname)}`;
 
   // 프로필 데이터 생성
   currentProfileData = generateProfileData(nickname, member);
+  console.log('생성된 프로필 데이터:', currentProfileData);
   renderProfileModal(currentProfileData);
 
   // 모달 표시
@@ -931,8 +983,11 @@ function generateProfileData(nickname, member) {
   // 카테고리별 집계 - 저장된 데이터 사용
   const categoryCount = member.categoryCount || { cleaning: 0, exercise: 0, morning: 0, planning: 0, study: 0, medicine: 0, diary: 0, meditation: 0, comeback: 0 };
 
-  // 일별 EXP - 저장된 데이터 사용 (전체 기간)
+  // 일별 EXP - 저장된 데이터 사용 (최근 60일)
   const dailyExp = member.dailyExp || {};
+
+  // 월별 EXP - 저장된 데이터 사용 (전체 기간)
+  const monthlyExpHistory = member.monthlyExpHistory || {};
 
   // 레벨 및 칭호
   const netExp = member.netExp || 0;
@@ -949,10 +1004,14 @@ function generateProfileData(nickname, member) {
   const expGrowth = lastMonthExp > 0 ? Math.round((monthlyExp - lastMonthExp) / lastMonthExp * 100) : (monthlyExp > 0 ? 100 : 0);
   const countGrowth = lastMonthCount > 0 ? Math.round((monthlyCount - lastMonthCount) / lastMonthCount * 100) : (monthlyCount > 0 ? 100 : 0);
 
+  // 카테고리 칭호
+  const categoryTitle = getCategoryTitle(categoryCount);
+
   return {
     nickname,
     level,
     accTitle,
+    categoryTitle,
     totalExp,
     totalCount: member.totalCount || 0,
     monthlyExp,
@@ -964,6 +1023,7 @@ function generateProfileData(nickname, member) {
     expGrowth,
     countGrowth,
     dailyExp,
+    monthlyExpHistory,
     hourlyCount,
     categoryCount,
     recentRecords: records.slice().reverse()
@@ -990,6 +1050,16 @@ function renderProfileModal(data) {
   document.getElementById('profileLevel').textContent = `Lv.${data.level.level}`;
   document.getElementById('profileLevel').style.background = data.level.color;
   document.getElementById('profileTitle').textContent = `${data.accTitle.icon} ${data.accTitle.title}`;
+
+  // 카테고리 칭호
+  const categoryTitleEl = document.getElementById('profileCategoryTitle');
+  if (data.categoryTitle) {
+    categoryTitleEl.textContent = `${data.categoryTitle.emoji} ${data.categoryTitle.title}`;
+    categoryTitleEl.style.display = 'inline-block';
+    categoryTitleEl.title = `${CERT_CATEGORIES[data.categoryTitle.category].name} ${data.categoryTitle.count}회 인증`;
+  } else {
+    categoryTitleEl.style.display = 'none';
+  }
 
   // 통계 카드
   document.getElementById('profileMonthlyExp').textContent = `${data.monthlyExp} EXP`;
@@ -1022,7 +1092,7 @@ function renderProfileModal(data) {
   renderRecentRecords(data);
 }
 
-// 성장 추이 차트
+// 성장 추이 차트 (선 그래프)
 function renderGrowthChart(data, period) {
   const container = document.getElementById('profileGrowthChart');
   container.innerHTML = '';
@@ -1032,7 +1102,7 @@ function renderGrowthChart(data, period) {
     // 일별: 저장된 dailyExp 사용 (최근 30일만 표시)
     const allEntries = Object.entries(data.dailyExp || {}).sort((a, b) => a[0].localeCompare(b[0]));
     entries = allEntries.slice(-30);
-  } else {
+  } else if (period === 'weekly') {
     // 주별: dailyExp를 주별로 집계
     const weeklyAgg = {};
     Object.entries(data.dailyExp || {}).forEach(([date, exp]) => {
@@ -1040,6 +1110,19 @@ function renderGrowthChart(data, period) {
       weeklyAgg[weekStart] = (weeklyAgg[weekStart] || 0) + exp;
     });
     entries = Object.entries(weeklyAgg).sort((a, b) => a[0].localeCompare(b[0])).slice(-12);
+  } else {
+    // 월별: 저장된 monthlyExpHistory 사용 (전체 기간)
+    if (data.monthlyExpHistory) {
+      entries = Object.entries(data.monthlyExpHistory).sort((a, b) => a[0].localeCompare(b[0]));
+    } else {
+      // 이전 데이터 호환: dailyExp에서 월별 집계
+      const monthlyAgg = {};
+      Object.entries(data.dailyExp || {}).forEach(([date, exp]) => {
+        const month = date.slice(0, 7);
+        monthlyAgg[month] = (monthlyAgg[month] || 0) + exp;
+      });
+      entries = Object.entries(monthlyAgg).sort((a, b) => a[0].localeCompare(b[0]));
+    }
   }
 
   if (entries.length === 0) {
@@ -1047,22 +1130,152 @@ function renderGrowthChart(data, period) {
     return;
   }
 
+  // SVG 크기 설정
+  const width = container.clientWidth || 300;
+  const height = 180;
+  const padding = { top: 20, right: 20, bottom: 30, left: 35 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+
   const maxExp = Math.max(...entries.map(e => e[1]), 1);
+  const minExp = 0;
 
-  entries.forEach(([date, exp]) => {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'growth-bar-wrapper';
+  // 좌표 계산
+  const xStep = chartWidth / Math.max(entries.length - 1, 1);
+  const points = entries.map(([date, exp], i) => ({
+    x: padding.left + (entries.length === 1 ? chartWidth / 2 : i * xStep),
+    y: padding.top + chartHeight - (exp / maxExp) * chartHeight,
+    date,
+    exp
+  }));
 
-    const heightPercent = (exp / maxExp) * 100;
-    const label = date.slice(5).replace('-', '/');
+  // SVG 생성
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
 
-    wrapper.innerHTML = `
-      <div class="growth-bar" style="height: ${Math.max(heightPercent, exp > 0 ? 5 : 2)}%">
-        <div class="growth-bar-tooltip">${date}<br>${exp} EXP</div>
-      </div>
-      <div class="growth-bar-label">${label}</div>
-    `;
-    container.appendChild(wrapper);
+  // 그라데이션 정의
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#a78bfa"/>
+        <stop offset="100%" style="stop-color:#22d3ee"/>
+      </linearGradient>
+      <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" style="stop-color:#a78bfa"/>
+        <stop offset="100%" style="stop-color:transparent"/>
+      </linearGradient>
+    </defs>
+  `;
+
+  // Y축 그리드 라인 (3개)
+  const ySteps = [0, 0.5, 1];
+  ySteps.forEach(ratio => {
+    const y = padding.top + chartHeight * (1 - ratio);
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', padding.left);
+    line.setAttribute('y1', y);
+    line.setAttribute('x2', width - padding.right);
+    line.setAttribute('y2', y);
+    line.setAttribute('class', 'growth-grid-line');
+    svg.appendChild(line);
+
+    // Y축 라벨
+    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    label.setAttribute('x', padding.left - 5);
+    label.setAttribute('y', y + 3);
+    label.setAttribute('class', 'growth-y-label');
+    label.textContent = Math.round(maxExp * ratio);
+    svg.appendChild(label);
+  });
+
+  // 영역 채우기 (area)
+  if (points.length > 1) {
+    const areaPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const areaD = `M${points[0].x},${padding.top + chartHeight} ` +
+      points.map(p => `L${p.x},${p.y}`).join(' ') +
+      ` L${points[points.length - 1].x},${padding.top + chartHeight} Z`;
+    areaPath.setAttribute('d', areaD);
+    areaPath.setAttribute('class', 'growth-area');
+    svg.appendChild(areaPath);
+  }
+
+  // 선 그리기
+  if (points.length > 1) {
+    const linePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const lineD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+    linePath.setAttribute('d', lineD);
+    linePath.setAttribute('class', 'growth-line');
+    svg.appendChild(linePath);
+  }
+
+  // 데이터 포인트
+  points.forEach((p, i) => {
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', p.x);
+    circle.setAttribute('cy', p.y);
+    circle.setAttribute('r', 4);
+    circle.setAttribute('class', 'growth-point');
+    circle.setAttribute('data-index', i);
+    svg.appendChild(circle);
+  });
+
+  // X축 라벨 (일부만 표시)
+  const labelInterval = Math.ceil(entries.length / 6);
+  points.forEach((p, i) => {
+    if (i % labelInterval === 0 || i === points.length - 1) {
+      const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      label.setAttribute('x', p.x);
+      label.setAttribute('y', height - 8);
+      label.setAttribute('class', 'growth-x-label');
+      // 기간에 따라 라벨 형식 변경
+      if (period === 'monthly') {
+        label.textContent = parseInt(p.date.slice(5, 7)) + '월';
+      } else {
+        label.textContent = p.date.slice(5).replace('-', '/');
+      }
+      svg.appendChild(label);
+    }
+  });
+
+  container.appendChild(svg);
+
+  // 툴팁 생성
+  const tooltip = document.createElement('div');
+  tooltip.className = 'growth-tooltip';
+  container.appendChild(tooltip);
+
+  // 날짜 형식 포맷터
+  const formatDateLabel = (dateStr) => {
+    if (period === 'monthly') {
+      const [year, month] = dateStr.split('-');
+      return `${year}년 ${parseInt(month)}월`;
+    } else if (period === 'weekly') {
+      return `${dateStr.slice(5).replace('-', '/')} 주`;
+    }
+    return dateStr;
+  };
+
+  // 툴팁 이벤트
+  svg.querySelectorAll('.growth-point').forEach(circle => {
+    circle.addEventListener('mouseenter', (e) => {
+      const idx = parseInt(e.target.getAttribute('data-index'));
+      const p = points[idx];
+      tooltip.innerHTML = `
+        <div class="growth-tooltip-date">${formatDateLabel(p.date)}</div>
+        <div class="growth-tooltip-exp">${p.exp} EXP</div>
+      `;
+      tooltip.classList.add('visible');
+
+      const rect = container.getBoundingClientRect();
+      const circleRect = e.target.getBoundingClientRect();
+      tooltip.style.left = `${circleRect.left - rect.left + 10}px`;
+      tooltip.style.top = `${circleRect.top - rect.top - 40}px`;
+    });
+
+    circle.addEventListener('mouseleave', () => {
+      tooltip.classList.remove('visible');
+    });
   });
 }
 

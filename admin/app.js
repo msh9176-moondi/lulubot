@@ -1962,7 +1962,7 @@ function exportToTxt() {
 
 // Google Apps Script 웹앱 URL (배포 후 여기에 입력)
 const API_URL =
-  'https://script.google.com/macros/s/AKfycby1H56l1jG9YFZahPeyB6_hIFPSRloe8zIPPGjJZp-kcs4LNSUzcpaj8SXwUxVF9pEf/exec';
+  'https://script.google.com/macros/s/AKfycbzbaWTFihh3oH8YyNlX0hsx_kYKVtVgWcTBfWz9gpq8aA63IrlmNXfwXo01L0MVGyo3/exec';
 
 // 관리자 비밀번호 (실제 배포 시 변경 필요)
 const ADMIN_PASSWORD = 'lurupl2024';
@@ -2273,6 +2273,28 @@ function saveToGoogleSheets() {
   const { year, month, today } = getCurrentMonthInfo();
 
   // 저장할 데이터 구성 (이벤트 데이터도 함께 저장)
+  const membersData = getMembersForSave();
+
+  // 디버깅: 저장할 데이터 확인
+  console.log('=== 저장 데이터 디버깅 ===');
+  const sampleMember = Object.entries(membersData)[0];
+  if (sampleMember) {
+    console.log('샘플 멤버:', sampleMember[0]);
+    console.log('데이터:', sampleMember[1]);
+    console.log('hourlyCount:', sampleMember[1].hourlyCount);
+    console.log('dailyExp:', sampleMember[1].dailyExp);
+    console.log('records:', sampleMember[1].records);
+    console.log('lastMonthExp:', sampleMember[1].lastMonthExp);
+  }
+
+  // 전체 데이터 크기 확인
+  const tempData = {
+    members: membersData,
+    categoryCount: analysisData.categoryCount,
+    hourlyCount: calculateHourlyCount(),
+  };
+  console.log('전체 데이터 크기:', JSON.stringify(tempData).length, '자');
+
   const dataToSave = {
     password: ADMIN_PASSWORD,
     lastUpdated: `${year}년 ${month + 1}월 ${today}일 ${new Date().toLocaleTimeString('ko-KR')}`,
@@ -2282,7 +2304,7 @@ function saveToGoogleSheets() {
     hourlyCount: calculateHourlyCount(),
     weeklyData: getWeeklyDataForSave(),
     monthlyRankings: getMonthlyRankingsForSave(),
-    members: getMembersForSave(),
+    members: membersData,
     events: loadEventHistory(),
   };
 
@@ -2401,11 +2423,24 @@ function getMembersForSave() {
       }
     });
 
-    // 일별 EXP 집계 (전체 기간)
+    // 일별 EXP 집계 (최근 60일만 - 일별/주별 차트용)
     const dailyExp = {};
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+    const sixtyDaysAgoStr = `${sixtyDaysAgo.getFullYear()}-${String(sixtyDaysAgo.getMonth() + 1).padStart(2, '0')}-${String(sixtyDaysAgo.getDate()).padStart(2, '0')}`;
+
+    data.records.forEach(r => {
+      if (r.exp > 0 && r.date && r.date >= sixtyDaysAgoStr) {
+        dailyExp[r.date] = (dailyExp[r.date] || 0) + r.exp;
+      }
+    });
+
+    // 월별 EXP 집계 (전체 기간 - 월별 차트용)
+    const monthlyExp = {};
     data.records.forEach(r => {
       if (r.exp > 0 && r.date) {
-        dailyExp[r.date] = (dailyExp[r.date] || 0) + r.exp;
+        const month = r.date.slice(0, 7); // "2024-06"
+        monthlyExp[month] = (monthlyExp[month] || 0) + r.exp;
       }
     });
 
@@ -2414,15 +2449,14 @@ function getMembersForSave() {
     const lastMonthExp = lastMonthRecords.reduce((sum, r) => sum + r.exp, 0);
     const lastMonthCount = lastMonthRecords.length;
 
-    // 전체 기록 저장 (최대 100개)
+    // 최근 기록 저장 (최대 50개로 축소)
     const allRecords = data.records
       .filter(r => r.exp > 0)
-      .slice(-100)
+      .slice(-50)
       .map(r => ({
         date: r.date,
         time: r.time,
         category: r.category,
-        tag: r.tag,
         exp: r.exp
       }));
 
@@ -2438,6 +2472,7 @@ function getMembersForSave() {
       weeklyCertCount: weeklyCertCount,
       hourlyCount: hourlyCount,
       dailyExp: dailyExp,
+      monthlyExpHistory: monthlyExp, // 전체 기간 월별 EXP
       lastMonthExp: lastMonthExp,
       lastMonthCount: lastMonthCount,
       records: allRecords,
