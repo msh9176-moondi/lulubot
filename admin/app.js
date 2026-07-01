@@ -2314,18 +2314,20 @@ function saveToGoogleSheets() {
     saveBtn.textContent = '저장 중...';
   }
 
-  // fetch API를 사용한 POST 요청
-  const formData = new FormData();
-  formData.append('data', JSON.stringify(dataToSave));
+  // URLSearchParams로 POST 요청 (simple request)
+  const params = new URLSearchParams();
+  params.append('data', JSON.stringify(dataToSave));
 
   fetch(API_URL, {
     method: 'POST',
-    body: formData,
-    mode: 'no-cors', // CORS 우회
+    body: params,
+    mode: 'no-cors',
   })
     .then(() => {
-      // no-cors 모드에서는 응답을 읽을 수 없으므로 성공으로 가정
-      // 실제 저장 확인을 위해 GET 요청으로 검증
+      // 저장 완료 대기 후 확인
+      return new Promise((resolve) => setTimeout(resolve, 2000));
+    })
+    .then(() => {
       return fetch(API_URL + '?t=' + Date.now());
     })
     .then((response) => response.json())
