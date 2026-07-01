@@ -2314,40 +2314,38 @@ function saveToGoogleSheets() {
     saveBtn.textContent = '저장 중...';
   }
 
-  // 숨겨진 iframe 생성
-  let iframe = document.getElementById('saveFrame');
-  if (!iframe) {
-    iframe = document.createElement('iframe');
-    iframe.id = 'saveFrame';
-    iframe.name = 'saveFrame';
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
-  }
+  // fetch API를 사용한 POST 요청
+  const formData = new FormData();
+  formData.append('data', JSON.stringify(dataToSave));
 
-  // form 생성 및 제출
-  const form = document.createElement('form');
-  form.method = 'POST';
-  form.action = API_URL;
-  form.target = 'saveFrame';
-
-  const input = document.createElement('input');
-  input.type = 'hidden';
-  input.name = 'data';
-  input.value = JSON.stringify(dataToSave);
-  form.appendChild(input);
-
-  document.body.appendChild(form);
-  form.submit();
-  document.body.removeChild(form);
-
-  // 저장 완료 처리 (약간의 딜레이 후)
-  setTimeout(() => {
-    alert('데이터가 저장되었습니다!\n결과 페이지에서 확인하세요.');
-    if (saveBtn) {
-      saveBtn.disabled = false;
-      saveBtn.textContent = '📤 결과 저장';
-    }
-  }, 2000);
+  fetch(API_URL, {
+    method: 'POST',
+    body: formData,
+    mode: 'no-cors', // CORS 우회
+  })
+    .then(() => {
+      // no-cors 모드에서는 응답을 읽을 수 없으므로 성공으로 가정
+      // 실제 저장 확인을 위해 GET 요청으로 검증
+      return fetch(API_URL + '?t=' + Date.now());
+    })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.members) {
+        alert('데이터가 저장되었습니다!\n결과 페이지에서 확인하세요.');
+      } else {
+        alert('저장에 실패했을 수 있습니다.\n결과 페이지에서 확인해주세요.');
+      }
+    })
+    .catch((error) => {
+      console.error('저장 오류:', error);
+      alert('저장 중 오류가 발생했습니다.\n다시 시도해주세요.');
+    })
+    .finally(() => {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = '📤 결과 저장';
+      }
+    });
 }
 
 // 시간대별 인증 횟수 계산
