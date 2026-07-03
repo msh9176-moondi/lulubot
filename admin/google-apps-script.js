@@ -23,6 +23,8 @@ const ADMIN_PASSWORD = 'lurupl2024'; // 관리자 비밀번호
 // ========== GET 요청 처리 (데이터 조회) ==========
 function doGet(e) {
   try {
+    // e가 undefined일 경우 대비
+    e = e || { parameter: {} };
     const callback = e.parameter.callback; // JSONP 콜백
     const type = e.parameter.type || 'data'; // 'data' 또는 'events'
     const spreadsheet = SpreadsheetApp.openById(SHEET_ID);
@@ -47,13 +49,28 @@ function doGet(e) {
       return createResponse({ error: '데이터가 없습니다.' }, callback);
     }
 
-    const data = sheet.getRange('A1').getValue();
+    // 청크 개수 확인 (B1)
+    const chunkCount = sheet.getRange('B1').getValue();
 
-    if (!data) {
+    let jsonStr = '';
+    if (chunkCount && typeof chunkCount === 'number' && chunkCount > 0) {
+      // 여러 셀에서 데이터 읽기
+      for (let i = 1; i <= chunkCount; i++) {
+        const chunk = sheet.getRange(i, 1).getValue();
+        if (chunk) {
+          jsonStr += chunk;
+        }
+      }
+    } else {
+      // 이전 방식 호환 (단일 셀)
+      jsonStr = sheet.getRange('A1').getValue();
+    }
+
+    if (!jsonStr) {
       return createResponse({ error: '저장된 데이터가 없습니다.' }, callback);
     }
 
-    const jsonData = JSON.parse(data);
+    const jsonData = JSON.parse(jsonStr);
 
     // 이벤트 데이터도 함께 포함
     const eventSheet = spreadsheet.getSheetByName('Events');
@@ -74,15 +91,26 @@ function doGet(e) {
 // ========== POST 요청 처리 (데이터 저장) ==========
 function doPost(e) {
   try {
+    // e가 undefined일 경우 대비
+    e = e || { parameter: {}, postData: {} };
+
+    // 디버깅 로그
+    console.log('doPost 시작');
+    console.log('e.parameter:', JSON.stringify(e.parameter));
+    console.log('e.postData:', e.postData ? e.postData.contents : 'undefined');
+
     // form data 또는 JSON 파싱
     let data;
     if (e.parameter && e.parameter.data) {
       // form 방식 - JSON.parse가 유니코드 이스케이프(\uXXXX)를 자동 처리
+      console.log('form 방식으로 파싱');
       data = JSON.parse(e.parameter.data);
     } else if (e.postData && e.postData.contents) {
       // JSON 방식
+      console.log('JSON 방식으로 파싱');
       data = JSON.parse(e.postData.contents);
     } else {
+      console.log('데이터 없음');
       return createResponse({ error: '데이터가 없습니다.' });
     }
 
@@ -115,11 +143,30 @@ function doPost(e) {
       sheet = spreadsheet.insertSheet('Data');
     }
 
-    // JSON 데이터 저장
-    sheet.getRange('A1').setValue(JSON.stringify(data));
+    // JSON 데이터를 청크로 나눠서 저장 (셀당 40000자 제한)
+    const jsonStr = JSON.stringify(data);
+    const CHUNK_SIZE = 40000;
+    const chunks = [];
+    for (let i = 0; i < jsonStr.length; i += CHUNK_SIZE) {
+      chunks.push(jsonStr.substring(i, i + CHUNK_SIZE));
+    }
 
-    // 저장 시간 기록
-    sheet.getRange('B1').setValue(new Date().toISOString());
+    // 기존 데이터 클리어 (A열)
+    const lastRow = Math.max(sheet.getLastRow(), 1);
+    if (lastRow > 0) {
+      sheet.getRange(1, 1, lastRow, 1).clearContent();
+    }
+
+    // 청크별로 저장 (A1, A2, A3, ...)
+    chunks.forEach((chunk, index) => {
+      sheet.getRange(index + 1, 1).setValue(chunk);
+    });
+
+    // 청크 개수 저장 (B1)
+    sheet.getRange('B1').setValue(chunks.length);
+
+    // 저장 시간 기록 (C1)
+    sheet.getRange('C1').setValue(new Date().toISOString());
 
     // 히스토리 시트에도 기록 (백업용)
     let historySheet = spreadsheet.getSheetByName('History');
@@ -129,8 +176,8 @@ function doPost(e) {
     }
 
     const now = new Date();
-    const lastRow = historySheet.getLastRow() + 1;
-    historySheet.getRange(lastRow, 1, 1, 3).setValues([[
+    const historyLastRow = historySheet.getLastRow() + 1;
+    historySheet.getRange(historyLastRow, 1, 1, 3).setValues([[
       Utilities.formatDate(now, 'Asia/Seoul', 'yyyy-MM-dd'),
       Utilities.formatDate(now, 'Asia/Seoul', 'HH:mm:ss'),
       JSON.stringify(data)

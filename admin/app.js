@@ -1962,7 +1962,7 @@ function exportToTxt() {
 
 // Google Apps Script 웹앱 URL (배포 후 여기에 입력)
 const API_URL =
-  'https://script.google.com/macros/s/AKfycbyueT2n7ghJOOnUkUsMGpNMhjWLXZQiJy04oJyTBpr-ZlU0_ulEkt3CFWVcoE2wRhbMvg/exec';
+  'https://script.google.com/macros/s/AKfycbzZhAgOpYY9hoaArj4hvXBl6_3GKqHhJxDl-joKzc57qNgLy3dEjl5_MZzjKGA_Uo755w/exec';
 
 // 관리자 비밀번호 (실제 배포 시 변경 필요)
 const ADMIN_PASSWORD = 'lurupl2024';
@@ -2314,20 +2314,22 @@ function saveToGoogleSheets() {
     saveBtn.textContent = '저장 중...';
   }
 
-  // URLSearchParams로 POST 요청 (simple request)
-  const params = new URLSearchParams();
-  params.append('data', JSON.stringify(dataToSave));
+  // fetch로 POST 요청 (application/x-www-form-urlencoded)
+  const formData = new FormData();
+  formData.append('data', JSON.stringify(dataToSave));
 
   fetch(API_URL, {
     method: 'POST',
-    body: params,
-    mode: 'no-cors',
+    body: new URLSearchParams(formData),
+    redirect: 'follow',
   })
-    .then(() => {
-      // 저장 완료 대기 후 확인
-      return new Promise((resolve) => setTimeout(resolve, 2000));
+    .then((response) => {
+      console.log('POST 응답:', response);
+      return response.text();
     })
-    .then(() => {
+    .then((text) => {
+      console.log('응답 내용:', text);
+      // 저장 확인
       return fetch(API_URL + '?t=' + Date.now());
     })
     .then((response) => response.json())
@@ -2340,7 +2342,7 @@ function saveToGoogleSheets() {
     })
     .catch((error) => {
       console.error('저장 오류:', error);
-      alert('저장 중 오류가 발생했습니다.\n다시 시도해주세요.');
+      alert('저장 중 오류가 발생했습니다.\n콘솔을 확인해주세요.');
     })
     .finally(() => {
       if (saveBtn) {

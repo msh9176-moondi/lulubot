@@ -6,7 +6,7 @@
 // ========== 설정 ==========
 // Google Apps Script 웹앱 URL (배포 후 여기에 입력)
 const API_URL =
-  'https://script.google.com/macros/s/AKfycbyueT2n7ghJOOnUkUsMGpNMhjWLXZQiJy04oJyTBpr-ZlU0_ulEkt3CFWVcoE2wRhbMvg/exec';
+  'https://script.google.com/macros/s/AKfycbzZhAgOpYY9hoaArj4hvXBl6_3GKqHhJxDl-joKzc57qNgLy3dEjl5_MZzjKGA_Uo755w/exec';
 
 // ========== 상수 ==========
 const CERT_CATEGORIES = {
@@ -237,9 +237,25 @@ async function loadData() {
       throw new Error(`데이터를 불러올 수 없습니다. (${response.status})`);
 
     resultData = await response.json();
+    console.log('API 응답:', resultData);
 
-    if (!resultData || !resultData.members) {
-      throw new Error('유효하지 않은 데이터입니다.');
+    // 에러 응답 처리
+    if (resultData.error) {
+      throw new Error(resultData.error);
+    }
+
+    // 데이터가 없으면 빈 데이터로 초기화
+    if (!resultData.members) {
+      resultData = {
+        members: {},
+        categoryCount: {},
+        hourlyCount: new Array(24).fill(0),
+        monthlyCount: 0,
+        monthlyExp: 0,
+        weeklyData: [],
+        monthlyRankings: [],
+        lastUpdated: '데이터 없음'
+      };
     }
 
     // 서버에서 가져온 이벤트 데이터 캐시
