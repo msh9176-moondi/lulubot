@@ -116,6 +116,14 @@ const ACHIEVEMENTS = {
   balance_daily: { name: '균형잡기', emoji: '🌈', category: null, type: 'daily_variety', target: 3, difficulty: 2 },
   allrounder: { name: '올라운더', emoji: '🌈✨', category: null, type: 'weekly_variety', target: 6, difficulty: 3 },
   life_master: { name: '생활왕', emoji: '🌈👑', category: null, type: 'monthly_all', target: 9, difficulty: 4 },
+
+  // 🔮 히든 도전
+  hidden_owl: { name: '올빼미', emoji: '🌙', category: null, type: 'hidden_owl', target: 1, difficulty: 3, hidden: true, hint: '밤이 깊을 때...' },
+  hidden_santa: { name: '산타', emoji: '🎄', category: null, type: 'hidden_santa', target: 1, difficulty: 3, hidden: true, hint: '특별한 날에...' },
+  hidden_phoenix: { name: '불사조', emoji: '🔥', category: null, type: 'hidden_phoenix', target: 1, difficulty: 3, hidden: true, hint: '다시 일어나는 자...' },
+  hidden_perfect: { name: '퍼펙트 데이', emoji: '🌈✨', category: null, type: 'hidden_perfect', target: 1, difficulty: 4, hidden: true, hint: '완벽한 하루...' },
+  hidden_century: { name: '천 리 길', emoji: '🏅', category: null, type: 'hidden_century', target: 100, difficulty: 4, hidden: true, hint: '긴 여정의 끝...' },
+  hidden_ghost: { name: '유령', emoji: '👻', category: null, type: 'hidden_ghost', target: 3, difficulty: 4, hidden: true, hint: '주말의 존재...' },
 };
 
 // 월간 레벨 시스템 (경험치 기반)
@@ -457,6 +465,103 @@ function checkMonthlyAll(records, target) {
   return categories.size >= target;
 }
 
+// === 히든 과제 체크 함수들 ===
+
+// 올빼미: 새벽 3~4시 인증
+function checkHiddenOwl(records) {
+  return records.some(r => {
+    if (!r.time || r.exp <= 0) return false;
+    const hour = parseInt(r.time.split(':')[0], 10);
+    return hour >= 3 && hour < 5;
+  });
+}
+
+// 산타: 12월 25일 인증
+function checkHiddenSanta(records) {
+  return records.some(r => {
+    if (r.exp <= 0) return false;
+    return r.date && r.date.endsWith('-12-25');
+  });
+}
+
+// 불사조: 7일 미인증 후 복귀
+function checkHiddenPhoenix(records) {
+  if (records.length < 2) return false;
+
+  const sortedDates = records
+    .filter(r => r.exp > 0)
+    .map(r => r.date)
+    .sort();
+
+  for (let i = 1; i < sortedDates.length; i++) {
+    const prev = new Date(sortedDates[i - 1]);
+    const curr = new Date(sortedDates[i]);
+    const diffDays = (curr - prev) / (1000 * 60 * 60 * 24);
+    if (diffDays >= 7) return true;
+  }
+  return false;
+}
+
+// 퍼펙트 데이: 하루 5카테고리 이상 인증
+function checkHiddenPerfect(records) {
+  const dateCategories = {};
+  records.forEach(r => {
+    if (r.exp > 0 && r.category !== 'comeback') {
+      if (!dateCategories[r.date]) dateCategories[r.date] = new Set();
+      dateCategories[r.date].add(r.category);
+    }
+  });
+
+  return Object.values(dateCategories).some(cats => cats.size >= 5);
+}
+
+// 유령: 주말만 3주 연속 인증
+function checkHiddenGhost(records) {
+  const weekendDates = records
+    .filter(r => {
+      if (r.exp <= 0) return false;
+      const d = new Date(r.date);
+      const day = d.getDay();
+      return day === 0 || day === 6; // 일(0) or 토(6)
+    })
+    .map(r => r.date)
+    .sort();
+
+  if (weekendDates.length < 3) return false;
+
+  // 주말 인증한 주차 계산 (연속 3주 체크)
+  const weekNumbers = new Set();
+  weekendDates.forEach(dateStr => {
+    const d = new Date(dateStr);
+    const yearWeek = getYearWeek(d);
+    weekNumbers.add(yearWeek);
+  });
+
+  const sortedWeeks = Array.from(weekNumbers).sort();
+  let consecutive = 1;
+  for (let i = 1; i < sortedWeeks.length; i++) {
+    const prev = parseInt(sortedWeeks[i - 1]);
+    const curr = parseInt(sortedWeeks[i]);
+    if (curr === prev + 1) {
+      consecutive++;
+      if (consecutive >= 3) return true;
+    } else {
+      consecutive = 1;
+    }
+  }
+  return false;
+}
+
+// 연-주차 계산 (YYYYWW 형태)
+function getYearWeek(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  const weekNum = 1 + Math.round(((d - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+  return d.getFullYear() * 100 + weekNum;
+}
+
 // 도전 과제 진행률 계산
 function getAchievementProgress(records, categoryCount, achId, ach) {
   switch (ach.type) {
@@ -509,6 +614,21 @@ function getAchievementProgress(records, categoryCount, achId, ach) {
       records.forEach(r => { if (r.exp > 0 && isCurrentMonth(r.date) && r.category !== 'comeback') cats.add(r.category); });
       return { current: Math.min(cats.size, ach.target), target: ach.target };
     }
+    // 히든 과제 진행률 (달성 여부만 표시)
+    case 'hidden_owl':
+      return { current: checkHiddenOwl(records) ? 1 : 0, target: 1 };
+    case 'hidden_santa':
+      return { current: checkHiddenSanta(records) ? 1 : 0, target: 1 };
+    case 'hidden_phoenix':
+      return { current: checkHiddenPhoenix(records) ? 1 : 0, target: 1 };
+    case 'hidden_perfect':
+      return { current: checkHiddenPerfect(records) ? 1 : 0, target: 1 };
+    case 'hidden_century': {
+      const total = records.filter(r => r.exp > 0).length;
+      return { current: Math.min(total, ach.target), target: ach.target };
+    }
+    case 'hidden_ghost':
+      return { current: checkHiddenGhost(records) ? 1 : 0, target: 1 };
     default:
       return { current: 0, target: ach.target };
   }
@@ -550,6 +670,25 @@ function checkAchievements(memberData) {
         break;
       case 'monthly_all':
         achieved = checkMonthlyAll(records, ach.target);
+        break;
+      // 히든 과제들
+      case 'hidden_owl':
+        achieved = checkHiddenOwl(records);
+        break;
+      case 'hidden_santa':
+        achieved = checkHiddenSanta(records);
+        break;
+      case 'hidden_phoenix':
+        achieved = checkHiddenPhoenix(records);
+        break;
+      case 'hidden_perfect':
+        achieved = checkHiddenPerfect(records);
+        break;
+      case 'hidden_century':
+        achieved = records.filter(r => r.exp > 0).length >= ach.target;
+        break;
+      case 'hidden_ghost':
+        achieved = checkHiddenGhost(records);
         break;
     }
 

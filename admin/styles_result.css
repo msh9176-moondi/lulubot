@@ -3845,6 +3845,17 @@ footer .tip {
     flex-shrink: 0;
 }
 
+/* 히든 도전 과제 가이드 */
+.achievement-guide-item.hidden-guide {
+    background: linear-gradient(135deg, rgba(75, 0, 130, 0.1), rgba(48, 25, 52, 0.15));
+    border: 1px dashed rgba(147, 51, 234, 0.3);
+}
+
+.achievement-guide-item .hint-text {
+    color: #a78bfa;
+    font-style: italic;
+}
+
 @media (max-width: 600px) {
     .achievement-list {
         grid-template-columns: 1fr;
@@ -4002,6 +4013,26 @@ footer .tip {
     font-size: 0.65rem;
     color: var(--text-muted);
     margin-top: 4px;
+}
+
+/* 히든 도전 과제 */
+.achievement-card.hidden-achievement.locked {
+    background: linear-gradient(135deg, rgba(75, 0, 130, 0.15), rgba(48, 25, 52, 0.2));
+    border: 1px dashed var(--border);
+}
+
+.achievement-card.hidden-achievement.unlocked {
+    background: linear-gradient(135deg, rgba(138, 43, 226, 0.2), rgba(75, 0, 130, 0.15));
+    border: 1px solid #9333ea;
+    box-shadow: 0 0 15px rgba(147, 51, 234, 0.3);
+}
+
+.achievement-hint {
+    font-size: 0.7rem;
+    color: #a78bfa;
+    font-style: italic;
+    margin-top: 6px;
+    text-align: center;
 }
 
 /* 도전 과제 카테고리 구분선 */
