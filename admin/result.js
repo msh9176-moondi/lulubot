@@ -71,6 +71,57 @@ const ACHIEVEMENTS = {
   life_master: { name: '생활왕', emoji: '🌈👑', category: null, type: 'monthly_all', target: 9, difficulty: 4 },
 };
 
+// ========== 도전 과제 알림 배지 ==========
+const ACHIEVEMENT_SEEN_KEY = 'lurupl_achievements_seen';
+
+// 확인한 도전 과제 목록 가져오기
+function getSeenAchievements(nickname) {
+  try {
+    const data = localStorage.getItem(ACHIEVEMENT_SEEN_KEY);
+    if (!data) return {};
+    const parsed = JSON.parse(data);
+    return parsed[nickname] || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+// 도전 과제 확인 처리
+function markAchievementsSeen(nickname, achievements) {
+  try {
+    const data = localStorage.getItem(ACHIEVEMENT_SEEN_KEY);
+    const parsed = data ? JSON.parse(data) : {};
+    parsed[nickname] = achievements || [];
+    localStorage.setItem(ACHIEVEMENT_SEEN_KEY, JSON.stringify(parsed));
+  } catch (e) {
+    console.error('도전 과제 저장 오류:', e);
+  }
+}
+
+// 새 도전 과제 개수 계산
+function getNewAchievementsCount(nickname, currentAchievements) {
+  const seen = getSeenAchievements(nickname);
+  if (!Array.isArray(seen)) return currentAchievements.length;
+  const newOnes = currentAchievements.filter(ach => !seen.includes(ach));
+  return newOnes.length;
+}
+
+// 새 도전 과제 목록 가져오기
+function getNewAchievements(nickname, currentAchievements) {
+  const seen = getSeenAchievements(nickname);
+  if (!Array.isArray(seen)) return currentAchievements;
+  return currentAchievements.filter(ach => !seen.includes(ach));
+}
+
+// 리더보드 배지 업데이트
+function updateLeaderboardBadge(nickname) {
+  const btn = document.querySelector(`.profile-btn[data-nickname="${nickname}"]`);
+  if (btn) {
+    const badge = btn.querySelector('.new-badge');
+    if (badge) badge.remove();
+  }
+}
+
 // ========== 카테고리별 칭호 ==========
 const CATEGORY_TITLES = {
   cleaning: { title: '가정의 수호자', emoji: '🏠', minCount: 30 },
@@ -959,6 +1010,11 @@ function displayLeaderboard() {
             ? 'bronze'
             : '';
 
+    // 새 도전 과제 개수 계산
+    const currentAchievements = data.achievements || [];
+    const newCount = getNewAchievementsCount(nickname, currentAchievements);
+    const badgeHtml = newCount > 0 ? `<span class="new-badge">${newCount}</span>` : '';
+
     const item = document.createElement('div');
     item.className = 'leaderboard-item';
     item.innerHTML = `
@@ -979,7 +1035,7 @@ function displayLeaderboard() {
                 <div class="member-categories">${data.monthlyCount || 0}회 (${data.certDays || 0}일)</div>
                 <div class="member-total">누적 ${totalExp} EXP</div>
             </div>
-            <button class="profile-btn" data-nickname="${nickname}" title="개인 통계 보기">상세</button>
+            <button class="profile-btn" data-nickname="${nickname}" title="개인 통계 보기">상세${badgeHtml}</button>
         `;
     leaderboard.appendChild(item);
   });
@@ -1075,9 +1131,17 @@ function initProfileModal() {
       tab.classList.add('active');
       document.getElementById('tab' + capitalize(tab.dataset.tab)).classList.add('active');
 
-      // 도전 과제 탭 선택 시 렌더링
+      // 도전 과제 탭 선택 시 렌더링 및 확인 처리
       if (tab.dataset.tab === 'achievements' && currentProfileData) {
         renderAchievementsTab(currentProfileData);
+
+        // 확인 처리 - 배지 제거 및 localStorage 저장
+        const badge = tab.querySelector('.new-badge');
+        if (badge) badge.remove();
+        markAchievementsSeen(currentProfileData.nickname, currentProfileData.achievements || []);
+
+        // 리더보드의 배지도 업데이트
+        updateLeaderboardBadge(currentProfileData.nickname);
       }
     });
   });
@@ -1279,6 +1343,22 @@ function renderProfileModal(data) {
   document.querySelectorAll('.profile-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
   document.querySelectorAll('.profile-tab-content').forEach((c, i) => c.classList.toggle('active', i === 0));
   document.querySelectorAll('.period-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+
+  // 도전 과제 탭에 새 배지 표시
+  const achievementTab = document.querySelector('.profile-tab[data-tab="achievements"]');
+  if (achievementTab) {
+    const newCount = getNewAchievementsCount(data.nickname, data.achievements || []);
+    // 기존 배지 제거
+    const existingBadge = achievementTab.querySelector('.new-badge');
+    if (existingBadge) existingBadge.remove();
+    // 새 배지 추가
+    if (newCount > 0) {
+      const badge = document.createElement('span');
+      badge.className = 'new-badge';
+      badge.textContent = newCount;
+      achievementTab.appendChild(badge);
+    }
+  }
 
   // 각 탭 렌더링
   renderGrowthChart(data, 'daily');
