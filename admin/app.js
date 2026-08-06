@@ -70,6 +70,54 @@ const CERT_CATEGORIES = {
   },
 };
 
+// ========== 도전 과제 시스템 ==========
+const ACHIEVEMENTS = {
+  // 🧹 청소
+  cleaning_first: { name: '첫 걸음', emoji: '🧹', category: 'cleaning', type: 'first', target: 1, difficulty: 1 },
+  cleaning_weekly: { name: '깔끔러', emoji: '🧹', category: 'cleaning', type: 'weekly', target: 3, difficulty: 2 },
+  cleaning_streak: { name: '청소 습관', emoji: '🧹✨', category: 'cleaning', type: 'streak', target: 14, difficulty: 3 },
+  cleaning_master: { name: '정리왕', emoji: '🧹👑', category: 'cleaning', type: 'monthly', target: 20, difficulty: 4 },
+
+  // 🏃 운동
+  exercise_first: { name: '몸풀기', emoji: '🏃', category: 'exercise', type: 'first', target: 1, difficulty: 1 },
+  exercise_weekly: { name: '러너', emoji: '🏃', category: 'exercise', type: 'weekly', target: 4, difficulty: 2 },
+  exercise_streak: { name: '운동 루틴', emoji: '🏃✨', category: 'exercise', type: 'streak', target: 10, difficulty: 3 },
+  exercise_master: { name: '철인', emoji: '🏃👑', category: 'exercise', type: 'monthly', target: 25, difficulty: 4 },
+
+  // ⏰ 기상
+  morning_first: { name: '눈뜸', emoji: '⏰', category: 'morning', type: 'first', target: 1, difficulty: 1 },
+  morning_weekly: { name: '얼리버드', emoji: '⏰', category: 'morning', type: 'streak', target: 5, difficulty: 2 },
+  morning_streak: { name: '아침형 인간', emoji: '⏰✨', category: 'morning', type: 'streak', target: 14, difficulty: 3 },
+  morning_early: { name: '새벽빛', emoji: '🌅', category: 'morning', type: 'early', target: 10, difficulty: 4 },
+
+  // 📚 공부
+  study_first: { name: '학습 시작', emoji: '📚', category: 'study', type: 'first', target: 1, difficulty: 1 },
+  study_weekly: { name: '꾸준러', emoji: '📚', category: 'study', type: 'weekly', target: 5, difficulty: 2 },
+  study_streak: { name: '학습 습관', emoji: '📚✨', category: 'study', type: 'streak', target: 10, difficulty: 3 },
+  study_master: { name: '공부벌레', emoji: '📚👑', category: 'study', type: 'monthly', target: 30, difficulty: 4 },
+
+  // 💊 약
+  medicine_first: { name: '첫 복약', emoji: '💊', category: 'medicine', type: 'first', target: 1, difficulty: 1 },
+  medicine_streak: { name: '복약 습관', emoji: '💊✨', category: 'medicine', type: 'streak', target: 7, difficulty: 2 },
+
+  // 📋 계획
+  planning_first: { name: '첫 계획', emoji: '📋', category: 'planning', type: 'first', target: 1, difficulty: 1 },
+  planning_streak: { name: '계획러', emoji: '📋✨', category: 'planning', type: 'streak', target: 7, difficulty: 2 },
+
+  // 📝 일기
+  diary_first: { name: '첫 일기', emoji: '📝', category: 'diary', type: 'first', target: 1, difficulty: 1 },
+  diary_streak: { name: '일기쓰기', emoji: '📝✨', category: 'diary', type: 'streak', target: 7, difficulty: 2 },
+
+  // 🧘 명상
+  meditation_first: { name: '첫 명상', emoji: '🧘', category: 'meditation', type: 'first', target: 1, difficulty: 1 },
+  meditation_streak: { name: '마음챙김', emoji: '🧘✨', category: 'meditation', type: 'streak', target: 7, difficulty: 2 },
+
+  // 🌈 통합 도전
+  balance_daily: { name: '균형잡기', emoji: '🌈', category: null, type: 'daily_variety', target: 3, difficulty: 2 },
+  allrounder: { name: '올라운더', emoji: '🌈✨', category: null, type: 'weekly_variety', target: 6, difficulty: 3 },
+  life_master: { name: '생활왕', emoji: '🌈👑', category: null, type: 'monthly_all', target: 9, difficulty: 4 },
+};
+
 // 월간 레벨 시스템 (경험치 기반)
 const EXP_PER_LEVEL = 5; // 레벨당 필요 경험치 (한 달 최대 Lv.100)
 const PENALTY_PER_DAY = 0; // 페널티 비활성화
@@ -297,6 +345,220 @@ function getStreakBadge(streak) {
     }
   }
   return result;
+}
+
+// ========== 도전 과제 시스템 함수들 ==========
+
+// 카테고리별 연속 일수 계산
+function calculateCategoryStreak(records, category) {
+  const validRecords = records.filter(r => r.category === category && r.exp > 0);
+  if (validRecords.length === 0) return 0;
+
+  // 날짜별로 그룹화
+  const dates = new Set(validRecords.map(r => r.date));
+  const sortedDates = Array.from(dates).sort().reverse();
+
+  if (sortedDates.length === 0) return 0;
+
+  // 오늘 또는 어제부터 연속 체크
+  const today = toLocalDateStr(new Date());
+  const yesterday = toLocalDateStr(new Date(Date.now() - 86400000));
+
+  let streak = 0;
+  let checkDate = dates.has(today) ? today : (dates.has(yesterday) ? yesterday : null);
+
+  if (!checkDate) return 0;
+
+  while (dates.has(checkDate)) {
+    streak++;
+    const d = new Date(checkDate);
+    d.setDate(d.getDate() - 1);
+    checkDate = toLocalDateStr(d);
+  }
+
+  return streak;
+}
+
+// 최근 7일 내 카테고리 인증 횟수
+function checkWeeklyCount(records, category, target) {
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 86400000);
+  const weekAgoStr = toLocalDateStr(weekAgo);
+
+  const count = records.filter(r =>
+    r.category === category &&
+    r.exp > 0 &&
+    r.date >= weekAgoStr
+  ).length;
+
+  return count >= target;
+}
+
+// 이번 달 카테고리 인증 횟수
+function checkMonthlyCount(records, category, target) {
+  const count = records.filter(r =>
+    r.category === category &&
+    r.exp > 0 &&
+    isCurrentMonth(r.date)
+  ).length;
+
+  return count >= target;
+}
+
+// 오전 6시 이전 기상 인증 횟수
+function checkEarlyMorning(records, target) {
+  const count = records.filter(r => {
+    if (r.category !== 'morning' || r.exp <= 0 || !r.time) return false;
+    const hour = parseInt(r.time.split(':')[0]);
+    return hour < 6;
+  }).length;
+
+  return count >= target;
+}
+
+// 하루 다양성 체크 (특정 날짜에 N개 이상 카테고리)
+function checkDailyVariety(records, target) {
+  const dateCategories = {};
+  records.forEach(r => {
+    if (r.exp > 0) {
+      if (!dateCategories[r.date]) dateCategories[r.date] = new Set();
+      dateCategories[r.date].add(r.category);
+    }
+  });
+
+  return Object.values(dateCategories).some(cats => cats.size >= target);
+}
+
+// 주간 다양성 체크 (최근 7일 내 N개 이상 카테고리)
+function checkWeeklyVariety(records, target) {
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 86400000);
+  const weekAgoStr = toLocalDateStr(weekAgo);
+
+  const categories = new Set();
+  records.forEach(r => {
+    if (r.exp > 0 && r.date >= weekAgoStr) {
+      categories.add(r.category);
+    }
+  });
+
+  return categories.size >= target;
+}
+
+// 월간 전 카테고리 체크
+function checkMonthlyAll(records, target) {
+  const categories = new Set();
+  records.forEach(r => {
+    if (r.exp > 0 && isCurrentMonth(r.date) && r.category !== 'comeback') {
+      categories.add(r.category);
+    }
+  });
+
+  return categories.size >= target;
+}
+
+// 도전 과제 진행률 계산
+function getAchievementProgress(records, categoryCount, achId, ach) {
+  switch (ach.type) {
+    case 'first':
+      return { current: Math.min(categoryCount[ach.category] || 0, 1), target: 1 };
+    case 'weekly': {
+      const now = new Date();
+      const weekAgo = new Date(now.getTime() - 7 * 86400000);
+      const weekAgoStr = toLocalDateStr(weekAgo);
+      const count = records.filter(r => r.category === ach.category && r.exp > 0 && r.date >= weekAgoStr).length;
+      return { current: Math.min(count, ach.target), target: ach.target };
+    }
+    case 'streak': {
+      const streak = calculateCategoryStreak(records, ach.category);
+      return { current: Math.min(streak, ach.target), target: ach.target };
+    }
+    case 'monthly': {
+      const count = records.filter(r => r.category === ach.category && r.exp > 0 && isCurrentMonth(r.date)).length;
+      return { current: Math.min(count, ach.target), target: ach.target };
+    }
+    case 'early': {
+      const count = records.filter(r => {
+        if (r.category !== 'morning' || r.exp <= 0 || !r.time) return false;
+        const hour = parseInt(r.time.split(':')[0]);
+        return hour < 6;
+      }).length;
+      return { current: Math.min(count, ach.target), target: ach.target };
+    }
+    case 'daily_variety': {
+      const dateCategories = {};
+      records.forEach(r => {
+        if (r.exp > 0) {
+          if (!dateCategories[r.date]) dateCategories[r.date] = new Set();
+          dateCategories[r.date].add(r.category);
+        }
+      });
+      const maxVariety = Math.max(0, ...Object.values(dateCategories).map(s => s.size));
+      return { current: Math.min(maxVariety, ach.target), target: ach.target };
+    }
+    case 'weekly_variety': {
+      const now = new Date();
+      const weekAgo = new Date(now.getTime() - 7 * 86400000);
+      const weekAgoStr = toLocalDateStr(weekAgo);
+      const cats = new Set();
+      records.forEach(r => { if (r.exp > 0 && r.date >= weekAgoStr) cats.add(r.category); });
+      return { current: Math.min(cats.size, ach.target), target: ach.target };
+    }
+    case 'monthly_all': {
+      const cats = new Set();
+      records.forEach(r => { if (r.exp > 0 && isCurrentMonth(r.date) && r.category !== 'comeback') cats.add(r.category); });
+      return { current: Math.min(cats.size, ach.target), target: ach.target };
+    }
+    default:
+      return { current: 0, target: ach.target };
+  }
+}
+
+// 도전 과제 달성 체크
+function checkAchievements(memberData) {
+  const newAchievements = [];
+  const existing = memberData.achievements || [];
+  const records = memberData.records || [];
+  const categoryCount = memberData.categoryCount || {};
+
+  for (const [achId, ach] of Object.entries(ACHIEVEMENTS)) {
+    if (existing.includes(achId)) continue;
+
+    let achieved = false;
+
+    switch (ach.type) {
+      case 'first':
+        achieved = (categoryCount[ach.category] || 0) >= 1;
+        break;
+      case 'weekly':
+        achieved = checkWeeklyCount(records, ach.category, ach.target);
+        break;
+      case 'streak':
+        achieved = calculateCategoryStreak(records, ach.category) >= ach.target;
+        break;
+      case 'monthly':
+        achieved = checkMonthlyCount(records, ach.category, ach.target);
+        break;
+      case 'early':
+        achieved = checkEarlyMorning(records, ach.target);
+        break;
+      case 'daily_variety':
+        achieved = checkDailyVariety(records, ach.target);
+        break;
+      case 'weekly_variety':
+        achieved = checkWeeklyVariety(records, ach.target);
+        break;
+      case 'monthly_all':
+        achieved = checkMonthlyAll(records, ach.target);
+        break;
+    }
+
+    if (achieved) {
+      newAchievements.push(achId);
+    }
+  }
+
+  return newAchievements;
 }
 
 // 전월 랭킹 계산
@@ -914,6 +1176,9 @@ function parseChat(content) {
           meditation: 0,
           comeback: 0,
         },
+        // 도전 과제
+        achievements: [],
+        achievementDates: {},
       };
     }
     analysisData.members[trimmedNickname].records.push(record);
@@ -927,6 +1192,18 @@ function parseChat(content) {
   // 2차: 멤버별 월간 데이터 계산 (페널티 포함)
   for (const [nickname, memberData] of Object.entries(analysisData.members)) {
     memberData.monthly = calculateMonthlyData(memberData.records, nickname);
+  }
+
+  // 3차: 도전 과제 체크
+  const todayStr = toLocalDateStr(new Date());
+  for (const [nickname, memberData] of Object.entries(analysisData.members)) {
+    const newAchievements = checkAchievements(memberData);
+    newAchievements.forEach(achId => {
+      if (!memberData.achievements.includes(achId)) {
+        memberData.achievements.push(achId);
+        memberData.achievementDates[achId] = todayStr;
+      }
+    });
   }
 
   // 전체 월간 통계
@@ -2478,6 +2755,9 @@ function getMembersForSave() {
       lastMonthExp: lastMonthExp,
       lastMonthCount: lastMonthCount,
       records: allRecords,
+      // 도전 과제
+      achievements: data.achievements || [],
+      achievementDates: data.achievementDates || {},
     };
   }
 

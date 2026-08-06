@@ -23,6 +23,54 @@ const CERT_CATEGORIES = {
 
 const EXP_PER_LEVEL = 5;
 
+// ========== 도전 과제 시스템 ==========
+const ACHIEVEMENTS = {
+  // 🧹 청소
+  cleaning_first: { name: '첫 걸음', emoji: '🧹', category: 'cleaning', type: 'first', target: 1, difficulty: 1 },
+  cleaning_weekly: { name: '깔끔러', emoji: '🧹', category: 'cleaning', type: 'weekly', target: 3, difficulty: 2 },
+  cleaning_streak: { name: '청소 습관', emoji: '🧹✨', category: 'cleaning', type: 'streak', target: 14, difficulty: 3 },
+  cleaning_master: { name: '정리왕', emoji: '🧹👑', category: 'cleaning', type: 'monthly', target: 20, difficulty: 4 },
+
+  // 🏃 운동
+  exercise_first: { name: '몸풀기', emoji: '🏃', category: 'exercise', type: 'first', target: 1, difficulty: 1 },
+  exercise_weekly: { name: '러너', emoji: '🏃', category: 'exercise', type: 'weekly', target: 4, difficulty: 2 },
+  exercise_streak: { name: '운동 루틴', emoji: '🏃✨', category: 'exercise', type: 'streak', target: 10, difficulty: 3 },
+  exercise_master: { name: '철인', emoji: '🏃👑', category: 'exercise', type: 'monthly', target: 25, difficulty: 4 },
+
+  // ⏰ 기상
+  morning_first: { name: '눈뜸', emoji: '⏰', category: 'morning', type: 'first', target: 1, difficulty: 1 },
+  morning_weekly: { name: '얼리버드', emoji: '⏰', category: 'morning', type: 'streak', target: 5, difficulty: 2 },
+  morning_streak: { name: '아침형 인간', emoji: '⏰✨', category: 'morning', type: 'streak', target: 14, difficulty: 3 },
+  morning_early: { name: '새벽빛', emoji: '🌅', category: 'morning', type: 'early', target: 10, difficulty: 4 },
+
+  // 📚 공부
+  study_first: { name: '학습 시작', emoji: '📚', category: 'study', type: 'first', target: 1, difficulty: 1 },
+  study_weekly: { name: '꾸준러', emoji: '📚', category: 'study', type: 'weekly', target: 5, difficulty: 2 },
+  study_streak: { name: '학습 습관', emoji: '📚✨', category: 'study', type: 'streak', target: 10, difficulty: 3 },
+  study_master: { name: '공부벌레', emoji: '📚👑', category: 'study', type: 'monthly', target: 30, difficulty: 4 },
+
+  // 💊 약
+  medicine_first: { name: '첫 복약', emoji: '💊', category: 'medicine', type: 'first', target: 1, difficulty: 1 },
+  medicine_streak: { name: '복약 습관', emoji: '💊✨', category: 'medicine', type: 'streak', target: 7, difficulty: 2 },
+
+  // 📋 계획
+  planning_first: { name: '첫 계획', emoji: '📋', category: 'planning', type: 'first', target: 1, difficulty: 1 },
+  planning_streak: { name: '계획러', emoji: '📋✨', category: 'planning', type: 'streak', target: 7, difficulty: 2 },
+
+  // 📝 일기
+  diary_first: { name: '첫 일기', emoji: '📝', category: 'diary', type: 'first', target: 1, difficulty: 1 },
+  diary_streak: { name: '일기쓰기', emoji: '📝✨', category: 'diary', type: 'streak', target: 7, difficulty: 2 },
+
+  // 🧘 명상
+  meditation_first: { name: '첫 명상', emoji: '🧘', category: 'meditation', type: 'first', target: 1, difficulty: 1 },
+  meditation_streak: { name: '마음챙김', emoji: '🧘✨', category: 'meditation', type: 'streak', target: 7, difficulty: 2 },
+
+  // 🌈 통합 도전
+  balance_daily: { name: '균형잡기', emoji: '🌈', category: null, type: 'daily_variety', target: 3, difficulty: 2 },
+  allrounder: { name: '올라운더', emoji: '🌈✨', category: null, type: 'weekly_variety', target: 6, difficulty: 3 },
+  life_master: { name: '생활왕', emoji: '🌈👑', category: null, type: 'monthly_all', target: 9, difficulty: 4 },
+};
+
 // ========== 카테고리별 칭호 ==========
 const CATEGORY_TITLES = {
   cleaning: { title: '가정의 수호자', emoji: '🏠', minCount: 30 },
@@ -399,7 +447,7 @@ function displayWeeklyAlerts() {
     card.innerHTML = `
       <div class="alert-icon">${alert.icon}</div>
       <div class="alert-content">
-        <div class="alert-name">${name}</div>
+        <div class="alert-name clickable" data-nickname="${name}">${name}</div>
         <div class="alert-progress">
           <div class="alert-progress-bar">
             <div class="alert-progress-fill" style="width: ${progressWidth}%; background: ${alert.color}"></div>
@@ -411,6 +459,12 @@ function displayWeeklyAlerts() {
         ${alert.text}
       </div>
     `;
+
+    // 닉네임 클릭 시 프로필 모달 열기
+    const nameEl = card.querySelector('.alert-name');
+    nameEl.addEventListener('click', () => {
+      openProfileModal(name);
+    });
 
     alertGrid.appendChild(card);
   });
@@ -462,6 +516,7 @@ function displayResults() {
   displayWeeklyRankings();
   displayTimeActivity();
   displayCategories();
+  displayAchievementsGuide(); // 도전 과제 안내
   displayLeaderboard();
   displayRankingHistory();
 }
@@ -784,6 +839,102 @@ function displayCategories() {
   }
 }
 
+// ========== 도전 과제 안내 ==========
+function displayAchievementsGuide() {
+  const container = document.getElementById('achievementsGuideGrid');
+  if (!container) return;
+
+  // 카테고리별 그룹화
+  const categoryGroups = {
+    cleaning: { name: '청소', emoji: '🧹' },
+    exercise: { name: '운동', emoji: '🏃' },
+    morning: { name: '기상', emoji: '⏰' },
+    study: { name: '공부', emoji: '📚' },
+    medicine: { name: '약', emoji: '💊' },
+    planning: { name: '계획', emoji: '📋' },
+    diary: { name: '일기', emoji: '📝' },
+    meditation: { name: '명상', emoji: '🧘' },
+    integrated: { name: '통합', emoji: '🌈' }
+  };
+
+  // 도전 과제 조건 설명
+  const conditionText = {
+    first: '첫 인증',
+    weekly: (target) => `7일간 ${target}회 이상`,
+    streak: (target) => `${target}일 연속`,
+    monthly: (target) => `월 ${target}회 이상`,
+    early: (target) => `오전 6시 이전 ${target}회`,
+    daily_variety: (target) => `하루 ${target}카테고리 이상`,
+    weekly_variety: (target) => `주간 ${target}카테고리 이상`,
+    monthly_all: () => `월간 전 카테고리 인증`
+  };
+
+  let html = '';
+
+  // 카테고리별로 도전 과제 그룹화
+  const groupedAchievements = {};
+
+  for (const [achId, ach] of Object.entries(ACHIEVEMENTS)) {
+    const groupKey = ach.category || 'integrated';
+    if (!groupedAchievements[groupKey]) {
+      groupedAchievements[groupKey] = [];
+    }
+    groupedAchievements[groupKey].push({ id: achId, ...ach });
+  }
+
+  // 카테고리 순서대로 렌더링
+  const categoryOrder = ['cleaning', 'exercise', 'morning', 'study', 'medicine', 'planning', 'diary', 'meditation', 'integrated'];
+
+  for (const catKey of categoryOrder) {
+    const achievements = groupedAchievements[catKey];
+    if (!achievements || achievements.length === 0) continue;
+
+    const catInfo = categoryGroups[catKey];
+
+    html += `
+      <div class="achievement-category-group">
+        <div class="achievement-category-header">
+          <span class="cat-emoji">${catInfo.emoji}</span>
+          <span class="cat-name">${catInfo.name}</span>
+        </div>
+        <div class="achievement-list">
+    `;
+
+    // 난이도 순서로 정렬
+    achievements.sort((a, b) => a.difficulty - b.difficulty);
+
+    for (const ach of achievements) {
+      const stars = '★'.repeat(ach.difficulty) + '☆'.repeat(4 - ach.difficulty);
+
+      // 조건 텍스트 생성
+      let condition = '';
+      if (typeof conditionText[ach.type] === 'function') {
+        condition = conditionText[ach.type](ach.target);
+      } else {
+        condition = conditionText[ach.type] || '';
+      }
+
+      html += `
+        <div class="achievement-guide-item">
+          <span class="ach-emoji">${ach.emoji}</span>
+          <div class="ach-info">
+            <div class="ach-name">${ach.name}</div>
+            <div class="ach-condition">${condition}</div>
+          </div>
+          <span class="ach-stars">${stars}</span>
+        </div>
+      `;
+    }
+
+    html += `
+        </div>
+      </div>
+    `;
+  }
+
+  container.innerHTML = html;
+}
+
 // ========== 리더보드 ==========
 function displayLeaderboard() {
   const leaderboard = document.getElementById('leaderboard');
@@ -873,10 +1024,33 @@ function displayRankingHistory() {
 // ========== 초기화 ==========
 document.addEventListener('DOMContentLoaded', () => {
   loadData().then(() => {
+    initMainTabs();
     initProfileModal();
     handleHashChange();
   });
 });
+
+// ========== 메인 탭 네비게이션 ==========
+function initMainTabs() {
+  document.querySelectorAll('.main-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      // 탭 버튼 활성화
+      document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      // 탭 콘텐츠 전환
+      document.querySelectorAll('.main-tab-content').forEach(c => c.classList.remove('active'));
+      const tabId = 'tab' + capitalize(tab.dataset.tab);
+      document.getElementById(tabId).classList.add('active');
+
+      // 스크롤 위치 조정 (탭 네비게이션 바로 아래로)
+      const mainTabs = document.getElementById('mainTabs');
+      if (mainTabs) {
+        mainTabs.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+}
 
 // ========== 개인 프로필 모달 ==========
 
@@ -900,6 +1074,11 @@ function initProfileModal() {
       document.querySelectorAll('.profile-tab-content').forEach(c => c.classList.remove('active'));
       tab.classList.add('active');
       document.getElementById('tab' + capitalize(tab.dataset.tab)).classList.add('active');
+
+      // 도전 과제 탭 선택 시 렌더링
+      if (tab.dataset.tab === 'achievements' && currentProfileData) {
+        renderAchievementsTab(currentProfileData);
+      }
     });
   });
 
@@ -1043,7 +1222,11 @@ function generateProfileData(nickname, member) {
     monthlyExpHistory,
     hourlyCount,
     categoryCount,
-    recentRecords: records.slice().reverse()
+    recentRecords: records.slice().reverse(),
+    // 도전 과제
+    achievements: member.achievements || [],
+    achievementDates: member.achievementDates || {},
+    records: records
   };
 }
 
@@ -1084,11 +1267,6 @@ function renderProfileModal(data) {
   document.getElementById('profileLastMonthExp').textContent = `${data.lastMonthExp} EXP`;
   document.getElementById('profileLastMonthCount').textContent = `${data.lastMonthCount}회`;
 
-  const growthEl = document.getElementById('profileGrowth');
-  const growthSign = data.expGrowth >= 0 ? '+' : '';
-  growthEl.textContent = `${growthSign}${data.expGrowth}%`;
-  growthEl.classList.toggle('negative', data.expGrowth < 0);
-
   document.getElementById('profileTotalExp').textContent = `${data.totalExp} EXP`;
   document.getElementById('profileTotalCount').textContent = `${data.totalCount}회`;
 
@@ -1105,6 +1283,7 @@ function renderProfileModal(data) {
   // 각 탭 렌더링
   renderGrowthChart(data, 'daily');
   renderCategoryPie(data);
+  renderAchievementsTab(data);
   renderTimeHeatmap(data);
   renderRecentRecords(data);
 }
@@ -1460,4 +1639,192 @@ function generatePersonalizedFeedback(data) {
   }
 
   return { icon, messages: messages.slice(0, 2) };
+}
+
+// ========== 도전 과제 렌더링 ==========
+
+// 날짜 문자열 변환 (result.js용)
+function toLocalDateStr(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+// 이번 달 체크
+function isCurrentMonth(dateStr) {
+  if (!dateStr) return false;
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  return dateStr.startsWith(currentMonth);
+}
+
+// 카테고리별 연속 일수 계산
+function calculateCategoryStreak(records, category) {
+  const validRecords = records.filter(r => r.category === category && r.exp > 0);
+  if (validRecords.length === 0) return 0;
+
+  const dates = new Set(validRecords.map(r => r.date));
+  const today = toLocalDateStr(new Date());
+  const yesterday = toLocalDateStr(new Date(Date.now() - 86400000));
+
+  let streak = 0;
+  let checkDate = dates.has(today) ? today : (dates.has(yesterday) ? yesterday : null);
+
+  if (!checkDate) return 0;
+
+  while (dates.has(checkDate)) {
+    streak++;
+    const d = new Date(checkDate);
+    d.setDate(d.getDate() - 1);
+    checkDate = toLocalDateStr(d);
+  }
+
+  return streak;
+}
+
+// 도전 과제 진행률 계산
+function getAchievementProgress(records, categoryCount, achId, ach) {
+  switch (ach.type) {
+    case 'first':
+      return { current: Math.min(categoryCount[ach.category] || 0, 1), target: 1 };
+    case 'weekly': {
+      const now = new Date();
+      const weekAgo = new Date(now.getTime() - 7 * 86400000);
+      const weekAgoStr = toLocalDateStr(weekAgo);
+      const count = records.filter(r => r.category === ach.category && r.exp > 0 && r.date >= weekAgoStr).length;
+      return { current: Math.min(count, ach.target), target: ach.target };
+    }
+    case 'streak': {
+      const streak = calculateCategoryStreak(records, ach.category);
+      return { current: Math.min(streak, ach.target), target: ach.target };
+    }
+    case 'monthly': {
+      const count = records.filter(r => r.category === ach.category && r.exp > 0 && isCurrentMonth(r.date)).length;
+      return { current: Math.min(count, ach.target), target: ach.target };
+    }
+    case 'early': {
+      const count = records.filter(r => {
+        if (r.category !== 'morning' || r.exp <= 0 || !r.time) return false;
+        const hour = parseInt(r.time.split(':')[0]);
+        return hour < 6;
+      }).length;
+      return { current: Math.min(count, ach.target), target: ach.target };
+    }
+    case 'daily_variety': {
+      const dateCategories = {};
+      records.forEach(r => {
+        if (r.exp > 0) {
+          if (!dateCategories[r.date]) dateCategories[r.date] = new Set();
+          dateCategories[r.date].add(r.category);
+        }
+      });
+      const maxVariety = Math.max(0, ...Object.values(dateCategories).map(s => s.size));
+      return { current: Math.min(maxVariety, ach.target), target: ach.target };
+    }
+    case 'weekly_variety': {
+      const now = new Date();
+      const weekAgo = new Date(now.getTime() - 7 * 86400000);
+      const weekAgoStr = toLocalDateStr(weekAgo);
+      const cats = new Set();
+      records.forEach(r => { if (r.exp > 0 && r.date >= weekAgoStr) cats.add(r.category); });
+      return { current: Math.min(cats.size, ach.target), target: ach.target };
+    }
+    case 'monthly_all': {
+      const cats = new Set();
+      records.forEach(r => { if (r.exp > 0 && isCurrentMonth(r.date) && r.category !== 'comeback') cats.add(r.category); });
+      return { current: Math.min(cats.size, ach.target), target: ach.target };
+    }
+    default:
+      return { current: 0, target: ach.target };
+  }
+}
+
+// 도전 과제 탭 렌더링
+function renderAchievementsTab(data) {
+  const container = document.getElementById('achievementsGrid');
+  if (!container) return;
+
+  const achievements = data.achievements || [];
+  const achievementDates = data.achievementDates || {};
+  const records = data.records || [];
+  const categoryCount = data.categoryCount || {};
+
+  // 카테고리 순서
+  const categoryOrder = ['cleaning', 'exercise', 'morning', 'study', 'medicine', 'planning', 'diary', 'meditation', null];
+  const categoryNames = {
+    cleaning: '🧹 청소',
+    exercise: '🏃 운동',
+    morning: '⏰ 기상',
+    study: '📚 공부',
+    medicine: '💊 약',
+    planning: '📋 계획',
+    diary: '📝 일기',
+    meditation: '🧘 명상',
+    null: '🌈 통합'
+  };
+
+  let html = '';
+
+  categoryOrder.forEach((cat, index) => {
+    const catAchievements = Object.entries(ACHIEVEMENTS).filter(([id, ach]) => ach.category === cat);
+    if (catAchievements.length === 0) return;
+
+    // 달성 개수 계산
+    const unlockedCount = catAchievements.filter(([achId]) => achievements.includes(achId)).length;
+    const totalCount = catAchievements.length;
+
+    // 첫 번째 카테고리만 기본 열림
+    const isOpen = index === 0;
+
+    html += `
+      <div class="achievement-accordion">
+        <div class="achievement-accordion-header ${isOpen ? 'open' : ''}" data-category="${cat}">
+          <span class="accordion-title">${categoryNames[cat]}</span>
+          <span class="accordion-badge">${unlockedCount}/${totalCount}</span>
+          <span class="accordion-arrow">${isOpen ? '▼' : '▶'}</span>
+        </div>
+        <div class="achievement-accordion-content ${isOpen ? 'open' : ''}">
+          <div class="achievement-cards">
+    `;
+
+    catAchievements.forEach(([achId, ach]) => {
+      const isUnlocked = achievements.includes(achId);
+      const progress = getAchievementProgress(records, categoryCount, achId, ach);
+      const progressPercent = Math.round((progress.current / progress.target) * 100);
+      const stars = '★'.repeat(ach.difficulty) + '☆'.repeat(4 - ach.difficulty);
+      const unlockedDate = achievementDates[achId] || '';
+
+      html += `
+        <div class="achievement-card ${isUnlocked ? 'unlocked' : 'locked'}">
+          <span class="achievement-emoji">${ach.emoji}</span>
+          <div class="achievement-name">${ach.name}</div>
+          ${isUnlocked
+            ? `<div class="achievement-date">${unlockedDate}</div>`
+            : `<div class="achievement-progress">${progress.current}/${progress.target}</div>
+               <div class="achievement-progress-bar">
+                 <div class="achievement-progress-fill" style="width: ${progressPercent}%"></div>
+               </div>`
+          }
+          <div class="difficulty-stars">${stars}</div>
+        </div>
+      `;
+    });
+
+    html += `
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+
+  // 아코디언 클릭 이벤트
+  container.querySelectorAll('.achievement-accordion-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const content = header.nextElementSibling;
+      const arrow = header.querySelector('.accordion-arrow');
+      const isOpen = header.classList.toggle('open');
+      content.classList.toggle('open', isOpen);
+      arrow.textContent = isOpen ? '▼' : '▶';
+    });
+  });
 }

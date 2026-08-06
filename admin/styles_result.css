@@ -66,6 +66,64 @@ header h1 {
     font-size: 1.1rem;
 }
 
+/* ========== 메인 탭 네비게이션 ========== */
+.main-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-card);
+    padding: 6px;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.main-tab {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.main-tab:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
+}
+
+.main-tab.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+}
+
+.main-tab-content {
+    display: none;
+}
+
+.main-tab-content.active {
+    display: block;
+}
+
+@media (max-width: 480px) {
+    .main-tabs {
+        padding: 4px;
+        gap: 2px;
+    }
+
+    .main-tab {
+        padding: 10px 8px;
+        font-size: 0.85rem;
+    }
+}
+
 .upload-section {
     margin-bottom: 3rem;
 }
@@ -1995,6 +2053,16 @@ footer .tip {
     text-overflow: ellipsis;
 }
 
+.alert-name.clickable {
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.alert-name.clickable:hover {
+    color: var(--primary);
+    text-decoration: underline;
+}
+
 .alert-progress {
     display: flex;
     align-items: center;
@@ -3635,5 +3703,288 @@ footer .tip {
 
     .growth-chart-container {
         height: 120px;
+    }
+}
+
+/* ========== 도전 과제 안내 섹션 ========== */
+.achievements-guide-section {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.achievements-guide-section h3 {
+    margin-bottom: 0.5rem;
+}
+
+.achievements-guide-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.achievement-category-group {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.achievement-category-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.achievement-category-header .cat-emoji {
+    font-size: 1.2rem;
+}
+
+.achievement-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+}
+
+.achievement-guide-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.achievement-guide-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.achievement-guide-item .ach-emoji {
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.achievement-guide-item .ach-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.achievement-guide-item .ach-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.achievement-guide-item .ach-condition {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.achievement-guide-item .ach-stars {
+    font-size: 0.7rem;
+    color: #fbbf24;
+    flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+    .achievement-list {
+        grid-template-columns: 1fr;
+    }
+
+    .achievement-guide-item {
+        padding: 8px 10px;
+    }
+
+    .achievement-guide-item .ach-emoji {
+        font-size: 1.1rem;
+    }
+
+    .achievement-guide-item .ach-name {
+        font-size: 0.8rem;
+    }
+}
+
+/* ========== 도전 과제 아코디언 스타일 ========== */
+.achievement-accordion {
+    margin-bottom: 8px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg-card);
+}
+
+.achievement-accordion-header {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.03);
+    transition: background 0.2s ease;
+    user-select: none;
+}
+
+.achievement-accordion-header:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.achievement-accordion-header .accordion-title {
+    flex: 1;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.achievement-accordion-header .accordion-badge {
+    background: var(--primary);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-right: 12px;
+}
+
+.achievement-accordion-header .accordion-arrow {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    transition: transform 0.2s ease;
+}
+
+.achievement-accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.achievement-accordion-content.open {
+    max-height: 500px;
+}
+
+.achievement-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+    padding: 12px;
+}
+
+/* ========== 도전 과제 스타일 (프로필 모달) ========== */
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    padding: 8px 0;
+}
+
+.achievement-card {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 16px 12px;
+    text-align: center;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.achievement-card.locked {
+    opacity: 0.4;
+    filter: grayscale(0.8);
+}
+
+.achievement-card.unlocked {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(34, 211, 238, 0.15));
+    border: 1px solid var(--primary);
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
+}
+
+.achievement-card.unlocked:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+}
+
+.achievement-emoji {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.achievement-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.achievement-progress {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.achievement-progress-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+.achievement-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), #22d3ee);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.difficulty-stars {
+    color: #fbbf24;
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    margin-top: 6px;
+}
+
+.achievement-date {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+/* 도전 과제 카테고리 구분선 */
+.achievements-section-title {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 16px 0 8px 4px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+}
+
+.achievements-section-title:first-child {
+    margin-top: 0;
+}
+
+@media (max-width: 480px) {
+    .achievements-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .achievement-card {
+        padding: 12px 8px;
+    }
+
+    .achievement-emoji {
+        font-size: 1.5rem;
+    }
+
+    .achievement-name {
+        font-size: 0.75rem;
+    }
+
+    .achievement-progress {
+        font-size: 0.65rem;
     }
 }

@@ -56,78 +56,100 @@
           </div>
         </div>
 
-        <!-- 이벤트 배너 -->
-        <div class="event-banners" id="eventBanners"></div>
+        <!-- 상단 고정 탭 네비게이션 -->
+        <nav class="main-tabs" id="mainTabs">
+          <button class="main-tab active" data-tab="summary">📊 요약</button>
+          <button class="main-tab" data-tab="challenges">🏆 도전</button>
+          <button class="main-tab" data-tab="ranking">👥 랭킹</button>
+        </nav>
 
-        <!-- 주간 인증 경고 시스템 -->
-        <div class="weekly-alert-section" id="weeklyAlertSection">
-          <div class="alert-header">
-            <h3>주간 인증 현황</h3>
-            <div class="deadline-timer" id="deadlineTimer"></div>
+        <!-- 요약 탭 -->
+        <div class="main-tab-content active" id="tabSummary">
+          <!-- 이벤트 배너 -->
+          <div class="event-banners" id="eventBanners"></div>
+
+          <!-- 주간 인증 경고 시스템 -->
+          <div class="weekly-alert-section" id="weeklyAlertSection">
+            <div class="alert-header">
+              <h3>주간 인증 현황</h3>
+              <div class="deadline-timer" id="deadlineTimer"></div>
+            </div>
+            <p class="section-desc">주 3회 이상 인증하지 않으면 강퇴됩니다</p>
+            <div class="alert-grid" id="alertGrid"></div>
           </div>
-          <p class="section-desc">주 3회 이상 인증하지 않으면 강퇴됩니다</p>
-          <div class="alert-grid" id="alertGrid"></div>
-        </div>
 
-        <div class="weekly-section">
-          <h3>주간 정산</h3>
-          <p class="section-desc">매주 순위 변동을 확인하고 상장을 드립니다</p>
-          <div class="weekly-rankings" id="weeklyRankings"></div>
-        </div>
+          <div class="weekly-section">
+            <h3>주간 정산</h3>
+            <p class="section-desc">매주 순위 변동을 확인하고 상장을 드립니다</p>
+            <div class="weekly-rankings" id="weeklyRankings"></div>
+          </div>
 
-        <div class="history-section">
-          <h3>월간 성장 추이</h3>
-          <div class="history-table-wrapper">
-            <table class="history-table" id="historyTable">
-              <thead>
-                <tr>
-                  <th>월</th>
-                  <th>🌟 MVP</th>
-                  <th>🌱 성장</th>
-                  <th>💪 도전</th>
-                </tr>
-              </thead>
-              <tbody id="historyBody"></tbody>
-            </table>
+          <div class="time-activity-section">
+            <h3>시간대별 인증 활동</h3>
+            <p class="section-desc">
+              하루 중 언제 가장 활발하게 인증하는지 확인하세요
+            </p>
+            <div class="time-chart-container">
+              <div class="time-chart" id="timeChart"></div>
+              <div class="time-labels" id="timeLabels"></div>
+            </div>
+            <div class="time-stats" id="timeStats"></div>
+          </div>
+
+          <div class="category-section">
+            <h3>카테고리별 인증 현황</h3>
+            <div class="category-content">
+              <div class="pie-chart-container">
+                <div class="pie-chart" id="pieChart"></div>
+                <div class="pie-center">
+                  <span class="pie-total" id="pieTotal">0</span>
+                  <span class="pie-label">총 인증</span>
+                </div>
+              </div>
+              <div class="pie-legend" id="pieLegend"></div>
+            </div>
+            <div class="category-grid" id="categoryGrid"></div>
           </div>
         </div>
 
-        <div class="time-activity-section">
-          <h3>시간대별 인증 활동</h3>
-          <p class="section-desc">
-            하루 중 언제 가장 활발하게 인증하는지 확인하세요
-          </p>
-          <div class="time-chart-container">
-            <div class="time-chart" id="timeChart"></div>
-            <div class="time-labels" id="timeLabels"></div>
+        <!-- 도전 탭 -->
+        <div class="main-tab-content" id="tabChallenges">
+          <div class="achievements-guide-section" id="achievementsGuideSection">
+            <h3>🏆 도전 과제</h3>
+            <p class="section-desc">인증을 통해 도전 과제를 달성하고 성취감을 느껴보세요</p>
+            <div class="achievements-guide-grid" id="achievementsGuideGrid"></div>
           </div>
-          <div class="time-stats" id="timeStats"></div>
         </div>
 
-        <div class="category-section">
-          <h3>카테고리별 인증 현황</h3>
-          <div class="category-content">
-            <div class="pie-chart-container">
-              <div class="pie-chart" id="pieChart"></div>
-              <div class="pie-center">
-                <span class="pie-total" id="pieTotal">0</span>
-                <span class="pie-label">총 인증</span>
+        <!-- 랭킹 탭 -->
+        <div class="main-tab-content" id="tabRanking">
+          <div class="leaderboard-section" id="leaderboardSection">
+            <h3>이번 달 성장 기록</h3>
+            <div class="monthly-rewards">
+              <div class="reward-card random">
+                <span class="reward-rank">🎁 보상</span>
+                <span class="reward-prize">꾸준함에 대한 선물</span>
               </div>
             </div>
-            <div class="pie-legend" id="pieLegend"></div>
+            <div class="leaderboard" id="leaderboard"></div>
           </div>
-          <div class="category-grid" id="categoryGrid"></div>
-        </div>
 
-        <div class="leaderboard-section" id="leaderboardSection">
-          <h3>이번 달 성장 기록</h3>
-          <div class="monthly-rewards">
-            <div class="reward-card random">
-              <span class="reward-rank">🎁 보상</span>
-              <span class="reward-prize">꾸준함에 대한 선물</span>
+          <div class="history-section">
+            <h3>월간 성장 추이</h3>
+            <div class="history-table-wrapper">
+              <table class="history-table" id="historyTable">
+                <thead>
+                  <tr>
+                    <th>월</th>
+                    <th>🌟 MVP</th>
+                    <th>🌱 성장</th>
+                    <th>💪 도전</th>
+                  </tr>
+                </thead>
+                <tbody id="historyBody"></tbody>
+              </table>
             </div>
           </div>
-          <div class="leaderboard" id="leaderboard"></div>
         </div>
       </section>
 
@@ -167,10 +189,6 @@
             <span class="stat-sub" id="profileLastMonthCount">0회</span>
           </div>
           <div class="profile-stat-card">
-            <span class="stat-label">성장률</span>
-            <span class="stat-value growth" id="profileGrowth">0%</span>
-          </div>
-          <div class="profile-stat-card">
             <span class="stat-label">누적</span>
             <span class="stat-value" id="profileTotalExp">0</span>
             <span class="stat-sub" id="profileTotalCount">0회</span>
@@ -189,6 +207,7 @@
         <div class="profile-tabs">
           <button class="profile-tab active" data-tab="growth">성장 추이</button>
           <button class="profile-tab" data-tab="category">카테고리</button>
+          <button class="profile-tab" data-tab="achievements">도전 과제</button>
           <button class="profile-tab" data-tab="time">시간대</button>
           <button class="profile-tab" data-tab="records">기록</button>
         </div>
@@ -217,6 +236,11 @@
             </div>
             <div class="profile-pie-legend" id="profilePieLegend"></div>
           </div>
+        </div>
+
+        <!-- 도전 과제 탭 -->
+        <div class="profile-tab-content" id="tabAchievements">
+          <div class="achievements-grid" id="achievementsGrid"></div>
         </div>
 
         <!-- 시간대 탭 -->
