@@ -427,11 +427,11 @@ header h1 {
     transition: 0.3s;
 }
 
-.toggle-switch input:checked + .toggle-slider {
+.toggle-switch input:checked+.toggle-slider {
     background: linear-gradient(135deg, #7c3aed, #ec4899);
 }
 
-.toggle-switch input:checked + .toggle-slider:before {
+.toggle-switch input:checked+.toggle-slider:before {
     transform: translateX(24px);
 }
 
@@ -663,8 +663,15 @@ header h1 {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .results-section h2 {
@@ -970,14 +977,37 @@ header h1 {
     height: 4px;
 }
 
-.category-card.cleaning::before { background: var(--cleaning); }
-.category-card.exercise::before { background: var(--exercise); }
-.category-card.morning::before { background: var(--morning); }
-.category-card.planning::before { background: var(--planning); }
-.category-card.study::before { background: var(--study); }
-.category-card.medicine::before { background: var(--medicine); }
-.category-card.diary::before { background: var(--diary); }
-.category-card.comeback::before { background: var(--comeback); }
+.category-card.cleaning::before {
+    background: var(--cleaning);
+}
+
+.category-card.exercise::before {
+    background: var(--exercise);
+}
+
+.category-card.morning::before {
+    background: var(--morning);
+}
+
+.category-card.planning::before {
+    background: var(--planning);
+}
+
+.category-card.study::before {
+    background: var(--study);
+}
+
+.category-card.medicine::before {
+    background: var(--medicine);
+}
+
+.category-card.diary::before {
+    background: var(--diary);
+}
+
+.category-card.comeback::before {
+    background: var(--comeback);
+}
 
 .category-card .emoji {
     font-size: 2rem;
@@ -1019,14 +1049,37 @@ header h1 {
     display: inline-block;
 }
 
-.category-card.cleaning .count { color: var(--cleaning); }
-.category-card.exercise .count { color: var(--exercise); }
-.category-card.morning .count { color: var(--morning); }
-.category-card.planning .count { color: var(--planning); }
-.category-card.study .count { color: var(--study); }
-.category-card.medicine .count { color: var(--medicine); }
-.category-card.diary .count { color: var(--diary); }
-.category-card.comeback .count { color: var(--comeback); }
+.category-card.cleaning .count {
+    color: var(--cleaning);
+}
+
+.category-card.exercise .count {
+    color: var(--exercise);
+}
+
+.category-card.morning .count {
+    color: var(--morning);
+}
+
+.category-card.planning .count {
+    color: var(--planning);
+}
+
+.category-card.study .count {
+    color: var(--study);
+}
+
+.category-card.medicine .count {
+    color: var(--medicine);
+}
+
+.category-card.diary .count {
+    color: var(--diary);
+}
+
+.category-card.comeback .count {
+    color: var(--comeback);
+}
 
 .leaderboard-section {
     margin-bottom: 2rem;
@@ -1126,8 +1179,15 @@ header h1 {
 }
 
 @keyframes championGlow {
-    0%, 100% { box-shadow: 0 0 8px rgba(251, 191, 36, 0.5); }
-    50% { box-shadow: 0 0 15px rgba(251, 191, 36, 0.8), 0 0 25px rgba(251, 191, 36, 0.4); }
+
+    0%,
+    100% {
+        box-shadow: 0 0 8px rgba(251, 191, 36, 0.5);
+    }
+
+    50% {
+        box-shadow: 0 0 15px rgba(251, 191, 36, 0.8), 0 0 25px rgba(251, 191, 36, 0.4);
+    }
 }
 
 .rank {
@@ -1142,9 +1202,17 @@ header h1 {
     background: var(--border);
 }
 
-.rank.gold { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
-.rank.silver { background: linear-gradient(135deg, #94a3b8, #64748b); }
-.rank.bronze { background: linear-gradient(135deg, #fb923c, #ea580c); }
+.rank.gold {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+}
+
+.rank.silver {
+    background: linear-gradient(135deg, #94a3b8, #64748b);
+}
+
+.rank.bronze {
+    background: linear-gradient(135deg, #fb923c, #ea580c);
+}
 
 .member-info {
     flex: 1;
@@ -1620,14 +1688,45 @@ header h1 {
     font-weight: 500;
 }
 
-.record-tag.cleaning { background: rgba(244, 114, 182, 0.2); color: var(--cleaning); }
-.record-tag.exercise { background: rgba(34, 211, 238, 0.2); color: var(--exercise); }
-.record-tag.morning { background: rgba(251, 191, 36, 0.2); color: var(--morning); }
-.record-tag.planning { background: rgba(167, 139, 250, 0.2); color: var(--planning); }
-.record-tag.study { background: rgba(74, 222, 128, 0.2); color: var(--study); }
-.record-tag.medicine { background: rgba(248, 113, 113, 0.2); color: var(--medicine); }
-.record-tag.diary { background: rgba(251, 146, 60, 0.2); color: var(--diary); }
-.record-tag.comeback { background: rgba(56, 189, 248, 0.2); color: var(--comeback); }
+.record-tag.cleaning {
+    background: rgba(244, 114, 182, 0.2);
+    color: var(--cleaning);
+}
+
+.record-tag.exercise {
+    background: rgba(34, 211, 238, 0.2);
+    color: var(--exercise);
+}
+
+.record-tag.morning {
+    background: rgba(251, 191, 36, 0.2);
+    color: var(--morning);
+}
+
+.record-tag.planning {
+    background: rgba(167, 139, 250, 0.2);
+    color: var(--planning);
+}
+
+.record-tag.study {
+    background: rgba(74, 222, 128, 0.2);
+    color: var(--study);
+}
+
+.record-tag.medicine {
+    background: rgba(248, 113, 113, 0.2);
+    color: var(--medicine);
+}
+
+.record-tag.diary {
+    background: rgba(251, 146, 60, 0.2);
+    color: var(--diary);
+}
+
+.record-tag.comeback {
+    background: rgba(56, 189, 248, 0.2);
+    color: var(--comeback);
+}
 
 .status-badge {
     padding: 0.25rem 0.5rem;
@@ -1654,8 +1753,15 @@ header h1 {
 }
 
 @keyframes eventPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
 }
 
 /* 이벤트 배너 */
@@ -1733,9 +1839,17 @@ footer .tip {
 }
 
 @keyframes levelUp {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); }
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.2);
+    }
+
+    100% {
+        transform: scale(1);
+    }
 }
 
 .level-up {
@@ -1816,7 +1930,7 @@ footer .tip {
     margin-bottom: 1.5rem;
 }
 
-.login-box > p {
+.login-box>p {
     color: var(--text-muted);
     margin-bottom: 1.5rem;
 }
@@ -1904,7 +2018,9 @@ footer .tip {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .error-section {
