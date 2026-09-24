@@ -1,5 +1,4 @@
 import pyautokakao
-import time
 import re
 
 CHATROOM_TITLE = "ADHD 집중력 구조대 🚨 ADHD 친목·루틴·인증"
