@@ -17,8 +17,99 @@
  */
 
 // ========== 설정 ==========
-const SHEET_ID = 'YOUR_GOOGLE_SHEET_ID'; // 스프레드시트 ID (URL에서 복사)
+const SHEET_ID = '1BK33w3bZv0lqvL-VgLyi5dCjgNEJwj8V-Nwf2ygRi4g'; // 스프레드시트 ID (URL에서 복사)
 const ADMIN_PASSWORD = 'lurupl2024'; // 관리자 비밀번호
+
+// ========== 인증 카테고리 설정 ==========
+const CERT_CATEGORIES = {
+  cleaning: {
+    name: '청소',
+    emoji: '🧹',
+    exp: 2,
+    dailyLimit: 3,
+    tags: ['#청소', '#방청소', '#정리', '#설거지', '#빨래', '#집안일'],
+  },
+  exercise: {
+    name: '운동',
+    emoji: '🏃',
+    exp: 3,
+    dailyLimit: 2,
+    tags: ['#운동', '#헬스', '#러닝', '#산책', '#식단'],
+  },
+  morning: {
+    name: '기상',
+    emoji: '⏰',
+    exp: 2,
+    dailyLimit: 1,
+    tags: ['#기상', '#굿모닝', '#아침'],
+  },
+  planning: {
+    name: '계획',
+    emoji: '📋',
+    exp: 3,
+    dailyLimit: 1,
+    tags: ['#계획', '#계획표', '#투두', '#todo', '#할일'],
+  },
+  study: {
+    name: '공부',
+    emoji: '📚',
+    exp: 3,
+    dailyLimit: 3,
+    tags: ['#공부', '#스터디', '#독서', '#학습'],
+  },
+  medicine: {
+    name: '약',
+    emoji: '💊',
+    exp: 1,
+    dailyLimit: 1,
+    tags: ['#약', '#복약', '#약먹기', '#약복용', '#영양제'],
+  },
+  diary: {
+    name: '일기',
+    emoji: '📝',
+    exp: 2,
+    dailyLimit: 1,
+    tags: ['#일기', '#감사일기', '#하루기록', '#오늘하루', '#일상'],
+  },
+  meditation: {
+    name: '명상',
+    emoji: '🧘',
+    exp: 2,
+    dailyLimit: 2,
+    tags: ['#명상', '#마음챙김', '#호흡', '#묵상'],
+  },
+  comeback: {
+    name: '복귀',
+    emoji: '🔄',
+    exp: 3,
+    dailyLimit: 999,
+    cooldownHours: 72,
+    tags: ['#복귀', '#컴백', '#돌아왔어'],
+  },
+};
+
+// ========== 헬퍼 함수 ==========
+function findCategory(message) {
+  const lowerMessage = message.toLowerCase();
+  for (const [category, data] of Object.entries(CERT_CATEGORIES)) {
+    for (const tag of data.tags) {
+      if (lowerMessage.includes(tag.toLowerCase())) {
+        return category;
+      }
+    }
+  }
+  return null;
+}
+
+function extractTag(message, category) {
+  const data = CERT_CATEGORIES[category];
+  for (const tag of data.tags) {
+    if (message.toLowerCase().includes(tag.toLowerCase())) {
+      return tag;
+    }
+  }
+  return '';
+}
 
 // ========== GET 요청 처리 (데이터 조회) ==========
 function doGet(e) {
@@ -135,6 +226,11 @@ function doPost(e) {
       return createResponse({ success: true, message: '이벤트가 저장되었습니다.' });
     }
 
+    // 카카오톡 채팅 로그 처리 (자동화 스크립트에서 전송)
+    if (data.chat_logs) {
+      return processChatLogs(spreadsheet, data.chat_logs);
+    }
+
     // 기본: 인증 데이터 저장
     let sheet = spreadsheet.getSheetByName('Data');
 
@@ -211,4 +307,196 @@ function createResponse(data, callback) {
 function testGet() {
   const result = doGet({ parameter: {} });
   Logger.log(result.getContent());
+}
+
+// ========== 카카오톡 채팅 로그 처리 ==========
+function processChatLogs(spreadsheet, chatLogs) {
+  // 오늘 날짜 (한국 시간)
+  const now = new Date();
+  const koreaTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+  const today = Utilities.formatDate(koreaTime, 'Asia/Seoul', 'yyyy-MM-dd');
+  const currentTime = Utilities.formatDate(koreaTime, 'Asia/Seoul', 'HH:mm');
+
+  // 기존 데이터 로드
+  let existingData = loadExistingData(spreadsheet);
+
+  // 일일 인증 횟수 추적
+  const dailyCertCounts = {};
+
+  // 기존 records에서 오늘 인증 횟수 계산
+  if (existingData.records) {
+    existingData.records.forEach(record => {
+      if (record.date === today) {
+        const key = `${record.nickname}|${today}|${record.category}`;
+        dailyCertCounts[key] = (dailyCertCounts[key] || 0) + 1;
+      }
+    });
+  }
+
+  let newRecordsCount = 0;
+  let totalNewExp = 0;
+
+  // 채팅 로그 처리
+  chatLogs.forEach(log => {
+    const nickname = log.username.trim();
+    const message = log.chat;
+
+    // 카테고리 찾기
+    const category = findCategory(message);
+    if (!category) return;
+
+    // 일일 제한 체크
+    const dailyKey = `${nickname}|${today}|${category}`;
+    const currentCount = dailyCertCounts[dailyKey] || 0;
+    const dailyLimit = CERT_CATEGORIES[category].dailyLimit;
+
+    if (currentCount >= dailyLimit) {
+      console.log(`[일일 제한 초과] ${nickname} - ${category}: ${currentCount}/${dailyLimit}`);
+      return;
+    }
+
+    // 중복 체크 (같은 메시지가 이미 있는지)
+    const isDuplicate = existingData.records && existingData.records.some(r =>
+      r.date === today &&
+      r.nickname === nickname &&
+      r.message === message.trim()
+    );
+
+    if (isDuplicate) {
+      console.log(`[중복 스킵] ${nickname}: ${message.substring(0, 30)}...`);
+      return;
+    }
+
+    // 새 레코드 생성
+    const baseExp = CERT_CATEGORIES[category].exp;
+    const record = {
+      date: today,
+      time: currentTime,
+      nickname: nickname,
+      message: message.trim(),
+      category: category,
+      tag: extractTag(message, category),
+      baseExp: baseExp,
+      expMultiplier: 1,
+      exp: baseExp,
+      isEventBoost: false,
+      isValidMorning: category === 'morning' ? true : null,
+      isValidComeback: category === 'comeback' ? true : null,
+      comebackBonusExp: 0,
+      targetWakeTime: null,
+      isOverDailyLimit: false,
+      dailyCertNum: currentCount + 1,
+    };
+
+    // 데이터에 추가
+    if (!existingData.records) existingData.records = [];
+    existingData.records.push(record);
+
+    // 멤버 데이터 업데이트
+    if (!existingData.members) existingData.members = {};
+    if (!existingData.members[nickname]) {
+      existingData.members[nickname] = {
+        records: [],
+        totalCount: 0,
+        totalExp: 0,
+        categoryCount: {
+          cleaning: 0, exercise: 0, morning: 0, planning: 0,
+          study: 0, medicine: 0, diary: 0, meditation: 0, comeback: 0
+        }
+      };
+    }
+
+    existingData.members[nickname].records.push(record);
+    existingData.members[nickname].totalCount++;
+    existingData.members[nickname].totalExp += baseExp;
+    existingData.members[nickname].categoryCount[category]++;
+
+    // 일일 카운트 증가
+    dailyCertCounts[dailyKey] = currentCount + 1;
+
+    newRecordsCount++;
+    totalNewExp += baseExp;
+
+    console.log(`[인증 추가] ${nickname} - ${category} (+${baseExp} EXP)`);
+  });
+
+  // 전체 통계 업데이트
+  existingData.totalCount = (existingData.totalCount || 0) + newRecordsCount;
+  existingData.totalExp = (existingData.totalExp || 0) + totalNewExp;
+  existingData.lastUpdated = koreaTime.toISOString();
+
+  // 데이터 저장
+  if (newRecordsCount > 0) {
+    saveData(spreadsheet, existingData);
+  }
+
+  return createResponse({
+    success: true,
+    message: `${newRecordsCount}건의 인증이 처리되었습니다. (+${totalNewExp} EXP)`,
+    newRecords: newRecordsCount,
+    newExp: totalNewExp
+  });
+}
+
+// ========== 기존 데이터 로드 ==========
+function loadExistingData(spreadsheet) {
+  const sheet = spreadsheet.getSheetByName('Data');
+  if (!sheet) {
+    return { records: [], members: {}, totalCount: 0, totalExp: 0 };
+  }
+
+  const chunkCount = sheet.getRange('B1').getValue();
+  let jsonStr = '';
+
+  if (chunkCount && typeof chunkCount === 'number' && chunkCount > 0) {
+    for (let i = 1; i <= chunkCount; i++) {
+      const chunk = sheet.getRange(i, 1).getValue();
+      if (chunk) jsonStr += chunk;
+    }
+  } else {
+    jsonStr = sheet.getRange('A1').getValue();
+  }
+
+  if (!jsonStr) {
+    return { records: [], members: {}, totalCount: 0, totalExp: 0 };
+  }
+
+  try {
+    return JSON.parse(jsonStr);
+  } catch (e) {
+    console.log('기존 데이터 파싱 실패:', e.message);
+    return { records: [], members: {}, totalCount: 0, totalExp: 0 };
+  }
+}
+
+// ========== 데이터 저장 ==========
+function saveData(spreadsheet, data) {
+  let sheet = spreadsheet.getSheetByName('Data');
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet('Data');
+  }
+
+  const jsonStr = JSON.stringify(data);
+  const CHUNK_SIZE = 40000;
+  const chunks = [];
+
+  for (let i = 0; i < jsonStr.length; i += CHUNK_SIZE) {
+    chunks.push(jsonStr.substring(i, i + CHUNK_SIZE));
+  }
+
+  // 기존 데이터 클리어
+  const lastRow = Math.max(sheet.getLastRow(), 1);
+  if (lastRow > 0) {
+    sheet.getRange(1, 1, lastRow, 1).clearContent();
+  }
+
+  // 청크별 저장
+  chunks.forEach((chunk, index) => {
+    sheet.getRange(index + 1, 1).setValue(chunk);
+  });
+
+  sheet.getRange('B1').setValue(chunks.length);
+  sheet.getRange('C1').setValue(new Date().toISOString());
+
+  console.log(`데이터 저장 완료: ${chunks.length}개 청크, ${jsonStr.length}자`);
 }
