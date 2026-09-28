@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { DEFAULT_CATEGORIES } from '@/domain/categories';
 
 interface Achievement {
   key: string;
@@ -14,6 +15,36 @@ interface Achievement {
   achieved_at?: string;
 }
 
+// 해금 조건 설명 생성
+function getUnlockCondition(ach: Achievement): string {
+  const categoryName = ach.category && DEFAULT_CATEGORIES[ach.category]
+    ? DEFAULT_CATEGORIES[ach.category].name
+    : '';
+
+  switch (ach.type) {
+    case 'category_count':
+      return `${categoryName} ${ach.target}회 인증`;
+    case 'category_streak':
+      return `${categoryName} ${ach.target}일 연속 인증`;
+    case 'total_count':
+      return `총 ${ach.target}회 인증`;
+    case 'total_streak':
+      return `${ach.target}일 연속 인증`;
+    case 'daily_count':
+      return `하루에 ${ach.target}회 인증`;
+    case 'level':
+      return `레벨 ${ach.target} 달성`;
+    case 'exp':
+      return `${ach.target} EXP 획득`;
+    case 'monthly_exp':
+      return `한 달에 ${ach.target} EXP 획득`;
+    case 'category_master':
+      return `${categoryName} 마스터 달성`;
+    default:
+      return '조건 달성 시 해금';
+  }
+}
+
 interface AchievementsGridProps {
   memberId?: string;
 }
@@ -22,6 +53,7 @@ export function AchievementsGrid({ memberId }: AchievementsGridProps) {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [memberAchievements, setMemberAchievements] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAchievements();
@@ -117,15 +149,21 @@ export function AchievementsGrid({ memberId }: AchievementsGridProps) {
             {achs.map((ach) => {
               const isAchieved = memberAchievements.has(ach.key);
               const isHidden = ach.is_hidden && !isAchieved;
+              const isSpecial = category === 'special';
+              const showCondition = !isAchieved && !isHidden && !isSpecial && hoveredKey === ach.key;
 
               return (
                 <div
                   key={ach.key}
-                  className={`p-4 rounded-lg border transition-all ${
+                  className={`p-4 rounded-lg border transition-all relative ${
                     isAchieved
                       ? 'bg-primary/10 border-primary/30'
                       : 'bg-bg border-border opacity-40 grayscale'
-                  }`}
+                  } ${!isAchieved && !isHidden && !isSpecial ? 'cursor-pointer hover:opacity-60' : ''}`}
+                  onMouseEnter={() => !isAchieved && !isHidden && !isSpecial && setHoveredKey(ach.key)}
+                  onMouseLeave={() => setHoveredKey(null)}
+                  onTouchStart={() => !isAchieved && !isHidden && !isSpecial && setHoveredKey(ach.key)}
+                  onTouchEnd={() => setTimeout(() => setHoveredKey(null), 2000)}
                 >
                   <div className="flex items-start justify-between mb-2">
                     <span className={`text-2xl ${!isAchieved ? 'opacity-50' : ''}`}>
@@ -151,6 +189,14 @@ export function AchievementsGrid({ memberId }: AchievementsGridProps) {
                     <p className="text-xs text-text-muted mt-2 italic">
                       힌트: {ach.hint}
                     </p>
+                  )}
+
+                  {/* 해금 조건 툴팁 */}
+                  {showCondition && (
+                    <div className="absolute inset-0 bg-bg-card/95 rounded-lg border border-primary/50 p-3 flex flex-col items-center justify-center text-center z-10">
+                      <p className="text-xs text-text-muted mb-1">해금 조건</p>
+                      <p className="text-sm font-medium text-primary">{getUnlockCondition(ach)}</p>
+                    </div>
                   )}
                 </div>
               );
