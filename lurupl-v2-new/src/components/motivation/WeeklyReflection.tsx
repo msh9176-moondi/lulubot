@@ -14,7 +14,7 @@ interface WeeklyReflectionProps {
 
 export function WeeklyReflection({ memberId }: WeeklyReflectionProps) {
   const [currentWeekStart, setCurrentWeekStart] = useState(getWeekStart());
-  const [reflection, setReflection] = useState<WeeklyReflectionType | null>(null);
+  const [, setReflection] = useState<WeeklyReflectionType | null>(null);
   const [recentReflections, setRecentReflections] = useState<WeeklyReflectionType[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Play, Clock, Lightbulb, ArrowLeft, CheckCircle, X } from 'lucide-react';
+import { Play, Clock, Lightbulb, ArrowLeft, CheckCircle } from 'lucide-react';
 import { createStartAttempt, getPersonalReasons } from '@/lib/motivation-api';
 import type { ChallengeTemplate, PersonalReason } from '@/domain/motivation';
 import { DIFFICULTY_LABELS, DIFFICULTY_COLORS, getImportanceEmoji } from '@/domain/motivation';

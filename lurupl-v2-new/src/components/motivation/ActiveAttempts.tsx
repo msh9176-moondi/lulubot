@@ -14,7 +14,7 @@ export function ActiveAttempts({ memberId, onNewChallenge }: ActiveAttemptsProps
   const [activeAttempts, setActiveAttempts] = useState<StartAttempt[]>([]);
   const [recentAttempts, setRecentAttempts] = useState<StartAttempt[]>([]);
   const [loading, setLoading] = useState(true);
-  const [now, setNow] = useState(new Date());
+  const [, setNow] = useState(new Date());
 
   useEffect(() => {
     fetchAttempts();

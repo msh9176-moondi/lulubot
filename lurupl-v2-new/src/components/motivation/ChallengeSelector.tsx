@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Star, Clock, ChevronRight, Sparkles, Heart } from 'lucide-react';
+import { Clock, ChevronRight, Sparkles, Heart } from 'lucide-react';
 import { getChallengeTemplates, toggleFavoriteChallenge, getFavoriteChallenges } from '@/lib/motivation-api';
-import type { ChallengeTemplate, UserChallenge } from '@/domain/motivation';
+import type { ChallengeTemplate } from '@/domain/motivation';
 import { DIFFICULTY_LABELS, DIFFICULTY_COLORS } from '@/domain/motivation';
 import { DEFAULT_CATEGORIES, type CategoryKey, CATEGORY_COLORS } from '@/domain/categories';
 

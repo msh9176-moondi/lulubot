@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Heart, Sparkles, Play, Calendar, ChevronRight, Trophy } from 'lucide-react';
+import { Heart, Sparkles, Play, Calendar, ChevronRight } from 'lucide-react';
 import { PinSetup } from './PinSetup';
 import { MyReasons } from './MyReasons';
 import { ChallengeSelector } from './ChallengeSelector';
@@ -79,7 +79,7 @@ export function MotivationHub() {
     setView('start');
   }
 
-  function handleStarted(attemptId: string) {
+  function handleStarted(_attemptId: string) {
     setSelectedTemplate(null);
     setView('attempts');
   }
