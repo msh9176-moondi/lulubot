@@ -238,7 +238,11 @@ export function MotivationHub() {
       {/* Back to hub */}
       {view !== 'start' && (
         <button
-          onClick={() => setView('hub')}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setView('hub');
+          }}
           className="text-sm text-text-muted hover:text-text mb-4"
         >
           ← 메뉴로 돌아가기
