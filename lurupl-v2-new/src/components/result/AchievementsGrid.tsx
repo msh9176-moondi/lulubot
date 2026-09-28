@@ -22,24 +22,22 @@ function getUnlockCondition(ach: Achievement): string {
     : '';
 
   switch (ach.type) {
-    case 'category_count':
-      return `${categoryName} ${ach.target}회 인증`;
-    case 'category_streak':
+    case 'first':
+      return `${categoryName} 첫 인증`;
+    case 'weekly':
+      return `일주일간 ${categoryName} ${ach.target}회 인증`;
+    case 'streak':
       return `${categoryName} ${ach.target}일 연속 인증`;
-    case 'total_count':
-      return `총 ${ach.target}회 인증`;
-    case 'total_streak':
-      return `${ach.target}일 연속 인증`;
-    case 'daily_count':
-      return `하루에 ${ach.target}회 인증`;
-    case 'level':
-      return `레벨 ${ach.target} 달성`;
-    case 'exp':
-      return `${ach.target} EXP 획득`;
-    case 'monthly_exp':
-      return `한 달에 ${ach.target} EXP 획득`;
-    case 'category_master':
-      return `${categoryName} 마스터 달성`;
+    case 'monthly':
+      return `한 달간 ${categoryName} ${ach.target}회 인증`;
+    case 'early':
+      return `오전 6시 이전 기상 ${ach.target}회`;
+    case 'daily_variety':
+      return `하루에 ${ach.target}개 카테고리 인증`;
+    case 'weekly_variety':
+      return `일주일간 ${ach.target}개 카테고리 인증`;
+    case 'monthly_all':
+      return `한 달간 ${ach.target}개 카테고리 인증`;
     default:
       return '조건 달성 시 해금';
   }
