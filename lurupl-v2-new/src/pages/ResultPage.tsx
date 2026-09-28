@@ -148,7 +148,10 @@ export function ResultPage() {
             {TABS.map(tab => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setSelectedMemberId(null); // Close profile modal when switching tabs
+                }}
                 className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 text-sm sm:text-base font-medium border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'border-primary text-primary'
@@ -247,7 +250,10 @@ export function ResultPage() {
 
       <ProfileModal
         isOpen={!!selectedMemberId}
-        onClose={() => setSelectedMemberId(null)}
+        onClose={() => {
+          setSelectedMemberId(null);
+          window.location.hash = '';
+        }}
         memberId={selectedMemberId}
         yearMonth={selectedMonth}
       />
