@@ -38,6 +38,19 @@ function getUnlockCondition(ach: Achievement): string {
       return `일주일간 ${ach.target}개 카테고리 인증`;
     case 'monthly_all':
       return `한 달간 ${ach.target}개 카테고리 인증`;
+    // 히든 도전과제
+    case 'hidden_owl':
+      return `자정~새벽 4시 사이 인증`;
+    case 'hidden_santa':
+      return `12월 25일에 인증`;
+    case 'hidden_phoenix':
+      return `7일 이상 공백 후 복귀 인증`;
+    case 'hidden_perfect':
+      return `하루에 모든 카테고리 인증`;
+    case 'hidden_century':
+      return `총 ${ach.target}회 인증 달성`;
+    case 'hidden_ghost':
+      return `주말에만 ${ach.target}주 연속 인증`;
     default:
       return '조건 달성 시 해금';
   }
@@ -148,7 +161,13 @@ export function AchievementsGrid({ memberId }: AchievementsGridProps) {
               const isAchieved = memberAchievements.has(ach.key);
               const isHidden = ach.is_hidden && !isAchieved;
               const isSpecial = category === 'special';
-              const showCondition = !isAchieved && !isHidden && !isSpecial && hoveredKey === ach.key;
+              // 일반 도전과제: 미달성 시 조건 표시
+              const showNormalCondition = !isAchieved && !isHidden && !isSpecial && hoveredKey === ach.key;
+              // 특별 도전과제: 달성 시 조건 표시
+              const showSpecialCondition = isAchieved && isSpecial && hoveredKey === ach.key;
+              const showCondition = showNormalCondition || showSpecialCondition;
+              // 호버 가능 여부
+              const canHover = (!isAchieved && !isHidden && !isSpecial) || (isAchieved && isSpecial);
 
               return (
                 <div
@@ -157,10 +176,10 @@ export function AchievementsGrid({ memberId }: AchievementsGridProps) {
                     isAchieved
                       ? 'bg-primary/10 border-primary/30'
                       : 'bg-bg border-border opacity-40 grayscale'
-                  } ${!isAchieved && !isHidden && !isSpecial ? 'cursor-pointer hover:opacity-60' : ''}`}
-                  onMouseEnter={() => !isAchieved && !isHidden && !isSpecial && setHoveredKey(ach.key)}
+                  } ${canHover ? 'cursor-pointer hover:opacity-80' : ''}`}
+                  onMouseEnter={() => canHover && setHoveredKey(ach.key)}
                   onMouseLeave={() => setHoveredKey(null)}
-                  onTouchStart={() => !isAchieved && !isHidden && !isSpecial && setHoveredKey(ach.key)}
+                  onTouchStart={() => canHover && setHoveredKey(ach.key)}
                   onTouchEnd={() => setTimeout(() => setHoveredKey(null), 2000)}
                 >
                   <div className="flex items-start justify-between mb-2">
@@ -192,7 +211,9 @@ export function AchievementsGrid({ memberId }: AchievementsGridProps) {
                   {/* 해금 조건 툴팁 */}
                   {showCondition && (
                     <div className="absolute inset-0 bg-bg-card/95 rounded-lg border border-primary/50 p-3 flex flex-col items-center justify-center text-center z-10">
-                      <p className="text-xs text-text-muted mb-1">해금 조건</p>
+                      <p className="text-xs text-text-muted mb-1">
+                        {showSpecialCondition ? '달성 조건' : '해금 조건'}
+                      </p>
                       <p className="text-sm font-medium text-primary">{getUnlockCondition(ach)}</p>
                     </div>
                   )}
