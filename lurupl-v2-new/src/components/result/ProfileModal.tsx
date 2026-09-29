@@ -37,9 +37,6 @@ export function ProfileModal({ isOpen, onClose, memberId, yearMonth }: ProfileMo
   const [details, setDetails] = useState<MemberDetails | null>(null);
   const [certifications, setCertifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingWakeTime, setEditingWakeTime] = useState(false);
-  const [wakeTime, setWakeTime] = useState('07:00');
-  const [savingWakeTime, setSavingWakeTime] = useState(false);
 
   useEffect(() => {
     if (isOpen && memberId) {
@@ -155,7 +152,6 @@ export function ProfileModal({ isOpen, onClose, memberId, yearMonth }: ProfileMo
         total_category_counts: totalCategoryCounts,
         wake_up_time: memberData.wake_up_time,
       });
-      setWakeTime(memberData.wake_up_time || '07:00');
 
       // Fetch recent certifications
       const { data: recentCerts, error: recentError } = await supabase
@@ -172,27 +168,6 @@ export function ProfileModal({ isOpen, onClose, memberId, yearMonth }: ProfileMo
       console.error('Failed to fetch member details:', error);
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function handleSaveWakeTime() {
-    if (!memberId) return;
-    setSavingWakeTime(true);
-    try {
-      // RPC 함수 사용 (RLS 우회)
-      const { error } = await supabase.rpc('update_wake_time', {
-        p_member_id: memberId,
-        p_wake_time: wakeTime,
-      });
-
-      if (error) throw error;
-
-      setDetails((prev) => prev ? { ...prev, wake_up_time: wakeTime } : null);
-      setEditingWakeTime(false);
-    } catch (error) {
-      console.error('Failed to save wake time:', error);
-    } finally {
-      setSavingWakeTime(false);
     }
   }
 
@@ -279,47 +254,16 @@ export function ProfileModal({ isOpen, onClose, memberId, yearMonth }: ProfileMo
               />
             </div>
 
-            {/* Wake Time Setting */}
+            {/* Wake Time Display (읽기 전용 - 수정은 내 정보 탭에서) */}
             <div className="mt-4 p-3 bg-bg/50 rounded-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-lg">⏰</span>
                   <span className="text-sm text-text-muted">목표 기상 시간</span>
                 </div>
-                {editingWakeTime ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="time"
-                      value={wakeTime}
-                      onChange={(e) => setWakeTime(e.target.value)}
-                      className="bg-bg-card border border-border rounded px-2 py-1 text-sm text-text"
-                    />
-                    <button
-                      onClick={handleSaveWakeTime}
-                      disabled={savingWakeTime}
-                      className="px-3 py-1 bg-primary text-white rounded text-sm disabled:opacity-50"
-                    >
-                      {savingWakeTime ? '...' : '저장'}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setEditingWakeTime(false);
-                        setWakeTime(details.wake_up_time || '07:00');
-                      }}
-                      className="px-3 py-1 text-text-muted hover:text-text text-sm"
-                    >
-                      취소
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setEditingWakeTime(true)}
-                    className="flex items-center gap-2 px-3 py-1 bg-bg-card border border-border rounded text-sm text-text hover:border-primary/50 transition-colors"
-                  >
-                    <span className="font-medium">{details.wake_up_time || '07:00'}</span>
-                    <span className="text-text-muted text-xs">변경</span>
-                  </button>
-                )}
+                <span className="px-3 py-1 bg-bg-card border border-border rounded text-sm text-text font-medium">
+                  {details.wake_up_time || '미설정'}
+                </span>
               </div>
             </div>
           </div>
@@ -399,8 +343,8 @@ function OverviewTab({ details, memberId }: { details: MemberDetails; memberId: 
       {/* Category Title Progress */}
       <CategoryTitleProgress categoryCounts={details.total_category_counts} />
 
-      {/* Growth Garden */}
-      <GrowthGarden memberId={memberId} isOwnProfile={true} />
+      {/* Growth Garden (읽기 전용) */}
+      <GrowthGarden memberId={memberId} isOwnProfile={false} />
     </div>
   );
 }

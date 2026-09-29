@@ -4,18 +4,19 @@
  */
 
 import { useEffect, useState } from 'react';
-import { ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Sparkles, LogOut } from 'lucide-react';
 import { Badge, ProgressBar, Spinner } from '@/components/common';
 import { AchievementsGrid } from './AchievementsGrid';
 import { GrowthChart } from './GrowthChart';
 import { TimeHeatmap } from './TimeHeatmap';
 import { PersonalizedFeedback } from './PersonalizedFeedback';
 import { GrowthGarden } from '@/components/stages';
-import { PersonalMotivationHub } from '@/components/motivation';
+import { PersonalMotivationHub, PinSetup } from '@/components/motivation';
 import { supabase } from '@/lib/supabase';
 import { calculateLevel, getLevelTitle, getAccumulatedTitle, EXP_PER_LEVEL } from '@/domain/levels';
 import { DEFAULT_CATEGORIES, CATEGORY_COLORS, type CategoryKey } from '@/domain/categories';
 import { getCategoryTitle } from '@/domain/category-title';
+import { hasMemberPin, setMemberPin, verifyMemberPin } from '@/lib/motivation-api';
 
 interface Member {
   id: string;
@@ -37,9 +38,12 @@ interface MemberDetails {
   wake_up_time: string | null;
 }
 
+type ViewState = 'select-member' | 'pin' | 'profile';
+
 export function MemberProfilePage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  const [selectedMemberName, setSelectedMemberName] = useState<string>('');
   const [details, setDetails] = useState<MemberDetails | null>(null);
   const [certifications, setCertifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,6 +52,11 @@ export function MemberProfilePage() {
   const [wakeTime, setWakeTime] = useState('07:00');
   const [savingWakeTime, setSavingWakeTime] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+
+  // PIN authentication state
+  const [view, setView] = useState<ViewState>('select-member');
+  const [hasPin, setHasPin] = useState(false);
+  const [loadingPin, setLoadingPin] = useState(false);
 
   // Get current month
   const now = new Date();
@@ -58,10 +67,10 @@ export function MemberProfilePage() {
   }, []);
 
   useEffect(() => {
-    if (selectedMemberId) {
+    if (selectedMemberId && view === 'profile') {
       fetchDetails();
     }
-  }, [selectedMemberId, yearMonth]);
+  }, [selectedMemberId, yearMonth, view]);
 
   async function fetchMembers() {
     setLoading(true);
@@ -208,10 +217,52 @@ export function MemberProfilePage() {
     }
   }
 
-  const handleBack = () => {
+  // Handle member selection - check PIN first
+  async function handleMemberSelect(member: Member) {
+    setSelectedMemberId(member.id);
+    setSelectedMemberName(member.display_name);
+    setLoadingPin(true);
+    const pinExists = await hasMemberPin(member.id);
+    setHasPin(pinExists);
+    setLoadingPin(false);
+    setView('pin');
+  }
+
+  // Handle PIN set
+  async function handlePinSet(pin: string): Promise<boolean> {
+    if (!selectedMemberId) return false;
+    const success = await setMemberPin(selectedMemberId, pin);
+    if (success) {
+      setView('profile');
+    }
+    return success;
+  }
+
+  // Handle PIN verify
+  async function handlePinVerify(pin: string): Promise<boolean> {
+    if (!selectedMemberId) return false;
+    const success = await verifyMemberPin(selectedMemberId, pin);
+    if (success) {
+      setView('profile');
+    }
+    return success;
+  }
+
+  // Handle logout - go back to member selection
+  const handleLogout = () => {
     setSelectedMemberId(null);
+    setSelectedMemberName('');
     setDetails(null);
     setActiveTab('overview');
+    setView('select-member');
+  };
+
+  const handleBack = () => {
+    setSelectedMemberId(null);
+    setSelectedMemberName('');
+    setDetails(null);
+    setActiveTab('overview');
+    setView('select-member');
   };
 
   // Loading state
@@ -224,7 +275,7 @@ export function MemberProfilePage() {
   }
 
   // Member selection view
-  if (!selectedMemberId) {
+  if (view === 'select-member') {
     return (
       <div className="bg-bg-card rounded-xl border border-border p-6">
         <div className="text-center mb-6">
@@ -233,7 +284,7 @@ export function MemberProfilePage() {
           </div>
           <h2 className="text-xl font-bold text-text">개인 페이지</h2>
           <p className="text-text-muted mt-2">
-            본인의 프로필을 선택해서 상세 활동을 확인하세요
+            본인을 선택하고 PIN을 입력해서 상세 활동을 확인하세요
           </p>
         </div>
 
@@ -241,7 +292,7 @@ export function MemberProfilePage() {
           {members.map((member) => (
             <button
               key={member.id}
-              onClick={() => setSelectedMemberId(member.id)}
+              onClick={() => handleMemberSelect(member)}
               className="w-full p-4 bg-bg rounded-lg border border-border text-left hover:border-primary/30 hover:bg-bg-hover transition-colors flex items-center justify-between"
             >
               <span className="font-medium text-text">{member.display_name}</span>
@@ -251,6 +302,42 @@ export function MemberProfilePage() {
         </div>
       </div>
     );
+  }
+
+  // PIN verification view
+  if (view === 'pin' && selectedMemberId) {
+    return (
+      <div className="bg-bg-card rounded-xl border border-border p-6">
+        <button
+          onClick={handleBack}
+          className="text-sm text-text-muted hover:text-text mb-4 flex items-center gap-1"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          다른 멤버 선택
+        </button>
+
+        <div className="text-center mb-4">
+          <p className="text-lg font-medium text-text">{selectedMemberName}</p>
+        </div>
+
+        {loadingPin ? (
+          <div className="flex items-center justify-center py-12">
+            <Spinner size="lg" />
+          </div>
+        ) : (
+          <PinSetup
+            hasPin={hasPin}
+            onPinSet={handlePinSet}
+            onPinVerify={handlePinVerify}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Profile view - only show if authenticated
+  if (view !== 'profile' || !selectedMemberId) {
+    return null;
   }
 
   // Loading profile
@@ -284,15 +371,17 @@ export function MemberProfilePage() {
   ];
 
   return (
-    <div className="bg-bg-card rounded-xl border border-border overflow-hidden">
-      {/* Back Button */}
+    <div className="bg-bg-card rounded-2xl border border-border w-full max-w-2xl mx-auto overflow-hidden flex flex-col">
+      {/* Logout Button */}
       <button
-        onClick={handleBack}
+        onClick={handleLogout}
         className="flex items-center gap-2 px-6 py-3 text-sm text-text-muted hover:text-text transition-colors border-b border-border w-full text-left"
       >
-        <ChevronLeft className="w-4 h-4" />
-        <span>멤버 선택으로 돌아가기</span>
+        <LogOut className="w-4 h-4" />
+        <span>로그아웃</span>
       </button>
+
+      <div className="flex-1 overflow-y-auto">
 
       {/* Header */}
       <div className="px-6 py-6 border-b border-border bg-gradient-to-r from-primary/10 to-transparent">
@@ -467,7 +556,7 @@ export function MemberProfilePage() {
                     </div>
                   )}
 
-                  <GrowthGarden memberId={selectedMemberId} />
+                  <GrowthGarden memberId={selectedMemberId} isOwnProfile={true} />
                 </div>
               </div>
             )}
@@ -559,6 +648,7 @@ export function MemberProfilePage() {
             )}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
