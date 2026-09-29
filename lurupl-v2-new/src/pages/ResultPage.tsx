@@ -421,10 +421,10 @@ function SummaryTab({
         </div>
       </div>
 
-      {/* 3. Row: Category Pie + Time Distribution (PC: side by side, Mobile: stacked) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Category Pie Chart */}
-        <div className="bg-bg-card rounded-xl border border-border shadow-sm p-5 sm:p-[28px]">
+      {/* 3. Row: Category Pie + Time Distribution (PC: 4:8 ratio, Mobile: stacked) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Category Pie Chart (4 cols on PC - same as TOP 3) */}
+        <div className="lg:col-span-4 bg-bg-card rounded-xl border border-border shadow-sm p-5 sm:p-[28px]">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-text">카테고리별 활동</h3>
             <span className="text-sm text-text-muted">{totalCerts}건</span>
@@ -433,8 +433,8 @@ function SummaryTab({
           <CategoryPieChart yearMonth={yearMonth} />
         </div>
 
-        {/* Time Distribution */}
-        <div className="bg-bg-card rounded-xl border border-border shadow-sm p-5 sm:p-[28px]">
+        {/* Time Distribution (8 cols on PC - same as Weekly Activity) */}
+        <div className="lg:col-span-8 bg-bg-card rounded-xl border border-border shadow-sm p-5 sm:p-[28px]">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Clock className="w-5 h-5 text-primary" />
