@@ -14,3 +14,4 @@ export { TimeHeatmap } from './TimeHeatmap';
 export { PersonalizedFeedback } from './PersonalizedFeedback';
 export { MonthlyAwardsHistory } from './MonthlyAwardsHistory';
 export { DetailedRecords } from './DetailedRecords';
+export { MemberProfilePage } from './MemberProfilePage';
