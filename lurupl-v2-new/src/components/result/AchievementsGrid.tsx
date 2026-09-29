@@ -197,13 +197,13 @@ export function AchievementsGrid({ memberId }: AchievementsGridProps) {
               const isAchieved = memberAchievements.has(ach.key);
               const isHidden = ach.is_hidden && !isAchieved;
               const isSpecial = category === 'special';
-              // 일반 도전과제: 미달성 시 조건 표시
-              const showNormalCondition = !isAchieved && !isHidden && !isSpecial && hoveredKey === ach.key;
-              // 특별 도전과제: 달성 시 조건 표시
-              const showSpecialCondition = isAchieved && isSpecial && hoveredKey === ach.key;
-              const showCondition = showNormalCondition || showSpecialCondition;
-              // 호버 가능 여부
-              const canHover = (!isAchieved && !isHidden && !isSpecial) || (isAchieved && isSpecial);
+              // 미달성 도전과제: 히든이 아니고 특별도 아닐 때 조건 표시
+              const showUnachievedCondition = !isAchieved && !isHidden && !isSpecial && hoveredKey === ach.key;
+              // 달성한 도전과제: 어떻게 달성했는지 조건 표시
+              const showAchievedCondition = isAchieved && hoveredKey === ach.key;
+              const showCondition = showUnachievedCondition || showAchievedCondition;
+              // 호버 가능 여부: 달성했거나, 미달성이면서 히든/특별이 아닌 경우
+              const canHover = isAchieved || (!isAchieved && !isHidden && !isSpecial);
 
               return (
                 <div
@@ -248,7 +248,7 @@ export function AchievementsGrid({ memberId }: AchievementsGridProps) {
                   {showCondition && (
                     <div className="absolute inset-0 bg-bg-card/95 rounded-lg border border-primary/50 p-3 flex flex-col items-center justify-center text-center z-10">
                       <p className="text-xs text-text-muted mb-1">
-                        {showSpecialCondition ? '달성 조건' : '해금 조건'}
+                        {isAchieved ? '달성 조건' : '해금 조건'}
                       </p>
                       <p className="text-sm font-medium text-primary">{getUnlockCondition(ach)}</p>
                     </div>
