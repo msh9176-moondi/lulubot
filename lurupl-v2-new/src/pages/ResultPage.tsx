@@ -23,9 +23,11 @@ import {
   Trophy,
   Clock,
   TrendingUp,
+  Sparkles,
 } from 'lucide-react';
+import { MotivationHub } from '@/components/motivation';
 
-type TabId = 'summary' | 'guide' | 'challenges' | 'ranking';
+type TabId = 'summary' | 'guide' | 'challenges' | 'ranking' | 'motivation';
 
 interface Tab {
   id: TabId;
@@ -38,6 +40,7 @@ const TABS: Tab[] = [
   { id: 'guide', label: '가이드', icon: <Zap className="w-5 h-5" /> },
   { id: 'challenges', label: '도전', icon: <Target className="w-5 h-5" /> },
   { id: 'ranking', label: '랭킹', icon: <Users className="w-5 h-5" /> },
+  { id: 'motivation', label: '동기부여', icon: <Sparkles className="w-5 h-5" /> },
 ];
 
 export function ResultPage() {
@@ -213,6 +216,13 @@ export function ResultPage() {
 
                 {/* Detailed Records */}
                 <DetailedRecords yearMonth={selectedMonth} onMemberClick={setSelectedMemberId} />
+              </div>
+            )}
+
+            {/* Motivation Tab */}
+            {activeTab === 'motivation' && (
+              <div className="bg-bg-card rounded-xl border border-border shadow-sm p-6">
+                <MotivationHub />
               </div>
             )}
           </>

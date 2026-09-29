@@ -141,32 +141,54 @@ export function ChallengeSelector({ memberId, onSelect }: ChallengeSelectorProps
                 onClick={() => onSelect(template)}
                 className="p-4 bg-bg rounded-lg border border-border hover:border-primary/30 cursor-pointer transition-all hover:shadow-md group"
               >
-                <div className="flex items-start gap-3">
-                  {/* Category Icon */}
-                  <div
-                    className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl flex-shrink-0"
-                    style={{ backgroundColor: `${color}20` }}
-                  >
-                    {category.emoji}
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-medium text-text">{template.title}</h4>
-                      <span
-                        className="px-2 py-0.5 text-xs rounded-full"
-                        style={{
-                          backgroundColor: `${DIFFICULTY_COLORS[template.difficulty]}20`,
-                          color: DIFFICULTY_COLORS[template.difficulty],
-                        }}
-                      >
-                        {DIFFICULTY_LABELS[template.difficulty]}
-                      </span>
+                {/* Mobile: Stack layout / Desktop: Row layout */}
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                  {/* Top row on mobile: Icon + Title + Difficulty + Actions */}
+                  <div className="flex items-start gap-3 w-full sm:w-auto">
+                    {/* Category Icon */}
+                    <div
+                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-xl sm:text-2xl flex-shrink-0"
+                      style={{ backgroundColor: `${color}20` }}
+                    >
+                      {category.emoji}
                     </div>
 
+                    {/* Title & Difficulty - grows to fill */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start sm:items-center gap-2 flex-wrap">
+                        <h4 className="font-medium text-text text-sm sm:text-base leading-tight">{template.title}</h4>
+                        <span
+                          className="px-2 py-0.5 text-xs rounded-full whitespace-nowrap flex-shrink-0"
+                          style={{
+                            backgroundColor: `${DIFFICULTY_COLORS[template.difficulty]}20`,
+                            color: DIFFICULTY_COLORS[template.difficulty],
+                          }}
+                        >
+                          {DIFFICULTY_LABELS[template.difficulty]}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Actions - on the right */}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                        onClick={(e) => handleToggleFavorite(template.id, e)}
+                        className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
+                          isFavorite
+                            ? 'text-red-500 bg-red-500/10'
+                            : 'text-text-muted hover:text-red-500 hover:bg-red-500/10'
+                        }`}
+                      >
+                        <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${isFavorite ? 'fill-current' : ''}`} />
+                      </button>
+                      <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-text-muted group-hover:text-primary transition-colors" />
+                    </div>
+                  </div>
+
+                  {/* Description & Meta - full width below on mobile */}
+                  <div className="flex-1 min-w-0 sm:hidden">
                     {template.description && (
-                      <p className="text-sm text-text-muted mt-1 line-clamp-2">
+                      <p className="text-sm text-text-muted line-clamp-2">
                         {template.description}
                       </p>
                     )}
@@ -188,19 +210,29 @@ export function ChallengeSelector({ memberId, onSelect }: ChallengeSelectorProps
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={(e) => handleToggleFavorite(template.id, e)}
-                      className={`p-2 rounded-lg transition-colors ${
-                        isFavorite
-                          ? 'text-red-500 bg-red-500/10'
-                          : 'text-text-muted hover:text-red-500 hover:bg-red-500/10'
-                      }`}
-                    >
-                      <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
-                    </button>
-                    <ChevronRight className="w-5 h-5 text-text-muted group-hover:text-primary transition-colors" />
+                  {/* Desktop only: Description & Meta inline */}
+                  <div className="hidden sm:block flex-1 min-w-0">
+                    {template.description && (
+                      <p className="text-sm text-text-muted mt-1 line-clamp-2">
+                        {template.description}
+                      </p>
+                    )}
+
+                    <div className="flex items-center gap-3 mt-2 text-xs text-text-muted">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {template.duration_minutes}분
+                      </span>
+                      <span
+                        className="px-1.5 py-0.5 rounded"
+                        style={{
+                          backgroundColor: `${color}15`,
+                          color: color,
+                        }}
+                      >
+                        {category.name}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
