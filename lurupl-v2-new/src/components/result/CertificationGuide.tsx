@@ -125,24 +125,126 @@ export function CertificationGuide() {
       </div>
 
       {/* 레벨 시스템 설명 */}
-      <div className="mt-8 p-4 bg-accent/5 border border-accent/20 rounded-lg">
-        <h3 className="font-medium text-text mb-3 flex items-center gap-2">
+      <div className="mt-8 p-5 bg-accent/5 border border-accent/20 rounded-lg space-y-5">
+        <h3 className="font-semibold text-text flex items-center gap-2 text-base">
           <span>⭐</span> 레벨 시스템
         </h3>
-        <ul className="text-sm text-text-muted space-y-2">
-          <li className="flex items-start gap-2">
-            <span className="text-accent">•</span>
-            <span><strong className="text-text">5 EXP</strong> = 1 레벨 업</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-accent">•</span>
-            <span>누적 EXP로 <strong className="text-text">등급</strong> 상승 (뉴비 → 루키 → 브론즈 → ... → 마스터)</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-accent">•</span>
-            <span>매월 <strong className="text-text">MVP / 성장 / 도전</strong> 수상자 선정</span>
-          </li>
-        </ul>
+
+        {/* 기본 레벨업 */}
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium text-text flex items-center gap-2">
+            <span>📈</span> 레벨업 규칙
+          </h4>
+          <ul className="text-sm text-text-muted space-y-1.5 ml-6">
+            <li className="flex items-start gap-2">
+              <span className="text-accent">•</span>
+              <span><strong className="text-text">5 EXP</strong> 획득 시 1 레벨 상승</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-accent">•</span>
+              <span>레벨 1부터 시작, 상한선 없음</span>
+            </li>
+          </ul>
+        </div>
+
+        {/* 레벨 타이틀 */}
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium text-text flex items-center gap-2">
+            <span>🏷️</span> 레벨별 타이틀 (10레벨 순환)
+          </h4>
+          <div className="grid grid-cols-5 gap-2 ml-6">
+            {['새싹', '성장', '발전', '열정', '습관', '루틴', '마스터', '전문가', '영웅', '전설'].map((title, i) => (
+              <div key={title} className="text-center p-2 bg-bg-card rounded-lg border border-accent/30 shadow-sm">
+                <p className="text-xs text-accent">Lv.{i + 1}</p>
+                <p className="text-sm font-medium text-text">{title}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-text-muted ml-6">
+            * Lv.11부터는 타이틀에 등급 추가 (예: 새싹 II, 성장 III...)
+          </p>
+        </div>
+
+        {/* 누적 등급 */}
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium text-text flex items-center gap-2">
+            <span>🎖️</span> 누적 EXP 등급
+          </h4>
+          <div className="overflow-x-auto ml-6">
+            <div className="flex gap-2 pb-2">
+              {[
+                { exp: 0, title: '뉴비', icon: '🌱' },
+                { exp: 30, title: '루키', icon: '🥉' },
+                { exp: 80, title: '브론즈', icon: '🥈' },
+                { exp: 150, title: '실버', icon: '🥇' },
+                { exp: 300, title: '골드', icon: '⭐' },
+                { exp: 500, title: '플래티넘', icon: '💎' },
+                { exp: 800, title: '다이아', icon: '👑' },
+                { exp: 1200, title: '마스터', icon: '🔥' },
+                { exp: 2000, title: '그랜드마스터', icon: '⚡' },
+                { exp: 3000, title: '레전드', icon: '🏆' },
+              ].map((rank, i, arr) => (
+                <div key={rank.title} className="flex items-center">
+                  <div className="text-center p-2 bg-bg-card rounded-lg border border-accent/30 shadow-sm min-w-[72px]">
+                    <p className="text-lg">{rank.icon}</p>
+                    <p className="text-xs font-medium text-text">{rank.title}</p>
+                    <p className="text-[10px] text-accent">{rank.exp}+</p>
+                  </div>
+                  {i < arr.length - 1 && (
+                    <span className="text-accent mx-1">→</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 월간 수상 */}
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium text-text flex items-center gap-2">
+            <span>🏅</span> 월간 수상 제도
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 ml-6">
+            <div className="p-3 bg-bg-card rounded-lg border border-accent/30 shadow-sm">
+              <div className="flex items-center gap-2 mb-1">
+                <span>🏆</span>
+                <span className="font-medium text-text text-sm">MVP</span>
+              </div>
+              <p className="text-xs text-text-muted">월간 최다 EXP 획득자</p>
+            </div>
+            <div className="p-3 bg-bg-card rounded-lg border border-accent/30 shadow-sm">
+              <div className="flex items-center gap-2 mb-1">
+                <span>📈</span>
+                <span className="font-medium text-text text-sm">성장왕</span>
+              </div>
+              <p className="text-xs text-text-muted">전월 대비 가장 많이 성장</p>
+            </div>
+            <div className="p-3 bg-bg-card rounded-lg border border-accent/30 shadow-sm">
+              <div className="flex items-center gap-2 mb-1">
+                <span>🎯</span>
+                <span className="font-medium text-text text-sm">도전왕</span>
+              </div>
+              <p className="text-xs text-text-muted">가장 많은 도전과제 달성</p>
+            </div>
+          </div>
+        </div>
+
+        {/* 보너스 규칙 */}
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium text-text flex items-center gap-2">
+            <span>✨</span> 보너스 EXP
+          </h4>
+          <ul className="text-sm text-text-muted space-y-1.5 ml-6">
+            <li className="flex items-start gap-2">
+              <span className="text-accent">•</span>
+              <span><strong className="text-text">기상 보너스</strong>: 목표 시간 ±30분 내 인증 시 +1 EXP</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-accent">•</span>
+              <span><strong className="text-text">복귀 보너스</strong>: 72시간 이상 휴식 후 복귀 시 +2 EXP</span>
+            </li>
+          </ul>
+        </div>
       </div>
 
       {/* 인증 예시 */}

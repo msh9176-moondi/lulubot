@@ -4,6 +4,8 @@ import { AchievementsGrid } from './AchievementsGrid';
 import { GrowthChart } from './GrowthChart';
 import { TimeHeatmap } from './TimeHeatmap';
 import { PersonalizedFeedback } from './PersonalizedFeedback';
+import { GrowthGarden } from '@/components/stages';
+import { PersonalMotivationHub } from '@/components/motivation';
 import { supabase } from '@/lib/supabase';
 import { calculateLevel, getLevelTitle, getAccumulatedTitle, EXP_PER_LEVEL } from '@/domain/levels';
 import { DEFAULT_CATEGORIES } from '@/domain/categories';
@@ -197,7 +199,7 @@ export function ProfileModal({ isOpen, onClose, memberId, yearMonth }: ProfileMo
   if (!isOpen) return null;
 
   const tabs = [
-    { id: 'overview', label: '개요', icon: '📊' },
+    { id: 'overview', label: '개요', icon: '🌱' },
     { id: 'growth', label: '성장', icon: '📈' },
     { id: 'category', label: '카테고리', icon: '📁' },
     { id: 'time', label: '시간대', icon: '⏰' },
@@ -327,11 +329,14 @@ export function ProfileModal({ isOpen, onClose, memberId, yearMonth }: ProfileMo
             <Tabs tabs={tabs}>
               {(activeTab) => (
                 <div className="pb-6">
-                  {activeTab === 'overview' && (
-                    <OverviewTab details={details} memberId={memberId!} />
+                  {activeTab === 'overview' && memberId && (
+                    <OverviewTab details={details} memberId={memberId} />
                   )}
                   {activeTab === 'growth' && memberId && (
-                    <GrowthChart memberId={memberId} />
+                    <div className="space-y-6">
+                      <GrowthChart memberId={memberId} />
+                      <PersonalMotivationHub memberId={memberId} memberName={details.display_name} />
+                    </div>
                   )}
                   {activeTab === 'category' && (
                     <CategoryTab categoryCounts={details.category_counts} />
@@ -393,6 +398,9 @@ function OverviewTab({ details, memberId }: { details: MemberDetails; memberId: 
 
       {/* Category Title Progress */}
       <CategoryTitleProgress categoryCounts={details.total_category_counts} />
+
+      {/* Growth Garden */}
+      <GrowthGarden memberId={memberId} isOwnProfile={true} />
     </div>
   );
 }

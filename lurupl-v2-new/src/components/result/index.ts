@@ -12,6 +12,5 @@ export { EventBanners } from './EventBanners';
 export { GrowthChart } from './GrowthChart';
 export { TimeHeatmap } from './TimeHeatmap';
 export { PersonalizedFeedback } from './PersonalizedFeedback';
-export { ExportButtons } from './ExportButtons';
 export { MonthlyAwardsHistory } from './MonthlyAwardsHistory';
 export { DetailedRecords } from './DetailedRecords';

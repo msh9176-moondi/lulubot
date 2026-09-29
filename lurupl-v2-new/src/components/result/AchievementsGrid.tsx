@@ -51,6 +51,19 @@ function getUnlockCondition(ach: Achievement): string {
       return `총 ${ach.target}회 인증 달성`;
     case 'hidden_ghost':
       return `주말에만 ${ach.target}주 연속 인증`;
+    // 랭킹 도전과제
+    case 'ranking_first':
+      return `월간 랭킹 1위 달성`;
+    case 'ranking_second':
+      return `월간 랭킹 2위 달성`;
+    case 'ranking_third':
+      return `월간 랭킹 3위 달성`;
+    case 'ranking_first_count':
+      return `월간 1위 ${ach.target}회 달성`;
+    case 'ranking_top3_count':
+      return `월간 TOP3 ${ach.target}회 달성`;
+    case 'ranking_top3_streak':
+      return `${ach.target}개월 연속 TOP3 달성`;
     default:
       return '조건 달성 시 해금';
   }
@@ -59,6 +72,16 @@ function getUnlockCondition(ach: Achievement): string {
 interface AchievementsGridProps {
   memberId?: string;
 }
+
+// 랭킹 도전과제 정적 데이터 (DB 마이그레이션 전 표시용)
+const RANKING_ACHIEVEMENTS: Achievement[] = [
+  { key: 'ranking_first', name: '챔피언', emoji: '👑', category: null, type: 'ranking_first', target: 1, difficulty: 4, is_hidden: false, hint: null },
+  { key: 'ranking_second', name: '준우승', emoji: '🥈', category: null, type: 'ranking_second', target: 1, difficulty: 3, is_hidden: false, hint: null },
+  { key: 'ranking_third', name: '입상', emoji: '🥉', category: null, type: 'ranking_third', target: 1, difficulty: 3, is_hidden: false, hint: null },
+  { key: 'ranking_first_3', name: '트리플 챔피언', emoji: '🏆', category: null, type: 'ranking_first_count', target: 3, difficulty: 4, is_hidden: false, hint: null },
+  { key: 'ranking_top3_5', name: '명예의 전당', emoji: '🌟', category: null, type: 'ranking_top3_count', target: 5, difficulty: 4, is_hidden: false, hint: null },
+  { key: 'ranking_top3_streak', name: '스테디셀러', emoji: '💎', category: null, type: 'ranking_top3_streak', target: 3, difficulty: 4, is_hidden: true, hint: '꾸준함이 빛을 발할 때' },
+];
 
 export function AchievementsGrid({ memberId }: AchievementsGridProps) {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
@@ -94,9 +117,15 @@ export function AchievementsGrid({ memberId }: AchievementsGridProps) {
         setMemberAchievements(new Set(achieved?.map((a) => a.achievement_key) || []));
       }
 
-      setAchievements(definitions || []);
+      // DB 데이터 + 랭킹 도전과제 (중복 제거)
+      const dbAchievements = definitions || [];
+      const existingKeys = new Set(dbAchievements.map(a => a.key));
+      const rankingToAdd = RANKING_ACHIEVEMENTS.filter(a => !existingKeys.has(a.key));
+
+      setAchievements([...dbAchievements, ...rankingToAdd]);
     } catch (error) {
       console.error('Failed to fetch achievements:', error);
+      setAchievements(RANKING_ACHIEVEMENTS);
     } finally {
       setLoading(false);
     }
@@ -129,9 +158,14 @@ export function AchievementsGrid({ memberId }: AchievementsGridProps) {
     );
   }
 
-  // Group by category
+  // Group by category (ranking achievements get their own group)
   const grouped = achievements.reduce((acc, ach) => {
-    const cat = ach.category || 'special';
+    let cat: string;
+    if (ach.type.startsWith('ranking_')) {
+      cat = 'ranking';
+    } else {
+      cat = ach.category || 'special';
+    }
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(ach);
     return acc;
@@ -146,6 +180,7 @@ export function AchievementsGrid({ memberId }: AchievementsGridProps) {
     medicine: '💊 약',
     diary: '📝 일기',
     meditation: '🧘 명상',
+    ranking: '🏆 랭킹',
     special: '🌈 특별',
   };
 

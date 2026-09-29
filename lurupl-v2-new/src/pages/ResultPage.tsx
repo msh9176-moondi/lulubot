@@ -5,12 +5,10 @@ import {
   ProfileModal,
   AchievementsGuide,
   CertificationGuide,
-  ExportButtons,
   CategoryPieChart,
   MonthlyAwardsHistory,
   DetailedRecords,
 } from '@/components/result';
-import { MotivationHub } from '@/components/motivation';
 import { Spinner } from '@/components/common';
 import { supabase } from '@/lib/supabase';
 import { calculateLevel, getLevelTitle, getExpForNextLevel, EXP_PER_LEVEL } from '@/domain/levels';
@@ -25,10 +23,9 @@ import {
   Trophy,
   Clock,
   TrendingUp,
-  Sparkles,
 } from 'lucide-react';
 
-type TabId = 'summary' | 'guide' | 'challenges' | 'motivation' | 'ranking';
+type TabId = 'summary' | 'guide' | 'challenges' | 'ranking';
 
 interface Tab {
   id: TabId;
@@ -40,7 +37,6 @@ const TABS: Tab[] = [
   { id: 'summary', label: '요약', icon: <BarChart3 className="w-5 h-5" /> },
   { id: 'guide', label: '가이드', icon: <Zap className="w-5 h-5" /> },
   { id: 'challenges', label: '도전', icon: <Target className="w-5 h-5" /> },
-  { id: 'motivation', label: '동기부여', icon: <Sparkles className="w-5 h-5" /> },
   { id: 'ranking', label: '랭킹', icon: <Users className="w-5 h-5" /> },
 ];
 
@@ -132,9 +128,6 @@ export function ResultPage() {
                 </button>
               </div>
 
-              {/* Export */}
-              <ExportButtons yearMonth={selectedMonth} />
-
               {lastUpdated && (
                 <span className="text-xs text-text-muted hidden lg:block">
                   {lastUpdated} 기준
@@ -198,31 +191,9 @@ export function ResultPage() {
               <AchievementsGuide />
             )}
 
-            {/* Motivation Tab */}
-            {activeTab === 'motivation' && (
-              <MotivationHub />
-            )}
-
             {/* Ranking Tab */}
             {activeTab === 'ranking' && (
               <div className="space-y-6">
-                {/* Rewards Banner */}
-                <div className="bg-gradient-to-r from-gold/20 via-gold/10 to-transparent rounded-xl border border-gold/30 p-[28px]">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                    <div className="w-14 h-14 rounded-full bg-gold/30 flex items-center justify-center text-3xl">
-                      🎁
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-text">이번 달 보상</h3>
-                      <p className="text-text-muted mt-1">꾸준함에 대한 선물을 드립니다</p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <span className="px-3 py-1.5 bg-gold/20 text-gold rounded-full text-sm font-medium">🥇 1위: 특별 상품</span>
-                      <span className="px-3 py-1.5 bg-bg text-text-muted rounded-full text-sm">🎲 랜덤 추첨</span>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Leaderboard */}
                 <div className="bg-bg-card rounded-xl border border-border shadow-sm">
                   <div className="px-6 py-5 border-b border-border">
