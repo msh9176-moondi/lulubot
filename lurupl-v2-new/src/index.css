@@ -77,3 +77,150 @@ body {
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* ============================================
+   Stage System Animations
+   카테고리 스테이지 해금 시스템 애니메이션
+   ============================================ */
+
+/* 이모티콘 드롭 애니메이션 */
+@keyframes emoji-drop {
+  0% {
+    transform: translateY(-20px) scale(0.5);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(3px) scale(1.1);
+    opacity: 1;
+  }
+  80% {
+    transform: translateY(-2px) scale(0.95);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-emoji-drop {
+  animation: emoji-drop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* 파티클 버스트 애니메이션 */
+@keyframes particle-burst {
+  0% {
+    transform: scale(0) translate(0, 0);
+    opacity: 1;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translate(
+      calc((var(--random-x, 0) - 0.5) * 200px),
+      calc((var(--random-y, 0) - 0.5) * 200px)
+    );
+    opacity: 0;
+  }
+}
+
+.animate-particle-burst {
+  --random-x: 0.5;
+  --random-y: 0.5;
+  animation: particle-burst 1s ease-out forwards;
+}
+
+/* 빛 펄스 애니메이션 */
+@keyframes glow-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.6;
+  }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 1.5s ease-in-out infinite;
+}
+
+/* 떠오르는 애니메이션 */
+@keyframes float-up {
+  0% {
+    transform: translateY(20px) scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(-10px) scale(1.05);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-float-up {
+  animation: float-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* 페이드인 + 위로 이동 */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s ease-out forwards;
+  opacity: 0;
+}
+
+/* 부드러운 펄스 (해금 가능 표시용) */
+@keyframes pulse-subtle {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(77, 99, 214, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(77, 99, 214, 0);
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+/* 반짝임 효과 (진행바) */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+/* 움직임 축소 모드 */
+@media (prefers-reduced-motion: reduce) {
+  .animate-emoji-drop,
+  .animate-particle-burst,
+  .animate-glow-pulse,
+  .animate-float-up,
+  .animate-fade-in-up,
+  .animate-pulse-subtle,
+  .animate-shimmer {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

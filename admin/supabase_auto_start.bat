@@ -13,7 +13,7 @@ cd /d "%~dp0"
 
 REM 필요한 패키지 설치
 echo 패키지 확인 중...
-pip install pyautokakao supabase -q
+pip install pyautokakao supabase pyautogui pygetwindow pyperclip pywin32 -q
 
 echo.
 python kakao_supabase_auto.py
