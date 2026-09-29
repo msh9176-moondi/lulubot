@@ -3,7 +3,6 @@ import { useMembersStore } from '@/stores/membersStore';
 import {
   Leaderboard,
   ProfileModal,
-  AchievementsGuide,
   CertificationGuide,
   CategoryPieChart,
   MonthlyAwardsHistory,
@@ -15,7 +14,6 @@ import { supabase } from '@/lib/supabase';
 import { calculateLevel, getLevelTitle, getExpForNextLevel, EXP_PER_LEVEL } from '@/domain/levels';
 import {
   BarChart3,
-  Target,
   Users,
   Calendar,
   ChevronLeft,
@@ -27,7 +25,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-type TabId = 'summary' | 'guide' | 'challenges' | 'ranking' | 'motivation';
+type TabId = 'summary' | 'ranking' | 'guide' | 'motivation';
 
 interface Tab {
   id: TabId;
@@ -37,9 +35,8 @@ interface Tab {
 
 const TABS: Tab[] = [
   { id: 'summary', label: '요약', icon: <BarChart3 className="w-5 h-5" /> },
-  { id: 'guide', label: '가이드', icon: <Zap className="w-5 h-5" /> },
-  { id: 'challenges', label: '도전', icon: <Target className="w-5 h-5" /> },
   { id: 'ranking', label: '랭킹', icon: <Users className="w-5 h-5" /> },
+  { id: 'guide', label: '가이드', icon: <Zap className="w-5 h-5" /> },
   { id: 'motivation', label: '내 정보', icon: <Sparkles className="w-5 h-5" /> },
 ];
 
@@ -184,16 +181,6 @@ export function ResultPage() {
               />
             )}
 
-            {/* Guide Tab */}
-            {activeTab === 'guide' && (
-              <CertificationGuide />
-            )}
-
-            {/* Challenges Tab */}
-            {activeTab === 'challenges' && (
-              <AchievementsGuide />
-            )}
-
             {/* Ranking Tab */}
             {activeTab === 'ranking' && (
               <div className="space-y-6">
@@ -217,6 +204,11 @@ export function ResultPage() {
                 {/* Detailed Records */}
                 <DetailedRecords yearMonth={selectedMonth} onMemberClick={setSelectedMemberId} />
               </div>
+            )}
+
+            {/* Guide Tab */}
+            {activeTab === 'guide' && (
+              <CertificationGuide />
             )}
 
             {/* Motivation Tab - 개인 페이지 */}
