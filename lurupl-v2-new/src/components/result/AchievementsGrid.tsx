@@ -182,7 +182,7 @@ export function AchievementsGrid({ memberId }: AchievementsGridProps) {
     diary: '📝 일기',
     meditation: '🧘 명상',
     ranking: '🏆 랭킹',
-    special: '🌈 특별',
+    special: '🔮 히든',
   };
 
   return (
