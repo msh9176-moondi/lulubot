@@ -360,38 +360,6 @@ function SummaryTab({
 
   return (
     <div className="space-y-8">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <SummaryCard
-          icon={<Zap className="w-6 h-6 text-primary" />}
-          label={`${yearMonth.split('-')[1]}월 총 인증`}
-          value={totalCerts}
-          unit="회"
-          sub={`${totalExp.toLocaleString()} EXP 획득`}
-        />
-        <SummaryCard
-          icon={<TrendingUp className="w-6 h-6 text-primary" />}
-          label={`이번 주 인증 (${weeklyData?.range || ''})`}
-          value={weeklyData?.total ?? '-'}
-          unit="회"
-          sub="월~일 기준"
-        />
-        <SummaryCard
-          icon={<Users className="w-6 h-6 text-primary" />}
-          label="이번 달 참여자"
-          value={activeMembers}
-          unit="명"
-          sub={`전체 ${totalMembers}명 중`}
-        />
-        <SummaryCard
-          icon={<Trophy className="w-6 h-6 text-primary" />}
-          label="이번 달 총 EXP"
-          value={totalExp.toLocaleString()}
-          unit=""
-          sub="전체 획득 경험치"
-        />
-      </div>
-
       {/* Top 1 Level Card */}
       {top3.length > 0 && <TopRankerCard member={top3[0]} onMemberClick={onMemberClick} />}
 
@@ -530,6 +498,38 @@ function SummaryTab({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Summary Cards - 맨 아래 */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <SummaryCard
+          icon={<Zap className="w-6 h-6 text-primary" />}
+          label={`${yearMonth.split('-')[1]}월 총 인증`}
+          value={totalCerts}
+          unit="회"
+          sub={`${totalExp.toLocaleString()} EXP 획득`}
+        />
+        <SummaryCard
+          icon={<TrendingUp className="w-6 h-6 text-primary" />}
+          label={`이번 주 인증 (${weeklyData?.range || ''})`}
+          value={weeklyData?.total ?? '-'}
+          unit="회"
+          sub="월~일 기준"
+        />
+        <SummaryCard
+          icon={<Users className="w-6 h-6 text-primary" />}
+          label="이번 달 참여자"
+          value={activeMembers}
+          unit="명"
+          sub={`전체 ${totalMembers}명 중`}
+        />
+        <SummaryCard
+          icon={<Trophy className="w-6 h-6 text-primary" />}
+          label="이번 달 총 EXP"
+          value={totalExp.toLocaleString()}
+          unit=""
+          sub="전체 획득 경험치"
+        />
       </div>
     </div>
   );
