@@ -12,7 +12,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { X, Volume2, VolumeX } from 'lucide-react';
-import { CATEGORIES, type CategoryKey } from '@/domain/categories';
+import { CATEGORIES } from '@/domain/categories';
 import { useStageStore } from '@/stores/stageStore';
 import { prefersReducedMotion } from '@/domain/stages';
 

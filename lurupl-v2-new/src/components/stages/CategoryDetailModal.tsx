@@ -8,7 +8,7 @@ import { X, ChevronLeft, ChevronRight, Calendar, Lock, Unlock, Sparkles } from '
 import { CATEGORIES, type CategoryKey } from '@/domain/categories';
 import { supabase } from '@/lib/supabase';
 import { useStageStore } from '@/stores/stageStore';
-import type { StageDefinition, CategoryStageStatus } from '@/domain/stages';
+import type { StageDefinition } from '@/domain/stages';
 
 interface CategoryDetailModalProps {
   isOpen: boolean;

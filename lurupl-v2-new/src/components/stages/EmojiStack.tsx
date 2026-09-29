@@ -86,7 +86,7 @@ export const EmojiStack = memo(function EmojiStack({
   };
 
   // 개별 이모티콘 렌더링
-  const renderEmoji = (index: number, rowIndex: number, colIndex: number) => {
+  const renderEmoji = (index: number, _rowIndex: number, colIndex: number) => {
     const isNew = animatedIndices.has(index);
     const isInteractive = interactive && onEmojiClick;
 

@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Heart, Sparkles, Play, Calendar, ChevronRight, Lock } from 'lucide-react';
+import { Heart, Sparkles, Play, Calendar, Lock } from 'lucide-react';
 import { PinSetup } from './PinSetup';
 import { MyReasons } from './MyReasons';
 import { ChallengeSelector } from './ChallengeSelector';

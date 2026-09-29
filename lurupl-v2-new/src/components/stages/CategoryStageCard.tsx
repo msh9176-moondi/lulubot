@@ -205,7 +205,7 @@ export function CategoryStageCard({
           showCount={true}
           stageLevel={status.currentStage}
           interactive
-          onEmojiClick={(index) => onDetailClick?.()}
+          onEmojiClick={() => onDetailClick?.()}
         />
       </div>
 

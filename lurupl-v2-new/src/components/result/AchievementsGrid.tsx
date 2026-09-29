@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { DEFAULT_CATEGORIES } from '@/domain/categories';
+import { DEFAULT_CATEGORIES, type CategoryKey } from '@/domain/categories';
 
 interface Achievement {
   key: string;
@@ -17,8 +17,9 @@ interface Achievement {
 
 // 해금 조건 설명 생성
 function getUnlockCondition(ach: Achievement): string {
-  const categoryName = ach.category && DEFAULT_CATEGORIES[ach.category]
-    ? DEFAULT_CATEGORIES[ach.category].name
+  const catKey = ach.category as CategoryKey | null;
+  const categoryName = catKey && DEFAULT_CATEGORIES[catKey]
+    ? DEFAULT_CATEGORIES[catKey].name
     : '';
 
   switch (ach.type) {

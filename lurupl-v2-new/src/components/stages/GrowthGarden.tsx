@@ -179,7 +179,7 @@ export function GrowthGarden({ memberId, isOwnProfile = false }: GrowthGardenPro
 
       {/* 카테고리 그리드 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {sortedCategories.map(({ key, status, category }) => (
+        {sortedCategories.map(({ key, status }) => (
           <CategoryStageCard
             key={key}
             memberId={memberId}
