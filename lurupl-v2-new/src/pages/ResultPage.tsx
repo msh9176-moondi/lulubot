@@ -363,128 +363,138 @@ function SummaryTab({
       {/* 1. Top 1 Level Card */}
       {top3.length > 0 && <TopRankerCard member={top3[0]} onMemberClick={onMemberClick} />}
 
-      {/* 2. Top 3 Preview */}
-      <div className="bg-bg-card rounded-xl border border-border shadow-sm p-5 sm:p-[28px]">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-semibold text-text">이번 달 TOP 3</h3>
-          <button
-            onClick={() => onTabChange('ranking')}
-            className="text-sm text-primary hover:underline"
-          >
-            전체 순위 →
-          </button>
-        </div>
-        <p className="text-sm text-text-muted mb-4">이번 달 가장 열심히 인증한 멤버들입니다</p>
-
-        <div className="space-y-3">
-          {top3.map((member, idx) => {
-            const level = calculateLevel(member.monthly_exp);
-            const levelTitle = getLevelTitle(level);
-            const rankColors = ['text-gold', 'text-silver', 'text-bronze'];
-
-            return (
-              <div
-                key={member.id}
-                onClick={() => onMemberClick(member.id)}
-                className="flex items-center gap-3 sm:gap-4 p-3 rounded-lg hover:bg-bg-hover cursor-pointer transition-colors"
+      {/* 2. Row: TOP 3 + Weekly Activity (PC: side by side, Mobile: stacked) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Top 3 Preview (4 cols on PC) */}
+        <div className="lg:col-span-4">
+          <div className="bg-bg-card rounded-xl border border-border shadow-sm p-5 sm:p-[28px] h-full">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-text">이번 달 TOP 3</h3>
+              <button
+                onClick={() => onTabChange('ranking')}
+                className="text-sm text-primary hover:underline"
               >
-                <span className={`text-xl sm:text-2xl font-bold ${rankColors[idx]} w-6 sm:w-8`}>
-                  {idx + 1}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-text truncate">{member.display_name}</p>
-                  <p className="text-sm text-text-muted">Lv.{level} {levelTitle}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-primary">{member.monthly_exp}</p>
-                  <p className="text-xs text-text-muted">EXP</p>
-                </div>
-              </div>
-            );
-          })}
+                전체 순위 →
+              </button>
+            </div>
+            <p className="text-sm text-text-muted mb-4">이번 달 가장 열심히 인증한 멤버들입니다</p>
 
-          {top3.length === 0 && (
-            <div className="text-center py-8 text-text-muted">
-              아직 인증 데이터가 없습니다
+            <div className="space-y-3">
+              {top3.map((member, idx) => {
+                const level = calculateLevel(member.monthly_exp);
+                const levelTitle = getLevelTitle(level);
+                const rankColors = ['text-gold', 'text-silver', 'text-bronze'];
+
+                return (
+                  <div
+                    key={member.id}
+                    onClick={() => onMemberClick(member.id)}
+                    className="flex items-center gap-3 sm:gap-4 p-3 rounded-lg hover:bg-bg-hover cursor-pointer transition-colors"
+                  >
+                    <span className={`text-xl sm:text-2xl font-bold ${rankColors[idx]} w-6 sm:w-8`}>
+                      {idx + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-text truncate">{member.display_name}</p>
+                      <p className="text-sm text-text-muted">Lv.{level} {levelTitle}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-primary">{member.monthly_exp}</p>
+                      <p className="text-xs text-text-muted">EXP</p>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {top3.length === 0 && (
+                <div className="text-center py-8 text-text-muted">
+                  아직 인증 데이터가 없습니다
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Weekly Activity Chart (8 cols on PC) */}
+        <div className="lg:col-span-8">
+          <WeeklyActivityChart yearMonth={yearMonth} />
+        </div>
+      </div>
+
+      {/* 3. Row: Category Pie + Time Distribution (PC: side by side, Mobile: stacked) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Category Pie Chart */}
+        <div className="bg-bg-card rounded-xl border border-border shadow-sm p-5 sm:p-[28px]">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-text">카테고리별 활동</h3>
+            <span className="text-sm text-text-muted">{totalCerts}건</span>
+          </div>
+          <p className="text-sm text-text-muted mb-5">어떤 영역에서 가장 활발하게 인증하고 있는지 확인하세요</p>
+          <CategoryPieChart yearMonth={yearMonth} />
+        </div>
+
+        {/* Time Distribution */}
+        <div className="bg-bg-card rounded-xl border border-border shadow-sm p-5 sm:p-[28px]">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-primary" />
+              <h3 className="text-lg font-semibold text-text">시간대별 활동</h3>
+            </div>
+            <span className="text-sm text-text-muted">총 {hourlyTotal}회</span>
+          </div>
+          <p className="text-sm text-text-muted mb-6">하루 중 언제 가장 활발하게 인증하는지 확인하세요</p>
+
+          {hourlyTotal > 0 ? (
+            <>
+              {/* Chart */}
+              <div className="h-40 mb-4 flex items-end gap-[2px]">
+                {hourlyData.map((count, hour) => {
+                  const heightPercent = (count / maxHourly) * 100;
+                  const barHeight = count > 0 ? Math.max(heightPercent, 8) : 3;
+                  return (
+                    <div
+                      key={hour}
+                      className="flex-1 group relative flex flex-col justify-end h-full"
+                    >
+                      <div
+                        className="w-full bg-primary rounded-t transition-all hover:bg-primary-dark"
+                        style={{ height: `${barHeight}%` }}
+                      />
+                      {/* Tooltip */}
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-text text-bg-card text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                        {hour}시: {count}회
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* X-axis */}
+              <div className="flex justify-between text-xs text-text-muted border-t border-border pt-2">
+                <span>0시</span>
+                <span>6시</span>
+                <span>12시</span>
+                <span>18시</span>
+                <span>24시</span>
+              </div>
+
+              {/* Summary */}
+              <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 pt-4 border-t border-border text-sm">
+                <span className="text-text-muted">새벽(0-6시): <span className="text-text font-medium">{nightCount}회</span></span>
+                <span className="text-text-muted">오전(6-12시): <span className="text-text font-medium">{morningCount}회</span></span>
+                <span className="text-text-muted">오후(12-18시): <span className="text-text font-medium">{afternoonCount}회</span></span>
+                <span className="text-text-muted">저녁(18-24시): <span className="text-text font-medium">{eveningCount}회</span></span>
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-40 text-text-muted">
+              이번 달 시간 데이터가 없습니다
             </div>
           )}
         </div>
       </div>
 
-      {/* 3. Weekly Activity Chart */}
-      <WeeklyActivityChart yearMonth={yearMonth} />
-
-      {/* 4. Category Pie Chart */}
-      <div className="bg-bg-card rounded-xl border border-border shadow-sm p-5 sm:p-[28px]">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-text">카테고리별 활동</h3>
-          <span className="text-sm text-text-muted">{totalCerts}건</span>
-        </div>
-        <p className="text-sm text-text-muted mb-5">어떤 영역에서 가장 활발하게 인증하고 있는지 확인하세요</p>
-        <CategoryPieChart yearMonth={yearMonth} />
-      </div>
-
-      {/* 5. Time Distribution */}
-      <div className="bg-bg-card rounded-xl border border-border shadow-sm p-5 sm:p-[28px]">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-semibold text-text">시간대별 활동</h3>
-          </div>
-          <span className="text-sm text-text-muted">총 {hourlyTotal}회</span>
-        </div>
-        <p className="text-sm text-text-muted mb-6">하루 중 언제 가장 활발하게 인증하는지 확인하세요</p>
-
-        {hourlyTotal > 0 ? (
-          <>
-            {/* Chart */}
-            <div className="h-40 mb-4 flex items-end gap-[2px]">
-              {hourlyData.map((count, hour) => {
-                const heightPercent = (count / maxHourly) * 100;
-                const barHeight = count > 0 ? Math.max(heightPercent, 8) : 3;
-                return (
-                  <div
-                    key={hour}
-                    className="flex-1 group relative flex flex-col justify-end h-full"
-                  >
-                    <div
-                      className="w-full bg-primary rounded-t transition-all hover:bg-primary-dark"
-                      style={{ height: `${barHeight}%` }}
-                    />
-                    {/* Tooltip */}
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-text text-bg-card text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
-                      {hour}시: {count}회
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* X-axis */}
-            <div className="flex justify-between text-xs text-text-muted border-t border-border pt-2">
-              <span>0시</span>
-              <span>6시</span>
-              <span>12시</span>
-              <span>18시</span>
-              <span>24시</span>
-            </div>
-
-            {/* Summary */}
-            <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 pt-4 border-t border-border text-sm">
-              <span className="text-text-muted">새벽(0-6시): <span className="text-text font-medium">{nightCount}회</span></span>
-              <span className="text-text-muted">오전(6-12시): <span className="text-text font-medium">{morningCount}회</span></span>
-              <span className="text-text-muted">오후(12-18시): <span className="text-text font-medium">{afternoonCount}회</span></span>
-              <span className="text-text-muted">저녁(18-24시): <span className="text-text font-medium">{eveningCount}회</span></span>
-            </div>
-          </>
-        ) : (
-          <div className="flex items-center justify-center h-40 text-text-muted">
-            이번 달 시간 데이터가 없습니다
-          </div>
-        )}
-      </div>
-
-      {/* 6. Summary Cards - 맨 아래 */}
+      {/* 4. Summary Cards - 맨 아래 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <SummaryCard
           icon={<Zap className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />}
