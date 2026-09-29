@@ -1,0 +1,6 @@
+{
+  "buildCommand": "cd lurupl-v2-new && npm install && npm run build",
+  "outputDirectory": "lurupl-v2-new/dist",
+  "installCommand": "cd lurupl-v2-new && npm install",
+  "framework": "vite"
+}
