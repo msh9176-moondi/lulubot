@@ -564,7 +564,7 @@ export function MemberProfilePage() {
             {activeTab === 'growth' && selectedMemberId && (
               <div className="space-y-6">
                 <GrowthChart memberId={selectedMemberId} />
-                <PersonalMotivationHub memberId={selectedMemberId} memberName={details.display_name} />
+                <PersonalMotivationHub memberId={selectedMemberId} memberName={details.display_name} alreadyAuthenticated={true} />
               </div>
             )}
 

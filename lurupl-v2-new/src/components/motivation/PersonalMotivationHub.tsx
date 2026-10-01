@@ -19,12 +19,13 @@ type View = 'locked' | 'pin' | 'hub' | 'reasons' | 'challenges' | 'start' | 'att
 interface PersonalMotivationHubProps {
   memberId: string;
   memberName: string;
+  alreadyAuthenticated?: boolean; // 부모에서 이미 PIN 인증한 경우
 }
 
-export function PersonalMotivationHub({ memberId, memberName }: PersonalMotivationHubProps) {
-  const [view, setView] = useState<View>('locked');
+export function PersonalMotivationHub({ memberId, memberName, alreadyAuthenticated = false }: PersonalMotivationHubProps) {
+  const [view, setView] = useState<View>(alreadyAuthenticated ? 'hub' : 'locked');
   const [hasPin, setHasPin] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(alreadyAuthenticated);
   const [selectedTemplate, setSelectedTemplate] = useState<ChallengeTemplate | null>(null);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);

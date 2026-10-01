@@ -290,3 +290,37 @@ BEGIN
   RETURN v_multiplier;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ========== 새 멤버 자동 등록 (RLS 우회) ==========
+CREATE OR REPLACE FUNCTION register_member(p_nickname VARCHAR)
+RETURNS UUID AS $$
+DECLARE
+  v_member_id UUID;
+BEGIN
+  -- 먼저 기존 멤버 확인
+  SELECT id INTO v_member_id
+  FROM members
+  WHERE display_name = p_nickname
+  LIMIT 1;
+
+  IF v_member_id IS NOT NULL THEN
+    RETURN v_member_id;
+  END IF;
+
+  -- 별칭에서도 확인
+  SELECT member_id INTO v_member_id
+  FROM member_aliases
+  WHERE kakao_nickname = p_nickname;
+
+  IF v_member_id IS NOT NULL THEN
+    RETURN v_member_id;
+  END IF;
+
+  -- 새 멤버 생성
+  INSERT INTO members (display_name, is_active, accumulated_exp)
+  VALUES (p_nickname, true, 0)
+  RETURNING id INTO v_member_id;
+
+  RETURN v_member_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

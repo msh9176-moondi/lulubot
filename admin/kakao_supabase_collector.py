@@ -187,11 +187,31 @@ class SupabaseCollector:
         except Exception as e:
             log(f"캐시 로드 오류: {e}")
 
-    def get_member_id(self, nickname: str) -> Optional[str]:
+    def get_member_id(self, nickname: str, auto_register: bool = True) -> Optional[str]:
+        """멤버 ID 조회 (없으면 자동 등록)"""
         if nickname in self.alias_cache:
             return self.alias_cache[nickname]
         if nickname in self.member_cache:
             return self.member_cache[nickname]
+
+        # 자동 등록이 비활성화되어 있으면 None 반환
+        if not auto_register:
+            return None
+
+        # RPC 함수로 멤버 조회/등록 (RLS 우회)
+        try:
+            result = self.supabase.rpc('register_member', {
+                'p_nickname': nickname
+            }).execute()
+
+            if result.data:
+                member_id = result.data
+                log(f"  [*] 새 멤버 등록: {nickname}")
+                self.member_cache[nickname] = member_id
+                return member_id
+        except Exception as e:
+            log(f"  [!] 멤버 등록 실패 ({nickname}): {e}")
+
         return None
 
     def process_line(self, line: str, cert_date: str) -> bool:
@@ -226,10 +246,10 @@ class SupabaseCollector:
 
         category_key, tag_used, base_exp = detected
 
-        # 멤버 ID 조회
+        # 멤버 ID 조회 (없으면 자동 등록)
         member_id = self.get_member_id(username)
         if not member_id:
-            log(f"  [!] 미등록: {username}")
+            log(f"  [!] 멤버 등록 실패: {username}")
             self.stats['skipped'] += 1
             self.processed_messages.add(msg_key)
             return False

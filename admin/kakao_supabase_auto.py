@@ -135,6 +135,8 @@ def load_config() -> dict:
         'supabase_key': '',
         'backfill_max_scroll': BACKFILL_MAX_SCROLL,
         'backfill_enabled': True,
+        'force_full_backfill': False,  # True면 시간 필터 무시하고 전체 수집
+        'backfill_start_date': '',  # 이 날짜 이후 메시지만 수집 (예: '2026-09-01')
     }
     try:
         if os.path.exists(CONFIG_FILE):
@@ -425,17 +427,36 @@ class SupabaseAutoCollector:
 
             # Enter로 저장
             pyautogui.press('enter')
-            time.sleep(1)
+            time.sleep(0.5)
 
             # 덮어쓰기 확인 창 처리
-            confirm_hwnd = find_window_by_title("다른 이름으로 저장 확인")
-            if confirm_hwnd:
-                pyautogui.press('enter')  # "예" 선택
+            for _ in range(5):  # 최대 2.5초 대기
+                confirm_hwnd = find_window_by_title("다른 이름으로 저장 확인")
+                if confirm_hwnd:
+                    pyautogui.press('enter')  # "예" 선택
+                    break
                 time.sleep(0.5)
 
-            # 파일 생성 확인
+            # 파일이 완전히 저장될 때까지 대기 (파일 크기가 안정화될 때까지)
+            log("파일 저장 대기 중...")
+            last_size = -1
+            stable_count = 0
+            for _ in range(60):  # 최대 30초 대기
+                if os.path.exists(export_path):
+                    current_size = os.path.getsize(export_path)
+                    if current_size > 0 and current_size == last_size:
+                        stable_count += 1
+                        if stable_count >= 3:  # 1.5초간 크기 변화 없으면 완료
+                            log(f"대화 내보내기 완료 ({current_size:,} bytes)")
+                            return export_path
+                    else:
+                        stable_count = 0
+                    last_size = current_size
+                time.sleep(0.5)
+
+            # 파일이 존재하면 반환 (타임아웃이지만 파일은 있음)
             if os.path.exists(export_path):
-                log(f"대화 내보내기 완료")
+                log(f"대화 내보내기 완료 (타임아웃)")
                 return export_path
             else:
                 log("파일 저장 실패")
@@ -460,14 +481,37 @@ class SupabaseAutoCollector:
         total_saved = 0
 
         try:
-            # 파일 읽기
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
+            # 파일 읽기 (UTF-8 우선 시도, 구버전 카카오톡은 CP949)
+            content = None
+            for encoding in ['utf-8', 'utf-8-sig', 'cp949', 'euc-kr']:
+                try:
+                    with open(file_path, 'r', encoding=encoding) as f:
+                        content = f.read()
+                    # 한글이 제대로 읽히는지 확인 (날짜 패턴으로 검증)
+                    if re.search(r'\d{4}년\s*\d{1,2}월\s*\d{1,2}일', content):
+                        if DEBUG_MODE:
+                            log(f"[DEBUG] 파일 인코딩: {encoding}")
+                        break
+                    else:
+                        content = None  # 한글이 깨졌으면 다른 인코딩 시도
+                except UnicodeDecodeError:
+                    continue
+
+            if not content:
+                log("파일 인코딩을 인식할 수 없습니다")
+                return 0
 
             # 날짜 블록으로 분리 (형식: "--------------- 2026년 4월 30일 목요일 ---------------")
-            date_blocks = re.split(r'(?=---+ \d{4}년 \d{1,2}월 \d{1,2}일)', content)
+            # 줄바꿈 + 대시 5개 이상 + 날짜 패턴으로 분리
+            date_blocks = re.split(r'\n(?=-{5,} \d{4}년)', content)
 
-            log("과거 메시지 수집 중...")
+            # 전체 메시지 수 확인 (MULTILINE 플래그로 각 줄에서 매칭)
+            all_messages = re.findall(r'^\[(.+?)\]\s*\[(.+?)\]\s*(.*)$', content, re.MULTILINE)
+            cert_messages = [m for m in all_messages if TAG_PATTERN.search(m[2])]
+            log(f"과거 메시지 수집 중... (전체 {len(all_messages)}개, 인증 {len(cert_messages)}개, 날짜블록 {len(date_blocks)}개)")
+
+            if DEBUG_MODE and date_blocks:
+                log(f"[DEBUG] 첫 블록 미리보기: {date_blocks[0][:200] if date_blocks[0] else 'empty'}")
 
             for block in date_blocks:
                 block = block.strip()
@@ -478,7 +522,7 @@ class SupabaseAutoCollector:
                 saved = self.process_export_block(block, after_time)
                 total_saved += saved
 
-            log(f"파일 처리 완료")
+            log(f"파일 처리 완료: {total_saved}건 저장")
 
         except Exception as e:
             log(f"파일 읽기 오류: {e}")
@@ -498,21 +542,42 @@ class SupabaseAutoCollector:
 
         cert_date = f"{date_match.group(1)}-{int(date_match.group(2)):02d}-{int(date_match.group(3)):02d}"
 
+        # 시작 날짜 필터 (설정된 날짜 이전 블록은 스킵)
+        start_date = self.config.get('backfill_start_date', '')
+        if start_date and cert_date < start_date:
+            return 0
+
         saved_count = 0
 
-        # 메시지 처리 (예: "[홍길동] [오후 3:30] 메시지 내용")
+        # 여러 줄 메시지 처리: [닉네임] [시간]으로 시작하는 줄부터 다음 메시지까지 합침
+        messages = []  # (username, time_str, chat_lines)
+        current_msg = None
+
         for line in lines[1:]:
-            line = line.strip()
-            if not line:
-                continue
-
             match = MSG_PATTERN.match(line)
-            if not match:
-                continue
+            if match:
+                # 새 메시지 시작 - 이전 메시지 저장
+                if current_msg:
+                    messages.append(current_msg)
+                current_msg = {
+                    'username': match.group(1),
+                    'time_str': match.group(2),
+                    'chat_lines': [match.group(3).strip()]
+                }
+            elif current_msg and line.strip():
+                # 이전 메시지의 연속 줄
+                current_msg['chat_lines'].append(line.strip())
 
-            username = match.group(1)
-            time_str = match.group(2)
-            chat = match.group(3).strip()
+        # 마지막 메시지 저장
+        if current_msg:
+            messages.append(current_msg)
+
+        # 메시지 처리
+        for msg in messages:
+            username = msg['username']
+            time_str = msg['time_str']
+            # 여러 줄을 합쳐서 하나의 채팅으로
+            chat = '\n'.join(msg['chat_lines'])
 
             cert_time = parse_time(time_str)
 
@@ -768,11 +833,31 @@ class SupabaseAutoCollector:
         except Exception as e:
             log(f"캐시 로드 오류: {e}")
 
-    def get_member_id(self, nickname: str) -> Optional[str]:
+    def get_member_id(self, nickname: str, auto_register: bool = True) -> Optional[str]:
+        """멤버 ID 조회 (없으면 자동 등록)"""
         if nickname in self.alias_cache:
             return self.alias_cache[nickname]
         if nickname in self.member_cache:
             return self.member_cache[nickname]
+
+        # 자동 등록이 비활성화되어 있으면 None 반환
+        if not auto_register:
+            return None
+
+        # RPC 함수로 멤버 조회/등록 (RLS 우회)
+        try:
+            result = self.supabase.rpc('register_member', {
+                'p_nickname': nickname
+            }).execute()
+
+            if result.data:
+                member_id = result.data
+                log(f"  [*] 새 멤버 등록: {nickname}")
+                self.member_cache[nickname] = member_id
+                return member_id
+        except Exception as e:
+            log(f"  [!] 멤버 등록 실패 ({nickname}): {e}")
+
         return None
 
     def process_chat(self, username: str, chat: str, cert_date: str, cert_time: str) -> bool:
@@ -794,10 +879,10 @@ class SupabaseAutoCollector:
 
         category_key, tag_used, base_exp = detected
 
-        # 멤버 ID 조회
+        # 멤버 ID 조회 (없으면 자동 등록)
         member_id = self.get_member_id(username)
         if not member_id:
-            log(f"  [!] 미등록: {username}")
+            log(f"  [!] 멤버 등록 실패: {username}")
             self.stats['skipped'] += 1
             self.processed_messages.add(msg_key)
             return False
@@ -937,14 +1022,24 @@ class SupabaseAutoCollector:
 
         # 시작 시 백필: Ctrl+S로 대화 내보내기 후 파일 읽기
         if self.config.get('backfill_enabled', True):
-            last_cert_time = self.get_last_cert_time()
-            if last_cert_time:
+            force_full = self.config.get('force_full_backfill', False)
+            last_cert_time = None if force_full else self.get_last_cert_time()
+
+            if force_full:
+                log("전체 재수집 모드 (시간 필터 무시)")
+            elif last_cert_time:
                 log(f"마지막 수집 시점: {last_cert_time.strftime('%Y-%m-%d %H:%M')}")
-                backfill_count = self.backfill_from_export(chatroom, last_cert_time)
-                if backfill_count > 0:
-                    log(f"백필 수집 완료: {backfill_count}건")
             else:
-                log("이전 수집 기록 없음")
+                log("이전 수집 기록 없음 - 전체 수집")
+
+            backfill_count = self.backfill_from_export(chatroom, last_cert_time)
+            if backfill_count > 0:
+                log(f"백필 수집 완료: {backfill_count}건")
+
+            # 전체 재수집 후 플래그 끄기
+            if force_full:
+                self.config['force_full_backfill'] = False
+                save_config(self.config)
 
         print()
         log("실시간 자동 수집 시작...")
