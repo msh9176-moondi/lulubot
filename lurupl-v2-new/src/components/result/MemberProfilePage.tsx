@@ -633,19 +633,7 @@ export function MemberProfilePage() {
                     </div>
                   </div>
 
-                  {categoryTitle && (
-                    <div className="p-4 bg-accent/10 border border-accent/30 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-2xl">{categoryTitle.emoji}</span>
-                        <div>
-                          <p className="font-medium text-text">{categoryTitle.title}</p>
-                          <p className="text-xs text-text-muted">
-                            {DEFAULT_CATEGORIES[categoryTitle.category]?.name} {categoryTitle.count}회 인증으로 획득!
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  <CategoryTitleProgress categoryCounts={details.total_category_counts} />
 
                   <GrowthGarden memberId={selectedMemberId} isOwnProfile={true} />
                 </div>
@@ -660,43 +648,7 @@ export function MemberProfilePage() {
             )}
 
             {activeTab === 'category' && (
-              <div className="space-y-4">
-                {Object.entries(details.category_counts)
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([category, count]) => {
-                    const cat = DEFAULT_CATEGORIES[category as CategoryKey];
-                    if (!cat) return null;
-                    const color = CATEGORY_COLORS[category as CategoryKey];
-                    const maxCount = Math.max(...Object.values(details.category_counts));
-
-                    return (
-                      <div key={category} className="flex items-center gap-4">
-                        <div className="w-20 flex items-center gap-2">
-                          <span className="text-xl">{cat.emoji}</span>
-                          <span className="text-sm text-text-muted">{cat.name}</span>
-                        </div>
-                        <div className="flex-1 h-6 bg-border/30 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all"
-                            style={{
-                              width: `${(count / maxCount) * 100}%`,
-                              backgroundColor: color,
-                            }}
-                          />
-                        </div>
-                        <span className="w-12 text-right font-medium text-text">
-                          {count}회
-                        </span>
-                      </div>
-                    );
-                  })}
-
-                {Object.keys(details.category_counts).length === 0 && (
-                  <div className="text-center py-8 text-text-muted">
-                    이번 달 인증 기록이 없습니다
-                  </div>
-                )}
-              </div>
+              <CategoryTab categoryCounts={details.category_counts} />
             )}
 
             {activeTab === 'time' && selectedMemberId && (
@@ -740,6 +692,150 @@ export function MemberProfilePage() {
           </div>
         </div>
       </div>
+      </div>
+    </div>
+  );
+}
+
+// 카테고리 칭호 진행 상황 컴포넌트
+function CategoryTitleProgress({ categoryCounts }: { categoryCounts: Record<string, number> }) {
+  const categoryTitleData = getCategoryTitle(categoryCounts);
+
+  if (categoryTitleData) {
+    return (
+      <div className="p-4 bg-accent/10 border border-accent/30 rounded-lg">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-2xl">{categoryTitleData.emoji}</span>
+          <div>
+            <p className="font-medium text-text">{categoryTitleData.title}</p>
+            <p className="text-xs text-text-muted">
+              {DEFAULT_CATEGORIES[categoryTitleData.category]?.name} {categoryTitleData.count}회 인증으로 획득!
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 칭호가 없으면 가장 많은 카테고리의 진행률 표시
+  const entries = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]);
+  if (entries.length === 0) return null;
+
+  const [topCat, topCount] = entries[0];
+  const cat = DEFAULT_CATEGORIES[topCat as CategoryKey];
+  const required = 20; // 기본 최소 요구치
+  const progress = Math.min(Math.round((topCount / required) * 100), 100);
+
+  return (
+    <div className="p-4 bg-bg rounded-lg">
+      <p className="text-sm text-text-muted mb-2">카테고리 칭호까지</p>
+      <div className="flex items-center gap-3">
+        <span className="text-xl">{cat?.emoji}</span>
+        <div className="flex-1">
+          <div className="flex justify-between text-sm mb-1">
+            <span className="text-text">{cat?.name}</span>
+            <span className="text-text-muted">{topCount}/{required}회</span>
+          </div>
+          <div className="h-2 bg-border rounded-full overflow-hidden">
+            <div
+              className="h-full bg-accent rounded-full transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 카테고리 탭 컴포넌트 (파이 차트 + 상세 카드)
+function CategoryTab({ categoryCounts }: { categoryCounts: Record<string, number> }) {
+  if (!categoryCounts || Object.keys(categoryCounts).length === 0) {
+    return <p className="text-center py-8 text-text-muted">이번 달 인증 기록이 없습니다</p>;
+  }
+
+  const total = Object.values(categoryCounts).reduce((a, b) => a + b, 0);
+
+  // 파이 차트 색상
+  const colors: Record<string, string> = {
+    cleaning: '#f472b6',
+    exercise: '#22d3ee',
+    morning: '#fbbf24',
+    planning: '#a78bfa',
+    study: '#4ade80',
+    medicine: '#f87171',
+    diary: '#fb923c',
+    meditation: '#c084fc',
+    comeback: '#38bdf8',
+  };
+
+  let gradientParts: string[] = [];
+  let currentAngle = 0;
+
+  Object.entries(categoryCounts)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([key, count]) => {
+      if (count > 0) {
+        const angle = (count / total) * 360;
+        gradientParts.push(
+          `${colors[key] || '#888'} ${currentAngle}deg ${currentAngle + angle}deg`
+        );
+        currentAngle += angle;
+      }
+    });
+
+  const pieStyle = gradientParts.length > 0
+    ? { background: `conic-gradient(${gradientParts.join(', ')})` }
+    : { background: '#333' };
+
+  return (
+    <div className="space-y-6">
+      {/* 파이 차트 */}
+      <div className="flex justify-center">
+        <div className="relative">
+          <div
+            className="w-32 h-32 rounded-full"
+            style={pieStyle}
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-20 h-20 rounded-full bg-bg-card flex flex-col items-center justify-center">
+              <span className="text-xl font-bold text-text">{total}</span>
+              <span className="text-xs text-text-muted">총 인증</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 카테고리 목록 */}
+      <div className="space-y-3">
+        {Object.entries(categoryCounts)
+          .sort((a, b) => b[1] - a[1])
+          .map(([key, count]) => {
+            const cat = DEFAULT_CATEGORIES[key as CategoryKey];
+            const percentage = ((count / total) * 100).toFixed(0);
+
+            return (
+              <div key={key} className="p-3 bg-bg rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-text">
+                    {cat?.emoji} {cat?.name || key}
+                  </span>
+                  <span className="text-text-muted">
+                    {count}회 ({percentage}%)
+                  </span>
+                </div>
+                <div className="h-2 bg-border rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{
+                      width: `${(count / total) * 100}%`,
+                      backgroundColor: colors[key] || '#888'
+                    }}
+                  />
+                </div>
+              </div>
+            );
+          })}
       </div>
     </div>
   );
