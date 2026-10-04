@@ -3,7 +3,7 @@
  * 멤버 선택 후 전체 프로필을 인라인으로 표시
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronRight, ChevronLeft, Sparkles, LogOut } from 'lucide-react';
 import { Badge, ProgressBar, Spinner } from '@/components/common';
 import { AchievementsGrid } from './AchievementsGrid';
@@ -17,6 +17,32 @@ import { calculateLevel, getLevelTitle, getAccumulatedTitle, EXP_PER_LEVEL } fro
 import { DEFAULT_CATEGORIES, CATEGORY_COLORS, type CategoryKey } from '@/domain/categories';
 import { getCategoryTitle } from '@/domain/category-title';
 import { hasMemberPin, setMemberPin, verifyMemberPin } from '@/lib/motivation-api';
+
+// SVG 이미지 import
+import Seed1 from '@/seed/seed-1.svg';
+import Seed2 from '@/seed/seed-2.svg';
+import Seed3 from '@/seed/seed-3.svg';
+import Seed4 from '@/seed/seed-4.svg';
+import Seed5 from '@/seed/seed-5.svg';
+import Seed6 from '@/seed/seed-6.svg';
+import Seed7 from '@/seed/seed-7.svg';
+import Seed8 from '@/seed/seed-8.svg';
+import Seed9 from '@/seed/seed-9.svg';
+import Seed10 from '@/seed/seed-10.svg';
+
+// 성장 단계별 이미지와 이름
+const GROWTH_STAGES = [
+  { image: Seed1, name: '씨앗', minCount: 0 },
+  { image: Seed2, name: '새싹', minCount: 10 },
+  { image: Seed3, name: '떡잎', minCount: 30 },
+  { image: Seed4, name: '어린 줄기', minCount: 60 },
+  { image: Seed5, name: '자라는 중', minCount: 100 },
+  { image: Seed6, name: '튼튼한 줄기', minCount: 150 },
+  { image: Seed7, name: '가지 뻗기', minCount: 210 },
+  { image: Seed8, name: '무성한 잎', minCount: 280 },
+  { image: Seed9, name: '꽃봉오리', minCount: 360 },
+  { image: Seed10, name: '열매 맺은 나무', minCount: 450 },
+];
 
 interface Member {
   id: string;
@@ -71,6 +97,26 @@ export function MemberProfilePage() {
       fetchDetails();
     }
   }, [selectedMemberId, yearMonth, view]);
+
+  // 현재 성장 단계 계산 (details가 없으면 0)
+  const currentStage = useMemo(() => {
+    if (!details) return 0;
+    const totalCount = details.total_count;
+    let stage = 0;
+    for (let i = GROWTH_STAGES.length - 1; i >= 0; i--) {
+      if (totalCount >= GROWTH_STAGES[i].minCount) {
+        stage = i;
+        break;
+      }
+    }
+    return stage;
+  }, [details?.total_count]);
+
+  const currentStageInfo = GROWTH_STAGES[currentStage];
+  const nextStage = currentStage < GROWTH_STAGES.length - 1 ? GROWTH_STAGES[currentStage + 1] : null;
+  const treeProgress = nextStage && details
+    ? ((details.total_count - currentStageInfo.minCount) / (nextStage.minCount - currentStageInfo.minCount)) * 100
+    : 100;
 
   async function fetchMembers() {
     setLoading(true);
@@ -383,73 +429,119 @@ export function MemberProfilePage() {
 
       <div className="flex-1 overflow-y-auto">
 
-      {/* Header */}
-      <div className="px-6 py-6 border-b border-border bg-gradient-to-r from-primary/10 to-transparent">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-2xl">
-            {getAccumulatedTitle(details.accumulated_exp).icon}
+      {/* 나의 정원 - 통합 헤더 */}
+      <div className="border-b border-border">
+        {/* 정원 배경 + 나무 */}
+        <div className="relative bg-gradient-to-b from-sky-100 to-green-100 dark:from-sky-900/30 dark:to-green-900/30 px-6 py-8 overflow-hidden">
+          {/* 배경 구름 */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-4 left-8 w-20 h-10 bg-white/50 rounded-full blur-sm" />
+            <div className="absolute top-8 right-12 w-24 h-12 bg-white/40 rounded-full blur-sm" />
+            <div className="absolute top-6 left-1/3 w-16 h-8 bg-white/30 rounded-full blur-sm" />
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-text">{details.display_name}</h2>
-            <div className="flex flex-wrap items-center gap-2 mt-1">
-              <Badge variant="primary">Lv.{monthlyLevel}</Badge>
-              <span className="text-text-muted">{getLevelTitle(monthlyLevel)}</span>
-              <span className="text-accent">
-                {getAccumulatedTitle(details.accumulated_exp).icon}{' '}
-                {getAccumulatedTitle(details.accumulated_exp).title}
-              </span>
-              {categoryTitle && (
-                <span
-                  className="text-sm bg-accent/20 text-accent px-2 py-0.5 rounded-full"
-                  title={`${DEFAULT_CATEGORIES[categoryTitle.category]?.name} ${categoryTitle.count}회 인증`}
-                >
-                  {categoryTitle.emoji} {categoryTitle.title}
+
+          {/* 메인 컨텐츠: 나무 + 정보 */}
+          <div className="relative z-10 flex items-center gap-6">
+            {/* 나무 이미지 */}
+            <div className="flex-shrink-0">
+              <img
+                src={currentStageInfo.image}
+                alt={currentStageInfo.name}
+                className="w-32 h-40 object-contain drop-shadow-lg"
+              />
+            </div>
+
+            {/* 정보 영역 */}
+            <div className="flex-1 min-w-0">
+              {/* 이름 + 칭호 */}
+              <h2 className="text-xl font-bold text-text">{details.display_name}</h2>
+              <div className="flex flex-wrap items-center gap-2 mt-1">
+                <span className="text-accent">
+                  {getAccumulatedTitle(details.accumulated_exp).icon}{' '}
+                  {getAccumulatedTitle(details.accumulated_exp).title}
                 </span>
+                {categoryTitle && (
+                  <span className="text-sm text-text-muted">
+                    {categoryTitle.emoji} {categoryTitle.title}
+                  </span>
+                )}
+              </div>
+
+              {/* 성장 단계 뱃지 */}
+              <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-white/80 dark:bg-black/40 rounded-full shadow-sm">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="text-sm font-bold text-primary">{currentStageInfo.name}</span>
+                <span className="text-xs text-text-muted">({currentStage + 1}/10)</span>
+              </div>
+
+              {/* 다음 단계 진행바 */}
+              {nextStage ? (
+                <div className="mt-3">
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-text-muted">다음: {nextStage.name}</span>
+                    <span className="text-primary font-medium">
+                      {details.total_count} / {nextStage.minCount}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-white/50 dark:bg-black/30 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(100, treeProgress)}%` }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-3 text-xs text-green-600 dark:text-green-400 font-medium">
+                  최고 단계 달성!
+                </p>
               )}
             </div>
           </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-4 mt-6">
-          <div className="bg-bg/50 rounded-lg p-3 text-center">
-            <p className="text-xs text-text-muted mb-1">이번 달</p>
-            <p className="text-xl font-bold text-primary">{details.monthly_exp} EXP</p>
-            <p className="text-xs text-text-muted">{details.monthly_count}회 ({details.cert_days}일)</p>
+        {/* EXP 통계 */}
+        <div className="px-6 py-4 bg-bg-card">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="text-center">
+              <p className="text-xs text-text-muted mb-0.5">이번 달</p>
+              <p className="text-lg font-bold text-primary">{details.monthly_exp}</p>
+              <p className="text-xs text-text-muted">EXP · {details.monthly_count}회</p>
+            </div>
+            <div className="text-center border-x border-border">
+              <p className="text-xs text-text-muted mb-0.5">저번 달</p>
+              <p className="text-lg font-bold text-text">{details.last_month_exp}</p>
+              <p className="text-xs text-text-muted">EXP · {details.last_month_count}회</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-text-muted mb-0.5">누적</p>
+              <p className="text-lg font-bold text-accent">{details.accumulated_exp}</p>
+              <p className="text-xs text-text-muted">EXP · {details.total_count}회</p>
+            </div>
           </div>
-          <div className="bg-bg/50 rounded-lg p-3 text-center">
-            <p className="text-xs text-text-muted mb-1">저번 달</p>
-            <p className="text-xl font-bold text-text">{details.last_month_exp} EXP</p>
-            <p className="text-xs text-text-muted">{details.last_month_count}회</p>
-          </div>
-          <div className="bg-bg/50 rounded-lg p-3 text-center">
-            <p className="text-xs text-text-muted mb-1">누적</p>
-            <p className="text-xl font-bold text-accent">{details.accumulated_exp} EXP</p>
-            <p className="text-xs text-text-muted">{details.total_count}회</p>
-          </div>
-        </div>
 
-        {/* Level Progress */}
-        <div className="mt-4">
-          <div className="flex items-center justify-between text-sm mb-1">
-            <span className="text-text-muted">Lv.{monthlyLevel}</span>
-            <span className="text-text-muted">
-              {details.monthly_exp % EXP_PER_LEVEL} / {EXP_PER_LEVEL} EXP
-            </span>
+          {/* 월간 레벨 진행 */}
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-xs mb-1">
+              <span className="text-text-muted flex items-center gap-1">
+                <Badge variant="primary" className="text-xs px-1.5 py-0">Lv.{monthlyLevel}</Badge>
+                {getLevelTitle(monthlyLevel)}
+              </span>
+              <span className="text-text-muted">
+                {details.monthly_exp % EXP_PER_LEVEL} / {EXP_PER_LEVEL}
+              </span>
+            </div>
+            <ProgressBar
+              value={details.monthly_exp % EXP_PER_LEVEL}
+              max={EXP_PER_LEVEL}
+              size="sm"
+            />
           </div>
-          <ProgressBar
-            value={details.monthly_exp % EXP_PER_LEVEL}
-            max={EXP_PER_LEVEL}
-            size="md"
-          />
-        </div>
 
-        {/* Wake Time Setting */}
-        <div className="mt-4 p-3 bg-bg/50 rounded-lg">
-          <div className="flex items-center justify-between">
+          {/* 기상 시간 */}
+          <div className="mt-4 flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
-              <span className="text-lg">⏰</span>
-              <span className="text-sm text-text-muted">목표 기상 시간</span>
+              <span>⏰</span>
+              <span className="text-text-muted">목표 기상</span>
             </div>
             {editingWakeTime ? (
               <div className="flex items-center gap-2">
@@ -457,12 +549,12 @@ export function MemberProfilePage() {
                   type="time"
                   value={wakeTime}
                   onChange={(e) => setWakeTime(e.target.value)}
-                  className="bg-bg-card border border-border rounded px-2 py-1 text-sm text-text"
+                  className="bg-bg border border-border rounded px-2 py-1 text-sm text-text"
                 />
                 <button
                   onClick={handleSaveWakeTime}
                   disabled={savingWakeTime}
-                  className="px-3 py-1 bg-primary text-white text-sm rounded hover:bg-primary-dark transition-colors disabled:opacity-50"
+                  className="px-2 py-1 bg-primary text-white text-xs rounded"
                 >
                   {savingWakeTime ? '...' : '저장'}
                 </button>
@@ -471,7 +563,7 @@ export function MemberProfilePage() {
                     setEditingWakeTime(false);
                     setWakeTime(details.wake_up_time || '07:00');
                   }}
-                  className="px-3 py-1 bg-border text-text-muted text-sm rounded hover:bg-bg-hover transition-colors"
+                  className="px-2 py-1 bg-border text-text-muted text-xs rounded"
                 >
                   취소
                 </button>
@@ -479,10 +571,9 @@ export function MemberProfilePage() {
             ) : (
               <button
                 onClick={() => setEditingWakeTime(true)}
-                className="flex items-center gap-2 px-3 py-1 bg-bg-card border border-border rounded text-sm text-text hover:border-primary/50 transition-colors"
+                className="text-text font-medium hover:text-primary transition-colors"
               >
-                <span className="font-medium">{details.wake_up_time || '미설정'}</span>
-                <span className="text-text-muted text-xs">변경</span>
+                {details.wake_up_time || '미설정'}
               </button>
             )}
           </div>
