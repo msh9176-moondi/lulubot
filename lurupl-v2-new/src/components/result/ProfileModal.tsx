@@ -334,7 +334,7 @@ export function ProfileModal({ isOpen, onClose, memberId, yearMonth }: ProfileMo
               <div className="mt-4">
                 <div className="flex items-center justify-between text-xs mb-1">
                   <span className="text-text-muted flex items-center gap-1">
-                    <Badge variant="primary" className="text-xs px-1.5 py-0">Lv.{monthlyLevel}</Badge>
+                    <Badge variant="primary">Lv.{monthlyLevel}</Badge>
                     {getLevelTitle(monthlyLevel)}
                   </span>
                   <span className="text-text-muted">

@@ -14,7 +14,7 @@ import { GrowthGarden } from '@/components/stages';
 import { PersonalMotivationHub, PinSetup } from '@/components/motivation';
 import { supabase } from '@/lib/supabase';
 import { calculateLevel, getLevelTitle, getAccumulatedTitle, EXP_PER_LEVEL } from '@/domain/levels';
-import { DEFAULT_CATEGORIES, CATEGORY_COLORS, type CategoryKey } from '@/domain/categories';
+import { DEFAULT_CATEGORIES, type CategoryKey } from '@/domain/categories';
 import { getCategoryTitle } from '@/domain/category-title';
 import { hasMemberPin, setMemberPin, verifyMemberPin } from '@/lib/motivation-api';
 
@@ -523,7 +523,7 @@ export function MemberProfilePage() {
           <div className="mt-4">
             <div className="flex items-center justify-between text-xs mb-1">
               <span className="text-text-muted flex items-center gap-1">
-                <Badge variant="primary" className="text-xs px-1.5 py-0">Lv.{monthlyLevel}</Badge>
+                <Badge variant="primary">Lv.{monthlyLevel}</Badge>
                 {getLevelTitle(monthlyLevel)}
               </span>
               <span className="text-text-muted">
