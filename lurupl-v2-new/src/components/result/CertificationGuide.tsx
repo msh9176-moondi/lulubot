@@ -1,4 +1,27 @@
 import { DEFAULT_CATEGORIES, CATEGORY_COLORS, type CategoryKey } from '@/domain/categories';
+import Seed1 from '@/seed/seed-1.svg';
+import Seed2 from '@/seed/seed-2.svg';
+import Seed3 from '@/seed/seed-3.svg';
+import Seed4 from '@/seed/seed-4.svg';
+import Seed5 from '@/seed/seed-5.svg';
+import Seed6 from '@/seed/seed-6.svg';
+import Seed7 from '@/seed/seed-7.svg';
+import Seed8 from '@/seed/seed-8.svg';
+import Seed9 from '@/seed/seed-9.svg';
+import Seed10 from '@/seed/seed-10.svg';
+
+const GROWTH_STAGES = [
+  { image: Seed1, name: '씨앗', minCount: 0 },
+  { image: Seed2, name: '새싹', minCount: 10 },
+  { image: Seed3, name: '떡잎', minCount: 30 },
+  { image: Seed4, name: '어린 줄기', minCount: 60 },
+  { image: Seed5, name: '자라는 중', minCount: 100 },
+  { image: Seed6, name: '튼튼한 줄기', minCount: 150 },
+  { image: Seed7, name: '가지 뻗기', minCount: 210 },
+  { image: Seed8, name: '무성한 잎', minCount: 280 },
+  { image: Seed9, name: '꽃봉오리', minCount: 360 },
+  { image: Seed10, name: '열매 맺은 나무', minCount: 450 },
+];
 
 const CATEGORY_DESCRIPTIONS: Record<CategoryKey, string> = {
   cleaning: '집안일, 정리정돈, 청소 관련 활동',
@@ -242,6 +265,61 @@ export function CertificationGuide() {
             <li className="flex items-start gap-2">
               <span className="text-accent">•</span>
               <span><strong className="text-text">복귀 보너스</strong>: 72시간 이상 휴식 후 복귀 시 +2 EXP</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      {/* 나의 정원 시스템 */}
+      <div className="mt-8 p-5 bg-green-500/5 border border-green-500/20 rounded-lg space-y-5">
+        <h3 className="font-semibold text-text flex items-center gap-2 text-base">
+          <span>🌱</span> 나의 정원
+        </h3>
+
+        <p className="text-sm text-text-muted">
+          인증할수록 씨앗이 나무로 자라요! 총 인증 횟수에 따라 10단계로 성장합니다.
+        </p>
+
+        {/* 성장 단계 표시 */}
+        <div className="space-y-3">
+          <h4 className="text-sm font-medium text-text flex items-center gap-2">
+            <span>🌳</span> 성장 단계
+          </h4>
+          <div className="grid grid-cols-5 gap-2">
+            {GROWTH_STAGES.map((stage, idx) => (
+              <div
+                key={idx}
+                className="flex flex-col items-center p-2 bg-bg-card rounded-lg border border-green-500/20"
+              >
+                <img
+                  src={stage.image}
+                  alt={stage.name}
+                  className="w-10 h-12 object-contain"
+                />
+                <p className="text-xs font-medium text-text mt-1 text-center">{stage.name}</p>
+                <p className="text-[10px] text-green-600">{stage.minCount}회+</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 성장 규칙 */}
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium text-text flex items-center gap-2">
+            <span>📋</span> 성장 규칙
+          </h4>
+          <ul className="text-sm text-text-muted space-y-1.5 ml-6">
+            <li className="flex items-start gap-2">
+              <span className="text-green-500">•</span>
+              <span><strong className="text-text">모든 카테고리</strong>의 인증 횟수가 합산됩니다</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-green-500">•</span>
+              <span><strong className="text-text">450회</strong> 인증 시 최종 단계 달성!</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-green-500">•</span>
+              <span>내 정보/랭킹에서 나무 성장 상태를 확인할 수 있어요</span>
             </li>
           </ul>
         </div>
