@@ -40,7 +40,7 @@ const GROWTH_STAGES = [
   { image: Seed6, name: '튼튼한 줄기', minCount: 150 },
   { image: Seed7, name: '가지 뻗기', minCount: 210 },
   { image: Seed8, name: '무성한 잎', minCount: 280 },
-  { image: Seed9, name: '꽃봉오리', minCount: 360 },
+  { image: Seed9, name: '풍성한 나무', minCount: 360 },
   { image: Seed10, name: '열매 맺은 나무', minCount: 450 },
 ];
 
