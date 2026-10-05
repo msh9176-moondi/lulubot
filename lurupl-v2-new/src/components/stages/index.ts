@@ -7,3 +7,4 @@ export { CategoryStageCard } from './CategoryStageCard';
 export { CategoryDetailModal } from './CategoryDetailModal';
 export { StageCelebration } from './StageCelebration';
 export { GrowthGarden } from './GrowthGarden';
+export { TreeSkinSelector } from './TreeSkinSelector';
