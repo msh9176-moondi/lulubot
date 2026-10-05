@@ -36,7 +36,6 @@ export function TreeSkinSelector({
   onSkinChange,
 }: TreeSkinSelectorProps) {
   const [selectedSkin, setSelectedSkin] = useState<SkinId>(currentSkinId);
-  const [previewSkin, setPreviewSkin] = useState<SkinId>(currentSkinId);
   const [saving, setSaving] = useState(false);
 
   const { memberStatuses, fetchMemberStatus, fetchDefinitions } = useStageStore();
@@ -52,7 +51,6 @@ export function TreeSkinSelector({
   // 현재 스킨으로 초기화
   useEffect(() => {
     setSelectedSkin(currentSkinId);
-    setPreviewSkin(currentSkinId);
   }, [currentSkinId, isOpen]);
 
   // 카테고리별 현재 스테이지 가져오기
