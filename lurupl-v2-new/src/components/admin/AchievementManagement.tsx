@@ -7,8 +7,19 @@ import { useState, useEffect } from 'react';
 import { Trophy, User, BarChart3, RefreshCw } from 'lucide-react';
 import { Spinner } from '@/components/common';
 import { supabase } from '@/lib/supabase';
-import { ACHIEVEMENTS } from '@/domain/achievement-definitions';
-import type { AchievementDefinition } from '@/domain/achievement-types';
+
+// DB에서 로드하는 도전 과제 정의 타입
+interface AchievementDef {
+  key: string;
+  name: string;
+  emoji: string | null;
+  category: string | null;
+  type: string;
+  target: number;
+  difficulty: number;
+  is_hidden: boolean;
+  hint: string | null;
+}
 
 interface MemberAchievement {
   id: string;
@@ -20,7 +31,8 @@ interface MemberAchievement {
 interface AchievementStat {
   key: string;
   name: string;
-  category: string;
+  emoji: string | null;
+  category: string | null;
   difficulty: number;
   achievedCount: number;
   achievedMembers: string[];
@@ -36,6 +48,7 @@ type TabType = 'list' | 'members' | 'stats';
 export function AchievementManagement() {
   const [activeTab, setActiveTab] = useState<TabType>('list');
   const [members, setMembers] = useState<MemberInfo[]>([]);
+  const [achievements, setAchievements] = useState<AchievementDef[]>([]);
   const [memberAchievements, setMemberAchievements] = useState<Map<string, MemberAchievement[]>>(new Map());
   const [achievementStats, setAchievementStats] = useState<AchievementStat[]>([]);
   const [loading, setLoading] = useState(false);
@@ -47,24 +60,32 @@ export function AchievementManagement() {
       setLoading(true);
 
       try {
-        // 멤버와 도전 과제 동시 조회
-        const [membersResult, achievementsResult] = await Promise.all([
+        // 멤버, 도전 과제 정의, 달성 기록 동시 조회
+        const [membersResult, definitionsResult, achievementsResult] = await Promise.all([
           supabase
             .from('members')
             .select('id, display_name')
             .eq('is_active', true),
+          supabase
+            .from('achievement_definitions')
+            .select('*')
+            .eq('is_active', true)
+            .order('difficulty'),
           supabase
             .from('member_achievements')
             .select('*')
         ]);
 
         if (membersResult.error) throw membersResult.error;
+        if (definitionsResult.error) throw definitionsResult.error;
         if (achievementsResult.error) throw achievementsResult.error;
 
         const membersList = membersResult.data || [];
+        const definitionsList = definitionsResult.data || [];
         const achievementsList = achievementsResult.data || [];
 
         setMembers(membersList);
+        setAchievements(definitionsList);
 
         // 멤버별로 그룹화
         const achievementMap = new Map<string, MemberAchievement[]>();
@@ -76,10 +97,10 @@ export function AchievementManagement() {
         setMemberAchievements(achievementMap);
 
         // 통계 계산
-        const stats: AchievementStat[] = ACHIEVEMENTS.map(def => {
+        const stats: AchievementStat[] = definitionsList.map(def => {
           const achievedMembers: string[] = [];
-          achievementMap.forEach((achievements, memberId) => {
-            if (achievements.some(a => a.achievement_key === def.key)) {
+          achievementMap.forEach((memberAchs, memberId) => {
+            if (memberAchs.some(a => a.achievement_key === def.key)) {
               const member = membersList.find(m => m.id === memberId);
               if (member) {
                 achievedMembers.push(member.display_name);
@@ -90,6 +111,7 @@ export function AchievementManagement() {
           return {
             key: def.key,
             name: def.name,
+            emoji: def.emoji,
             category: def.category,
             difficulty: def.difficulty,
             achievedCount: achievedMembers.length,
@@ -130,21 +152,31 @@ export function AchievementManagement() {
   };
 
   // 카테고리별 도전 과제 그룹화
-  const groupedAchievements = ACHIEVEMENTS.reduce((acc, ach) => {
-    const category = ach.category;
-    if (!acc[category]) {
-      acc[category] = [];
+  const groupedAchievements = achievements.reduce((acc, ach) => {
+    // DB의 category 필드 또는 type 기반으로 그룹화
+    let groupKey = ach.category || 'special';
+    if (ach.type?.startsWith('hidden_')) groupKey = 'hidden';
+    if (ach.type?.startsWith('ranking_')) groupKey = 'ranking';
+
+    if (!acc[groupKey]) {
+      acc[groupKey] = [];
     }
-    acc[category].push(ach);
+    acc[groupKey].push(ach);
     return acc;
-  }, {} as Record<string, AchievementDefinition[]>);
+  }, {} as Record<string, AchievementDef[]>);
 
   const categoryLabels: Record<string, string> = {
-    category: '카테고리별',
-    integrated: '통합',
-    hidden: '히든',
-    ranking: '랭킹',
-    special: '특별',
+    cleaning: '🧹 청소',
+    exercise: '🏃 운동',
+    morning: '⏰ 기상',
+    planning: '📋 계획',
+    study: '📚 공부',
+    medicine: '💊 복약',
+    diary: '📝 일기',
+    meditation: '🧘 명상',
+    hidden: '🔮 히든',
+    ranking: '🏆 랭킹',
+    special: '✨ 특별',
   };
 
   const difficultyStars = (d: number) => '⭐'.repeat(d);
@@ -180,7 +212,7 @@ export function AchievementManagement() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-text-muted">
               <Trophy className="w-5 h-5" />
-              <h3 className="font-medium">도전 과제 목록 ({ACHIEVEMENTS.length}개)</h3>
+              <h3 className="font-medium">도전 과제 목록 ({achievements.length}개)</h3>
             </div>
           </div>
 
@@ -199,7 +231,7 @@ export function AchievementManagement() {
                       className="p-3 bg-bg rounded-lg border border-border flex items-center justify-between"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl">{ach.icon}</span>
+                        <span className="text-2xl">{ach.emoji}</span>
                         <div>
                           <p className="font-medium text-text">
                             {ach.name}
@@ -207,16 +239,15 @@ export function AchievementManagement() {
                               {difficultyStars(ach.difficulty)}
                             </span>
                           </p>
-                          <p className="text-sm text-text-muted">{ach.description}</p>
+                          <p className="text-sm text-text-muted">
+                            {ach.is_hidden ? (ach.hint || '히든 도전과제') : `${ach.type} (목표: ${ach.target})`}
+                          </p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-medium text-primary">
                           {stat?.achievedCount || 0}명 달성
                         </p>
-                        {ach.reward && (
-                          <p className="text-xs text-text-muted">+{ach.reward} EXP</p>
-                        )}
                       </div>
                     </div>
                   );
@@ -243,7 +274,7 @@ export function AchievementManagement() {
             <div className="space-y-3">
               {members.map(member => {
                 const achievements = memberAchievements.get(member.id) || [];
-                const percentage = Math.round((achievements.length / ACHIEVEMENTS.length) * 100);
+                const percentage = Math.round((achievements.length / achievements.length) * 100);
 
                 return (
                   <div
@@ -254,7 +285,7 @@ export function AchievementManagement() {
                       <div>
                         <p className="font-medium text-text">{member.display_name}</p>
                         <p className="text-sm text-text-muted">
-                          {achievements.length}/{ACHIEVEMENTS.length} 달성 ({percentage}%)
+                          {achievements.length}/{achievements.length} 달성 ({percentage}%)
                         </p>
                       </div>
                       <button
@@ -279,14 +310,14 @@ export function AchievementManagement() {
                     {achievements.length > 0 && (
                       <div className="mt-3 flex flex-wrap gap-1">
                         {achievements.slice(0, 10).map(ach => {
-                          const def = ACHIEVEMENTS.find(a => a.key === ach.achievement_key);
+                          const def = achievements.find(a => a.key === ach.achievement_key);
                           return def ? (
                             <span
                               key={ach.id}
                               className="text-lg"
                               title={def.name}
                             >
-                              {def.icon}
+                              {def.emoji}
                             </span>
                           ) : null;
                         })}
