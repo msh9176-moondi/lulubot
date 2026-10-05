@@ -171,7 +171,7 @@ export function ProfileModal({ isOpen, onClose, memberId, yearMonth }: ProfileMo
               <img
                 src={currentTreeImage}
                 alt={currentSkinInfo?.name || growthStageInfo.name}
-                className={`w-40 h-52 object-contain drop-shadow-xl ${details.selected_tree_skin === 'planning' ? 'scale-[3]' : ''}`}
+                className={`w-40 h-52 object-contain drop-shadow-xl ${details.selected_tree_skin === 'planning' ? 'scale-[4]' : ''}`}
               />
 
               {/* 이름 */}
