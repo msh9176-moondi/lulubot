@@ -425,7 +425,7 @@ export function MemberProfilePage() {
           {/* 메인 컨텐츠: 나무 + 정보 */}
           <div className="relative z-10 flex items-center gap-6">
             {/* 나무 이미지 */}
-            <div className="flex-shrink-0">
+            <div className={`flex-shrink-0 ${details.selected_tree_skin === 'planning' ? 'mr-6' : ''}`}>
               <img
                 src={currentTreeImage}
                 alt={currentSkinInfo?.name || growthStageInfo.name}
