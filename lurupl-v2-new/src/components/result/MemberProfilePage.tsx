@@ -429,7 +429,7 @@ export function MemberProfilePage() {
               <img
                 src={currentTreeImage}
                 alt={currentSkinInfo?.name || growthStageInfo.name}
-                className={`w-32 h-40 object-contain drop-shadow-lg ${details.selected_tree_skin === 'planning' ? 'scale-[1.4]' : ''}`}
+                className={`w-32 h-40 object-contain drop-shadow-lg ${details.selected_tree_skin === 'planning' ? 'scale-[2.2]' : ''}`}
               />
             </div>
 
