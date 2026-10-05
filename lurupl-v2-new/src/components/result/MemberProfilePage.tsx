@@ -414,7 +414,7 @@ export function MemberProfilePage() {
       {/* 나의 정원 - 통합 헤더 */}
       <div className="border-b border-border">
         {/* 정원 배경 + 나무 */}
-        <div className="relative bg-gradient-to-b from-sky-100 to-green-100 dark:from-sky-900/30 dark:to-green-900/30 px-6 py-8 overflow-hidden">
+        <div className="relative bg-gradient-to-b from-sky-100 to-green-100 dark:from-sky-900/30 dark:to-green-900/30 px-4 sm:px-6 py-6 sm:py-8 overflow-hidden">
           {/* 배경 구름 */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="absolute top-4 left-8 w-20 h-10 bg-white/50 rounded-full blur-sm" />
@@ -423,45 +423,45 @@ export function MemberProfilePage() {
           </div>
 
           {/* 메인 컨텐츠: 나무 + 정보 */}
-          <div className="relative z-10 flex items-center gap-6">
+          <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
             {/* 나무 이미지 */}
-            <div className={`flex-shrink-0 ${details.selected_tree_skin === 'planning' ? 'mr-6' : ''}`}>
+            <div className={`flex-shrink-0 ${details.selected_tree_skin === 'planning' ? 'sm:mr-6' : ''}`}>
               <img
                 src={currentTreeImage}
                 alt={currentSkinInfo?.name || growthStageInfo.name}
-                className={`w-32 h-40 object-contain drop-shadow-lg ${details.selected_tree_skin === 'planning' ? 'scale-[1.5]' : ''}`}
+                className={`w-24 h-32 sm:w-32 sm:h-40 object-contain drop-shadow-lg ${details.selected_tree_skin === 'planning' ? 'scale-[1.5]' : ''}`}
               />
             </div>
 
             {/* 정보 영역 */}
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 text-center sm:text-left">
               {/* 이름 + 칭호 */}
-              <h2 className="text-xl font-bold text-text">{details.display_name}</h2>
-              <div className="flex flex-wrap items-center gap-2 mt-1">
-                <span className="text-accent">
+              <h2 className="text-lg sm:text-xl font-bold text-text">{details.display_name}</h2>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-1">
+                <span className="text-accent text-sm sm:text-base">
                   {getAccumulatedTitle(details.accumulated_exp).icon}{' '}
                   {getAccumulatedTitle(details.accumulated_exp).title}
                 </span>
                 {categoryTitle && (
-                  <span className="text-sm text-text-muted">
+                  <span className="text-xs sm:text-sm text-text-muted">
                     {categoryTitle.emoji} {categoryTitle.title}
                   </span>
                 )}
               </div>
 
               {/* 성장 단계/스킨 뱃지 + 스킨 변경 버튼 */}
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/80 dark:bg-black/40 rounded-full shadow-sm">
-                  <Sparkles className="w-4 h-4 text-primary" />
+              <div className="mt-3 flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-white/80 dark:bg-black/40 rounded-full shadow-sm">
+                  <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
                   {details.selected_tree_skin === 'default' ? (
                     <>
-                      <span className="text-sm font-bold text-primary">{growthStageInfo.name}</span>
-                      <span className="text-xs text-text-muted">({growthStageInfo.stage + 1}/10)</span>
+                      <span className="text-xs sm:text-sm font-bold text-primary">{growthStageInfo.name}</span>
+                      <span className="text-[10px] sm:text-xs text-text-muted">({growthStageInfo.stage + 1}/10)</span>
                     </>
                   ) : (
                     <>
-                      <span className="text-sm font-bold text-primary">{currentSkinInfo?.name}</span>
-                      <span className="text-xs text-text-muted">
+                      <span className="text-xs sm:text-sm font-bold text-primary">{currentSkinInfo?.name}</span>
+                      <span className="text-[10px] sm:text-xs text-text-muted">
                         {DEFAULT_CATEGORIES[details.selected_tree_skin as CategoryKey]?.emoji}
                       </span>
                     </>
@@ -469,23 +469,23 @@ export function MemberProfilePage() {
                 </div>
                 <button
                   onClick={() => setShowSkinSelector(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/80 dark:bg-black/40 rounded-full shadow-sm hover:bg-white dark:hover:bg-black/60 transition-colors"
+                  className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-white/80 dark:bg-black/40 rounded-full shadow-sm hover:bg-white dark:hover:bg-black/60 transition-colors"
                 >
-                  <Palette className="w-3.5 h-3.5 text-text-muted" />
-                  <span className="text-xs text-text-muted">스킨 변경</span>
+                  <Palette className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-text-muted" />
+                  <span className="text-[10px] sm:text-xs text-text-muted">스킨 변경</span>
                 </button>
               </div>
 
               {/* 다음 단계 진행바 (기본 스킨일 때만) */}
               {details.selected_tree_skin === 'default' && growthStageInfo.nextStage ? (
                 <div className="mt-3">
-                  <div className="flex items-center justify-between text-xs mb-1">
+                  <div className="flex items-center justify-between text-[10px] sm:text-xs mb-1">
                     <span className="text-text-muted">다음: {growthStageInfo.nextStage.name}</span>
                     <span className="text-primary font-medium">
                       {details.total_count} / {growthStageInfo.nextStage.minCount}
                     </span>
                   </div>
-                  <div className="h-2 bg-white/50 dark:bg-black/30 rounded-full overflow-hidden">
+                  <div className="h-1.5 sm:h-2 bg-white/50 dark:bg-black/30 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full transition-all duration-500"
                       style={{ width: `${Math.min(100, growthStageInfo.progress)}%` }}
@@ -506,28 +506,28 @@ export function MemberProfilePage() {
         </div>
 
         {/* EXP 통계 */}
-        <div className="px-6 py-4 bg-bg-card">
-          <div className="grid grid-cols-3 gap-3">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 bg-bg-card">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
             <div className="text-center">
-              <p className="text-xs text-text-muted mb-0.5">이번 달</p>
-              <p className="text-lg font-bold text-primary">{details.monthly_exp}</p>
-              <p className="text-xs text-text-muted">EXP · {details.monthly_count}회</p>
+              <p className="text-[10px] sm:text-xs text-text-muted mb-0.5">이번 달</p>
+              <p className="text-base sm:text-lg font-bold text-primary">{details.monthly_exp}</p>
+              <p className="text-[10px] sm:text-xs text-text-muted">EXP · {details.monthly_count}회</p>
             </div>
             <div className="text-center border-x border-border">
-              <p className="text-xs text-text-muted mb-0.5">저번 달</p>
-              <p className="text-lg font-bold text-text">{details.last_month_exp}</p>
-              <p className="text-xs text-text-muted">EXP · {details.last_month_count}회</p>
+              <p className="text-[10px] sm:text-xs text-text-muted mb-0.5">저번 달</p>
+              <p className="text-base sm:text-lg font-bold text-text">{details.last_month_exp}</p>
+              <p className="text-[10px] sm:text-xs text-text-muted">EXP · {details.last_month_count}회</p>
             </div>
             <div className="text-center">
-              <p className="text-xs text-text-muted mb-0.5">누적</p>
-              <p className="text-lg font-bold text-accent">{details.accumulated_exp}</p>
-              <p className="text-xs text-text-muted">EXP · {details.total_count}회</p>
+              <p className="text-[10px] sm:text-xs text-text-muted mb-0.5">누적</p>
+              <p className="text-base sm:text-lg font-bold text-accent">{details.accumulated_exp}</p>
+              <p className="text-[10px] sm:text-xs text-text-muted">EXP · {details.total_count}회</p>
             </div>
           </div>
 
           {/* 월간 레벨 진행 */}
-          <div className="mt-4">
-            <div className="flex items-center justify-between text-xs mb-1">
+          <div className="mt-3 sm:mt-4">
+            <div className="flex items-center justify-between text-[10px] sm:text-xs mb-1">
               <span className="text-text-muted flex items-center gap-1">
                 <Badge variant="primary">Lv.{monthlyLevel}</Badge>
                 {getLevelTitle(monthlyLevel)}
