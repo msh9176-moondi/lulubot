@@ -1,10 +1,11 @@
 /**
  * TreeSkinSelector Component
  * 나무 스킨 선택 모달 - 획득한 스킨 중에서 선택 가능
+ * 좌우 슬라이드 캐러셀 방식
  */
 
-import { useState, useEffect } from 'react';
-import { Check, Lock, Sparkles, Eye } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Check, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Modal } from '@/components/common';
 import { useStageStore } from '@/stores/stageStore';
 import { updateMemberTreeSkin } from '@/lib/motivation-api';
@@ -93,155 +94,235 @@ export function TreeSkinSelector({
   };
 
   const unlockedSkinIds = getUnlockedSkinIds();
-  const isPreviewLocked = !unlockedSkinIds.has(previewSkin);
-
-  // 스킨 프리뷰 이미지
-  const previewImage = getSkinImage(previewSkin, totalCount);
   const growthStage = getCurrentGrowthStage(totalCount);
+
+  // 모든 스킨을 하나의 배열로 (기본 + 특별)
+  const allSkins: { id: SkinId; name: string; category?: CategoryKey; isDefault: boolean }[] = [
+    { id: 'default', name: DEFAULT_SKIN.name, isDefault: true },
+    ...Object.entries(CATEGORY_SKINS).map(([key, skin]) => ({
+      id: skin.id,
+      name: skin.name,
+      category: key as CategoryKey,
+      isDefault: false,
+    })),
+  ];
+
+  // 현재 인덱스
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const carouselRef = useRef<HTMLDivElement>(null);
+
+  // 스킨 변경 시 인덱스 초기화
+  useEffect(() => {
+    const idx = allSkins.findIndex(s => s.id === currentSkinId);
+    setCurrentIndex(idx >= 0 ? idx : 0);
+  }, [currentSkinId, isOpen]);
+
+  // 현재 보고 있는 스킨
+  const currentSkin = allSkins[currentIndex];
+  const isCurrentUnlocked = unlockedSkinIds.has(currentSkin.id);
+  const currentSkinImage = getSkinImage(currentSkin.id, totalCount);
+  const currentStageProgress = currentSkin.category
+    ? categoryStages.get(currentSkin.category) || 0
+    : 0;
+
+  // 이전/다음 스킨으로 이동
+  const goToPrev = () => {
+    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : allSkins.length - 1));
+  };
+
+  const goToNext = () => {
+    setCurrentIndex((prev) => (prev < allSkins.length - 1 ? prev + 1 : 0));
+  };
+
+  // 터치 스와이프 핸들링
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    const diff = touchStartX.current - touchEndX.current;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        goToNext();
+      } else {
+        goToPrev();
+      }
+    }
+  };
+
+  // 스킨 선택
+  const handleSelect = () => {
+    if (isCurrentUnlocked) {
+      setSelectedSkin(currentSkin.id);
+    }
+  };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="나무 스킨 선택" size="lg">
-      <div className="p-6">
-        {/* 프리뷰 영역 */}
-        <div className="mb-6 p-6 bg-gradient-to-b from-sky-100 to-green-100 dark:from-sky-900/30 dark:to-green-900/30 rounded-xl">
-          <div className="flex items-center justify-center">
-            <div className="text-center">
-              <div className="relative inline-block">
-                <img
-                  src={previewImage}
-                  alt="스킨 프리뷰"
-                  className={`w-32 h-40 object-contain mx-auto drop-shadow-lg ml-8 ${isPreviewLocked ? 'opacity-70' : ''} ${previewSkin === 'planning' ? 'scale-[1.5]' : ''}`}
-                />
-                {isPreviewLocked && (
-                  <div className="absolute top-0 right-0 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                    <Eye className="w-3 h-3" />
-                    미리보기
+      <div className="p-4">
+        {/* 캐러셀 영역 */}
+        <div
+          ref={carouselRef}
+          className="relative bg-gradient-to-b from-sky-100 to-green-100 dark:from-sky-900/30 dark:to-green-900/30 rounded-xl py-6 px-4"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          {/* 좌측 화살표 */}
+          <button
+            onClick={goToPrev}
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center bg-white/80 dark:bg-gray-800/80 rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-700 transition-colors"
+          >
+            <ChevronLeft className="w-6 h-6 text-text" />
+          </button>
+
+          {/* 우측 화살표 */}
+          <button
+            onClick={goToNext}
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center bg-white/80 dark:bg-gray-800/80 rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-700 transition-colors"
+          >
+            <ChevronRight className="w-6 h-6 text-text" />
+          </button>
+
+          {/* 스킨 미리보기 */}
+          <div className="flex flex-col items-center min-h-[280px] justify-center">
+            <div className="relative">
+              <img
+                src={currentSkinImage}
+                alt={currentSkin.name}
+                className={`w-36 h-44 object-contain drop-shadow-xl transition-all duration-300 ${
+                  !isCurrentUnlocked ? 'grayscale opacity-60' : ''
+                } ${currentSkin.id === 'planning' ? 'scale-[1.5]' : ''}`}
+              />
+              {!isCurrentUnlocked && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="bg-black/50 rounded-full p-3">
+                    <Lock className="w-8 h-8 text-white" />
                   </div>
-                )}
-              </div>
-              <p className="mt-3 font-medium text-text">
-                {previewSkin === 'default'
-                  ? `${growthStage.name} (${growthStage.stage + 1}/10)`
-                  : CATEGORY_SKINS[previewSkin as Exclude<CategoryKey, 'diary'>]?.name}
-              </p>
-              {previewSkin !== 'default' && (
+                </div>
+              )}
+              {isCurrentUnlocked && selectedSkin === currentSkin.id && (
+                <div className="absolute -top-2 -right-2 bg-primary rounded-full p-1.5 shadow-lg">
+                  <Check className="w-5 h-5 text-white" />
+                </div>
+              )}
+            </div>
+
+            {/* 스킨 정보 */}
+            <div className="text-center mt-4">
+              <p className="font-bold text-lg text-text">{currentSkin.name}</p>
+              {currentSkin.isDefault ? (
                 <p className="text-sm text-text-muted mt-1">
-                  {DEFAULT_CATEGORIES[previewSkin as CategoryKey]?.emoji}{' '}
-                  {DEFAULT_CATEGORIES[previewSkin as CategoryKey]?.name} 마스터
+                  현재: {growthStage.name} ({growthStage.stage + 1}/10)
+                </p>
+              ) : (
+                <p className="text-sm text-text-muted mt-1">
+                  {DEFAULT_CATEGORIES[currentSkin.category!]?.emoji}{' '}
+                  {DEFAULT_CATEGORIES[currentSkin.category!]?.name} 마스터
                 </p>
               )}
-              {isPreviewLocked && (
-                <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2 flex items-center justify-center gap-1">
-                  <Lock className="w-3 h-3" />
-                  {categoryStages.get(previewSkin as CategoryKey) || 0}/5 단계 달성 시 획득
+
+              {/* 해금 상태 */}
+              {!isCurrentUnlocked && (
+                <div className="mt-3 px-4 py-2 bg-yellow-500/20 rounded-lg">
+                  <p className="text-sm text-yellow-700 dark:text-yellow-400 flex items-center justify-center gap-1">
+                    <Lock className="w-4 h-4" />
+                    {currentStageProgress}/5 단계 달성 시 해금
+                  </p>
+                  <div className="mt-2 w-32 mx-auto h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-yellow-500 transition-all"
+                      style={{ width: `${(currentStageProgress / 5) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {isCurrentUnlocked && selectedSkin !== currentSkin.id && (
+                <button
+                  onClick={handleSelect}
+                  className="mt-3 px-6 py-2 bg-primary/20 text-primary rounded-lg text-sm font-medium hover:bg-primary/30 transition-colors"
+                >
+                  이 스킨 선택
+                </button>
+              )}
+
+              {selectedSkin === currentSkin.id && (
+                <p className="mt-3 text-sm text-primary font-medium flex items-center justify-center gap-1">
+                  <Check className="w-4 h-4" />
+                  선택됨
                 </p>
               )}
             </div>
+          </div>
+
+          {/* 페이지 인디케이터 */}
+          <div className="flex justify-center gap-1.5 mt-4">
+            {allSkins.map((skin, idx) => (
+              <button
+                key={skin.id}
+                onClick={() => setCurrentIndex(idx)}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  idx === currentIndex
+                    ? 'w-6 bg-primary'
+                    : unlockedSkinIds.has(skin.id)
+                    ? 'bg-primary/40'
+                    : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+              />
+            ))}
           </div>
         </div>
 
-        {/* 스킨 목록 */}
-        <div className="space-y-4">
-          {/* 기본 스킨 */}
-          <div>
-            <h3 className="text-sm font-medium text-text-muted mb-2">기본 스킨</h3>
-            <button
-              onClick={() => {
-                setPreviewSkin('default');
-                setSelectedSkin('default');
-              }}
-              onMouseEnter={() => setPreviewSkin('default')}
-              className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${
-                selectedSkin === 'default'
-                  ? 'border-primary bg-primary/10'
-                  : 'border-border hover:border-primary/50 bg-bg'
-              }`}
-            >
-              <img
-                src={growthStage.image}
-                alt={DEFAULT_SKIN.name}
-                className="w-16 h-20 object-contain"
-              />
-              <div className="flex-1 text-left">
-                <p className="font-medium text-text">{DEFAULT_SKIN.name}</p>
-                <p className="text-sm text-text-muted">
-                  인증 횟수에 따라 성장하는 나무
-                </p>
-                <p className="text-xs text-primary mt-1">
-                  현재: {growthStage.name} ({growthStage.stage + 1}/10)
-                </p>
-              </div>
-              {selectedSkin === 'default' && (
-                <Check className="w-6 h-6 text-primary" />
-              )}
-            </button>
-          </div>
+        {/* 스킨 썸네일 목록 (가로 스크롤) */}
+        <div className="mt-4 overflow-x-auto pb-2">
+          <div className="flex gap-2 px-1">
+            {allSkins.map((skin, idx) => {
+              const isUnlocked = unlockedSkinIds.has(skin.id);
+              const skinImg = getSkinImage(skin.id, totalCount);
 
-          {/* 특별 스킨 */}
-          <div>
-            <h3 className="text-sm font-medium text-text-muted mb-2">
-              <Sparkles className="w-4 h-4 inline mr-1" />
-              특별 스킨 (카테고리 5단계 달성 보상)
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              {Object.entries(CATEGORY_SKINS).map(([key, skin]) => {
-                const isUnlocked = unlockedSkinIds.has(skin.id);
-                const currentStage = categoryStages.get(key as CategoryKey) || 0;
-                const category = DEFAULT_CATEGORIES[key as CategoryKey];
-
-                return (
-                  <button
-                    key={skin.id}
-                    onClick={() => {
-                      setPreviewSkin(skin.id);
-                      if (isUnlocked) {
-                        setSelectedSkin(skin.id);
-                      }
-                    }}
-                    onMouseEnter={() => setPreviewSkin(skin.id)}
-                    className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all ${
-                      !isUnlocked
-                        ? 'border-border bg-bg opacity-60 hover:opacity-80 cursor-pointer'
-                        : selectedSkin === skin.id
-                        ? 'border-primary bg-primary/10'
-                        : 'border-border hover:border-primary/50 bg-bg'
-                    }`}
-                  >
-                    {!isUnlocked && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-bg/80 rounded-xl">
-                        <div className="text-center">
-                          <Lock className="w-6 h-6 text-text-muted mx-auto mb-1" />
-                          <p className="text-xs text-text-muted">
-                            {currentStage}/5 단계
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                    <img
-                      src={skin.image}
-                      alt={skin.name}
-                      className={`w-14 h-18 object-contain mb-2 ${
-                        skin.id === 'planning' ? 'scale-[1.5]' : ''
-                      }`}
-                    />
-                    <p className="font-medium text-sm text-text">{skin.name}</p>
-                    <p className="text-xs text-text-muted">
-                      {category?.emoji} {category?.name}
-                    </p>
-                    {isUnlocked && selectedSkin === skin.id && (
-                      <div className="absolute top-2 right-2">
-                        <Check className="w-5 h-5 text-primary" />
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+              return (
+                <button
+                  key={skin.id}
+                  onClick={() => setCurrentIndex(idx)}
+                  className={`flex-shrink-0 relative w-16 h-20 rounded-lg border-2 p-1 transition-all ${
+                    idx === currentIndex
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border bg-bg hover:border-primary/50'
+                  }`}
+                >
+                  <img
+                    src={skinImg}
+                    alt={skin.name}
+                    className={`w-full h-full object-contain ${
+                      !isUnlocked ? 'grayscale opacity-50' : ''
+                    } ${skin.id === 'planning' ? 'scale-[1.3]' : ''}`}
+                  />
+                  {!isUnlocked && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Lock className="w-4 h-4 text-text-muted" />
+                    </div>
+                  )}
+                  {isUnlocked && selectedSkin === skin.id && (
+                    <div className="absolute -top-1 -right-1 bg-primary rounded-full p-0.5">
+                      <Check className="w-3 h-3 text-white" />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* 버튼 */}
-        <div className="flex gap-3 mt-6">
+        <div className="flex gap-3 mt-4">
           <button
             onClick={onClose}
             className="flex-1 py-3 px-4 bg-bg border border-border rounded-xl text-text hover:bg-bg-hover transition-colors"
