@@ -25,10 +25,12 @@ interface Certification {
 
 interface ImportBatch {
   id: string;
-  imported_at: string;
+  created_at: string;
   cert_count: number;
-  date_range_start: string;
-  date_range_end: string;
+  total_exp: number;
+  status: string;
+  file_name: string;
+  confirmed_at: string | null;
 }
 
 type TabType = 'list' | 'batches' | 'stats';
@@ -115,7 +117,7 @@ export function CertificationManagement() {
       const { data, error } = await supabase
         .from('import_batches')
         .select('*')
-        .order('imported_at', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(50);
 
       if (error) {
@@ -380,7 +382,7 @@ export function CertificationManagement() {
                 >
                   <div>
                     <p className="font-medium text-text">
-                      {new Date(batch.imported_at).toLocaleDateString('ko-KR', {
+                      {new Date(batch.created_at).toLocaleDateString('ko-KR', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
@@ -388,13 +390,20 @@ export function CertificationManagement() {
                         minute: '2-digit',
                       })}
                     </p>
-                    <p className="text-sm text-text-muted">
-                      {batch.date_range_start} ~ {batch.date_range_end}
+                    <p className="text-sm text-text-muted flex items-center gap-2">
+                      <span>{batch.file_name}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs ${
+                        batch.status === 'confirmed'
+                          ? 'bg-green-500/20 text-green-600'
+                          : 'bg-yellow-500/20 text-yellow-600'
+                      }`}>
+                        {batch.status === 'confirmed' ? '완료' : '대기중'}
+                      </span>
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-primary">{batch.cert_count}</p>
-                    <p className="text-xs text-text-muted">건 가져옴</p>
+                    <p className="text-lg font-bold text-primary">{batch.cert_count}건</p>
+                    <p className="text-xs text-text-muted">+{batch.total_exp} EXP</p>
                   </div>
                 </div>
               ))}
