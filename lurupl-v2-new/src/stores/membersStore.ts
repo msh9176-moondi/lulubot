@@ -18,6 +18,8 @@ export interface MemberStats {
   monthly_exp: number;
   cert_count: number;
   cert_days: number;
+  selected_tree_skin: string;
+  total_count: number;
 }
 
 interface MembersState {
@@ -70,7 +72,7 @@ export const useMembersStore = create<MembersState>((set, get) => ({
       // Fetch active members
       const { data: membersData, error: membersError } = await supabase
         .from('members')
-        .select('id, display_name, accumulated_exp')
+        .select('id, display_name, accumulated_exp, selected_tree_skin')
         .eq('is_active', true);
 
       if (membersError) throw membersError;
@@ -84,6 +86,20 @@ export const useMembersStore = create<MembersState>((set, get) => ({
         .gt('final_exp', 0);
 
       if (certsError) throw certsError;
+
+      // Fetch all-time certification counts
+      const { data: allCertsData, error: allCertsError } = await supabase
+        .from('certifications')
+        .select('member_id')
+        .gt('final_exp', 0);
+
+      if (allCertsError) throw allCertsError;
+
+      // Calculate total counts per member
+      const totalCountMap: Record<string, number> = {};
+      for (const cert of allCertsData || []) {
+        totalCountMap[cert.member_id] = (totalCountMap[cert.member_id] || 0) + 1;
+      }
 
       // Calculate monthly stats per member
       const statsMap: Record<string, { exp: number; count: number; days: Set<string> }> = {};
@@ -104,6 +120,8 @@ export const useMembersStore = create<MembersState>((set, get) => ({
         monthly_exp: statsMap[member.id]?.exp || 0,
         cert_count: statsMap[member.id]?.count || 0,
         cert_days: statsMap[member.id]?.days.size || 0,
+        selected_tree_skin: member.selected_tree_skin || 'default',
+        total_count: totalCountMap[member.id] || 0,
       }));
 
       // Sort by monthly exp descending
