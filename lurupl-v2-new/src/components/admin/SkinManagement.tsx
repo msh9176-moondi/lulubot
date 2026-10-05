@@ -6,8 +6,6 @@
 import { useState, useEffect } from 'react';
 import { Sparkles, User, Check } from 'lucide-react';
 import { Spinner } from '@/components/common';
-import { useStageStore } from '@/stores/stageStore';
-import { useMembersStore } from '@/stores/membersStore';
 import {
   DEFAULT_GROWTH_STAGES,
   CATEGORY_SKINS,
@@ -31,61 +29,64 @@ export function SkinManagement() {
   const [memberSkins, setMemberSkins] = useState<MemberSkinInfo[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const { memberStatuses, fetchMemberStatus, fetchDefinitions } = useStageStore();
-  const { members, fetchMembers } = useMembersStore();
-
-  // 초기 데이터 로드
-  useEffect(() => {
-    fetchDefinitions();
-    fetchMembers();
-  }, [fetchDefinitions, fetchMembers]);
-
   // 멤버별 스킨 정보 로드
   useEffect(() => {
     const loadMemberSkins = async () => {
-      if (members.length === 0) return;
+      if (activeTab !== 'members') return;
       setLoading(true);
 
-      // 각 멤버의 스테이지 상태 가져오기
-      const skinInfos: MemberSkinInfo[] = [];
-
-      for (const member of members.filter(m => m.is_active)) {
-        await fetchMemberStatus(member.id);
-        const statuses = memberStatuses.get(member.id) || [];
-
-        // 해금된 스킨 계산
-        const unlocked: SkinId[] = ['default'];
-        for (const [categoryKey, skin] of Object.entries(CATEGORY_SKINS)) {
-          const status = statuses.find(s => s.categoryKey === categoryKey);
-          if (status && status.currentStage >= skin.requiredStage) {
-            unlocked.push(skin.id);
-          }
-        }
-
-        // 선택된 스킨 조회
-        const { data } = await supabase
+      try {
+        // 활성 멤버 조회
+        const { data: members, error: membersError } = await supabase
           .from('members')
-          .select('selected_tree_skin')
-          .eq('id', member.id)
-          .single();
+          .select('id, display_name, selected_tree_skin, accumulated_exp')
+          .eq('is_active', true)
+          .order('display_name');
 
-        skinInfos.push({
-          id: member.id,
-          display_name: member.display_name,
-          selected_tree_skin: data?.selected_tree_skin || 'default',
-          accumulated_exp: member.accumulated_exp,
-          unlocked_skins: unlocked,
+        if (membersError) throw membersError;
+
+        // 모든 멤버의 스테이지 해금 정보 조회
+        const { data: unlocks, error: unlocksError } = await supabase
+          .from('category_stage_unlocks')
+          .select('member_id, category_key, stage_number');
+
+        if (unlocksError) throw unlocksError;
+
+        // 멤버별로 해금된 스킨 계산
+        const skinInfos: MemberSkinInfo[] = (members || []).map(member => {
+          const memberUnlocks = (unlocks || []).filter(u => u.member_id === member.id);
+
+          // 해금된 스킨 계산
+          const unlockedSkins: SkinId[] = ['default'];
+          for (const [categoryKey, skin] of Object.entries(CATEGORY_SKINS)) {
+            const maxStage = memberUnlocks
+              .filter(u => u.category_key === categoryKey)
+              .reduce((max, u) => Math.max(max, u.stage_number), 0);
+
+            if (maxStage >= skin.requiredStage) {
+              unlockedSkins.push(skin.id);
+            }
+          }
+
+          return {
+            id: member.id,
+            display_name: member.display_name,
+            selected_tree_skin: member.selected_tree_skin || 'default',
+            accumulated_exp: member.accumulated_exp || 0,
+            unlocked_skins: unlockedSkins,
+          };
         });
-      }
 
-      setMemberSkins(skinInfos);
-      setLoading(false);
+        setMemberSkins(skinInfos);
+      } catch (error) {
+        console.error('Failed to load member skins:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    if (activeTab === 'members') {
-      loadMemberSkins();
-    }
-  }, [activeTab, members, fetchMemberStatus, memberStatuses]);
+    loadMemberSkins();
+  }, [activeTab]);
 
   const tabs = [
     { id: 'default' as TabType, label: '기본 스킨', icon: '🌱' },
