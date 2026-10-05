@@ -6,9 +6,9 @@
 import { useState, useEffect } from 'react';
 import { Edit2, Save, X, BarChart3 } from 'lucide-react';
 import { Spinner } from '@/components/common';
-import { useStageStore, type StageDefinition, type CategoryStageStatus } from '@/stores/stageStore';
-import { useMembersStore } from '@/stores/membersStore';
+import { useStageStore, type StageDefinition } from '@/stores/stageStore';
 import { DEFAULT_CATEGORIES, type CategoryKey } from '@/domain/categories';
+import { supabase } from '@/lib/supabase';
 
 type TabType = 'definitions' | 'progress';
 
@@ -20,43 +20,79 @@ interface EditFormData {
   theme_color: string;
 }
 
+// 멤버 진행 현황 타입
+interface MemberProgress {
+  id: string;
+  display_name: string;
+  stages: Record<string, number>; // categoryKey -> maxStage
+}
+
 export function StageManagement() {
   const [activeTab, setActiveTab] = useState<TabType>('definitions');
   const [selectedCategory, setSelectedCategory] = useState<CategoryKey>('cleaning');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<EditFormData>>({});
-  const [allMemberStatuses, setAllMemberStatuses] = useState<Map<string, CategoryStageStatus[]>>(new Map());
+  const [memberProgress, setMemberProgress] = useState<MemberProgress[]>([]);
   const [loadingProgress, setLoadingProgress] = useState(false);
 
-  const { definitions, loading, fetchDefinitions, updateStageDefinition, fetchMemberStatus, memberStatuses } = useStageStore();
-  const { members, fetchMembers } = useMembersStore();
+  const { definitions, loading, fetchDefinitions, updateStageDefinition } = useStageStore();
 
   // 초기 데이터 로드
   useEffect(() => {
     fetchDefinitions();
-    fetchMembers();
-  }, [fetchDefinitions, fetchMembers]);
+  }, [fetchDefinitions]);
 
   // 멤버 진행 현황 로드
   useEffect(() => {
     const loadAllProgress = async () => {
-      if (activeTab !== 'progress' || members.length === 0) return;
+      if (activeTab !== 'progress') return;
       setLoadingProgress(true);
 
-      const statusMap = new Map<string, CategoryStageStatus[]>();
-      for (const member of members.filter(m => m.is_active)) {
-        await fetchMemberStatus(member.id);
-        const statuses = memberStatuses.get(member.id);
-        if (statuses) {
-          statusMap.set(member.id, statuses);
-        }
+      try {
+        // 활성 멤버 조회
+        const { data: members, error: membersError } = await supabase
+          .from('members')
+          .select('id, display_name')
+          .eq('is_active', true)
+          .order('display_name');
+
+        if (membersError) throw membersError;
+
+        // 모든 스테이지 해금 정보 조회
+        const { data: unlocks, error: unlocksError } = await supabase
+          .from('category_stage_unlocks')
+          .select('member_id, category_key, stage_number');
+
+        if (unlocksError) throw unlocksError;
+
+        // 멤버별 최고 스테이지 계산
+        const progressList: MemberProgress[] = (members || []).map(member => {
+          const memberUnlocks = (unlocks || []).filter(u => u.member_id === member.id);
+          const stages: Record<string, number> = {};
+
+          // 각 카테고리별 최고 스테이지 찾기
+          for (const unlock of memberUnlocks) {
+            const current = stages[unlock.category_key] || 0;
+            stages[unlock.category_key] = Math.max(current, unlock.stage_number);
+          }
+
+          return {
+            id: member.id,
+            display_name: member.display_name,
+            stages,
+          };
+        });
+
+        setMemberProgress(progressList);
+      } catch (error) {
+        console.error('Failed to load member progress:', error);
+      } finally {
+        setLoadingProgress(false);
       }
-      setAllMemberStatuses(statusMap);
-      setLoadingProgress(false);
     };
 
     loadAllProgress();
-  }, [activeTab, members, fetchMemberStatus, memberStatuses]);
+  }, [activeTab]);
 
   // 선택된 카테고리의 정의 필터링
   const categoryDefinitions = definitions.filter(d => d.categoryKey === selectedCategory);
@@ -289,40 +325,36 @@ export function StageManagement() {
                   </tr>
                 </thead>
                 <tbody>
-                  {members.filter(m => m.is_active).map(member => {
-                    const statuses = allMemberStatuses.get(member.id) || [];
-                    return (
-                      <tr key={member.id} className="hover:bg-bg-hover">
-                        <td className="p-3 border-b border-border text-text sticky left-0 bg-bg-card">
-                          {member.display_name}
-                        </td>
-                        {categories.map(([key]) => {
-                          const status = statuses.find(s => s.categoryKey === key);
-                          const stage = status?.currentStage || 0;
-                          return (
-                            <td
-                              key={key}
-                              className="text-center p-3 border-b border-border"
+                  {memberProgress.map(member => (
+                    <tr key={member.id} className="hover:bg-bg-hover">
+                      <td className="p-3 border-b border-border text-text sticky left-0 bg-bg-card">
+                        {member.display_name}
+                      </td>
+                      {categories.map(([key]) => {
+                        const stage = member.stages[key] || 0;
+                        return (
+                          <td
+                            key={key}
+                            className="text-center p-3 border-b border-border"
+                          >
+                            <span
+                              className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
+                                stage === 5
+                                  ? 'bg-yellow-500 text-white'
+                                  : stage >= 3
+                                  ? 'bg-green-500 text-white'
+                                  : stage >= 1
+                                  ? 'bg-blue-500 text-white'
+                                  : 'bg-bg-hover text-text-muted'
+                              }`}
                             >
-                              <span
-                                className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
-                                  stage === 5
-                                    ? 'bg-yellow-500 text-white'
-                                    : stage >= 3
-                                    ? 'bg-green-500 text-white'
-                                    : stage >= 1
-                                    ? 'bg-blue-500 text-white'
-                                    : 'bg-bg-hover text-text-muted'
-                                }`}
-                              >
-                                {stage}
-                              </span>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })}
+                              {stage}
+                            </span>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
