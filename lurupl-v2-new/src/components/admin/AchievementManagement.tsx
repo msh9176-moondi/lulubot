@@ -6,7 +6,6 @@
 import { useState, useEffect } from 'react';
 import { Trophy, User, BarChart3, RefreshCw } from 'lucide-react';
 import { Spinner } from '@/components/common';
-import { useMembersStore } from '@/stores/membersStore';
 import { supabase } from '@/lib/supabase';
 import { ACHIEVEMENTS } from '@/domain/achievement-definitions';
 import type { AchievementDefinition } from '@/domain/achievement-types';
@@ -27,74 +26,87 @@ interface AchievementStat {
   achievedMembers: string[];
 }
 
+interface MemberInfo {
+  id: string;
+  display_name: string;
+}
+
 type TabType = 'list' | 'members' | 'stats';
 
 export function AchievementManagement() {
   const [activeTab, setActiveTab] = useState<TabType>('list');
+  const [members, setMembers] = useState<MemberInfo[]>([]);
   const [memberAchievements, setMemberAchievements] = useState<Map<string, MemberAchievement[]>>(new Map());
   const [achievementStats, setAchievementStats] = useState<AchievementStat[]>([]);
   const [loading, setLoading] = useState(false);
   const [recalculating, setRecalculating] = useState<string | null>(null);
 
-  const { members, fetchMembers } = useMembersStore();
-
-  // 초기 데이터 로드
+  // 데이터 로드
   useEffect(() => {
-    fetchMembers();
-  }, [fetchMembers]);
-
-  // 멤버별 도전 과제 달성 현황 로드
-  useEffect(() => {
-    const loadAchievements = async () => {
+    const loadData = async () => {
       setLoading(true);
 
-      const { data, error } = await supabase
-        .from('member_achievements')
-        .select('*');
+      try {
+        // 멤버와 도전 과제 동시 조회
+        const [membersResult, achievementsResult] = await Promise.all([
+          supabase
+            .from('members')
+            .select('id, display_name')
+            .eq('is_active', true),
+          supabase
+            .from('member_achievements')
+            .select('*')
+        ]);
 
-      if (error) {
-        console.error('Failed to load achievements:', error);
-        setLoading(false);
-        return;
-      }
+        if (membersResult.error) throw membersResult.error;
+        if (achievementsResult.error) throw achievementsResult.error;
 
-      // 멤버별로 그룹화
-      const achievementMap = new Map<string, MemberAchievement[]>();
-      for (const ach of data || []) {
-        const existing = achievementMap.get(ach.member_id) || [];
-        existing.push(ach);
-        achievementMap.set(ach.member_id, existing);
-      }
-      setMemberAchievements(achievementMap);
+        const membersList = membersResult.data || [];
+        const achievementsList = achievementsResult.data || [];
 
-      // 통계 계산
-      const stats: AchievementStat[] = ACHIEVEMENTS.map(def => {
-        const achievedMembers: string[] = [];
-        achievementMap.forEach((achievements, memberId) => {
-          if (achievements.some(a => a.achievement_key === def.key)) {
-            const member = members.find(m => m.id === memberId);
-            if (member) {
-              achievedMembers.push(member.display_name);
+        setMembers(membersList);
+
+        // 멤버별로 그룹화
+        const achievementMap = new Map<string, MemberAchievement[]>();
+        for (const ach of achievementsList) {
+          const existing = achievementMap.get(ach.member_id) || [];
+          existing.push(ach);
+          achievementMap.set(ach.member_id, existing);
+        }
+        setMemberAchievements(achievementMap);
+
+        // 통계 계산
+        const stats: AchievementStat[] = ACHIEVEMENTS.map(def => {
+          const achievedMembers: string[] = [];
+          achievementMap.forEach((achievements, memberId) => {
+            if (achievements.some(a => a.achievement_key === def.key)) {
+              const member = membersList.find(m => m.id === memberId);
+              if (member) {
+                achievedMembers.push(member.display_name);
+              }
             }
-          }
+          });
+
+          return {
+            key: def.key,
+            name: def.name,
+            category: def.category,
+            difficulty: def.difficulty,
+            achievedCount: achievedMembers.length,
+            achievedMembers,
+          };
         });
 
-        return {
-          key: def.key,
-          name: def.name,
-          category: def.category,
-          difficulty: def.difficulty,
-          achievedCount: achievedMembers.length,
-          achievedMembers,
-        };
-      });
-
-      setAchievementStats(stats);
-      setLoading(false);
+        setAchievementStats(stats);
+      } catch (error) {
+        console.error('Failed to load achievements:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    loadAchievements();
-  }, [members]);
+    loadData();
+  }, []);
 
   // 도전 과제 재계산
   const handleRecalculate = async (memberId: string) => {
@@ -229,7 +241,7 @@ export function AchievementManagement() {
             </div>
           ) : (
             <div className="space-y-3">
-              {members.filter(m => m.is_active).map(member => {
+              {members.map(member => {
                 const achievements = memberAchievements.get(member.id) || [];
                 const percentage = Math.round((achievements.length / ACHIEVEMENTS.length) * 100);
 
@@ -310,7 +322,7 @@ export function AchievementManagement() {
               {achievementStats
                 .sort((a, b) => b.achievedCount - a.achievedCount)
                 .map(stat => {
-                  const totalMembers = members.filter(m => m.is_active).length;
+                  const totalMembers = members.length;
                   const percentage = totalMembers > 0
                     ? Math.round((stat.achievedCount / totalMembers) * 100)
                     : 0;
