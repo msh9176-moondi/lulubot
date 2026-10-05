@@ -445,7 +445,7 @@ export function CertificationManagement() {
             </div>
             <div>
               <p className="text-sm text-text-muted mb-1">카테고리</p>
-              <p className="font-medium text-text">{getCategoryInfo(editingCert.category)}</p>
+              <p className="font-medium text-text">{getCategoryInfo(editingCert.category_key)}</p>
             </div>
             <div>
               <label className="block text-sm text-text-muted mb-1">최종 EXP</label>

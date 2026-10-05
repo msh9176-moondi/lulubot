@@ -181,6 +181,56 @@ export function AchievementManagement() {
 
   const difficultyStars = (d: number) => '⭐'.repeat(d);
 
+  // 해금 조건 설명 생성
+  const getUnlockCondition = (ach: AchievementDef): string => {
+    const categoryName = ach.category ? (categoryLabels[ach.category]?.replace(/^.+\s/, '') || ach.category) : '';
+
+    switch (ach.type) {
+      case 'first':
+        return `${categoryName} 첫 인증`;
+      case 'weekly':
+        return `주간 ${categoryName} ${ach.target}회 인증`;
+      case 'streak':
+        return `${categoryName} ${ach.target}일 연속 인증`;
+      case 'monthly':
+        return `월간 ${categoryName} ${ach.target}회 인증`;
+      case 'early':
+        return `오전 6시 이전 기상 ${ach.target}회`;
+      case 'daily_variety':
+        return `하루에 ${ach.target}개 카테고리 인증`;
+      case 'weekly_variety':
+        return `주간 ${ach.target}개 카테고리 인증`;
+      case 'monthly_all':
+        return `월간 ${ach.target}개 카테고리 인증`;
+      case 'hidden_owl':
+        return `자정~새벽 4시 사이 인증`;
+      case 'hidden_santa':
+        return `12월 25일에 인증`;
+      case 'hidden_phoenix':
+        return `7일 이상 공백 후 복귀 인증`;
+      case 'hidden_perfect':
+        return `하루에 모든 카테고리 인증`;
+      case 'hidden_century':
+        return `총 ${ach.target}회 인증 달성`;
+      case 'hidden_ghost':
+        return `주말에만 ${ach.target}주 연속 인증`;
+      case 'ranking_first':
+        return `월간 랭킹 1위 달성`;
+      case 'ranking_second':
+        return `월간 랭킹 2위 달성`;
+      case 'ranking_third':
+        return `월간 랭킹 3위 달성`;
+      case 'ranking_first_count':
+        return `월간 1위 ${ach.target}회 달성`;
+      case 'ranking_top3_count':
+        return `월간 TOP3 ${ach.target}회 달성`;
+      case 'ranking_top3_streak':
+        return `${ach.target}개월 연속 TOP3 달성`;
+      default:
+        return ach.hint || `목표: ${ach.target}`;
+    }
+  };
+
   const tabs = [
     { id: 'list' as TabType, label: '전체 목록', icon: '📋' },
     { id: 'members' as TabType, label: '멤버별 현황', icon: '👥' },
@@ -240,7 +290,7 @@ export function AchievementManagement() {
                             </span>
                           </p>
                           <p className="text-sm text-text-muted">
-                            {ach.is_hidden ? (ach.hint || '히든 도전과제') : `${ach.type} (목표: ${ach.target})`}
+                            {getUnlockCondition(ach)}
                           </p>
                         </div>
                       </div>
@@ -273,8 +323,9 @@ export function AchievementManagement() {
           ) : (
             <div className="space-y-3">
               {members.map(member => {
-                const achievements = memberAchievements.get(member.id) || [];
-                const percentage = Math.round((achievements.length / achievements.length) * 100);
+                const memberAchs = memberAchievements.get(member.id) || [];
+                const totalCount = achievements.length;
+                const percentage = totalCount > 0 ? Math.round((memberAchs.length / totalCount) * 100) : 0;
 
                 return (
                   <div
@@ -285,7 +336,7 @@ export function AchievementManagement() {
                       <div>
                         <p className="font-medium text-text">{member.display_name}</p>
                         <p className="text-sm text-text-muted">
-                          {achievements.length}/{achievements.length} 달성 ({percentage}%)
+                          {memberAchs.length}/{totalCount} 달성 ({percentage}%)
                         </p>
                       </div>
                       <button
@@ -307,9 +358,9 @@ export function AchievementManagement() {
                     </div>
 
                     {/* 최근 달성 */}
-                    {achievements.length > 0 && (
+                    {memberAchs.length > 0 && (
                       <div className="mt-3 flex flex-wrap gap-1">
-                        {achievements.slice(0, 10).map(ach => {
+                        {memberAchs.slice(0, 10).map(ach => {
                           const def = achievements.find(a => a.key === ach.achievement_key);
                           return def ? (
                             <span
@@ -321,9 +372,9 @@ export function AchievementManagement() {
                             </span>
                           ) : null;
                         })}
-                        {achievements.length > 10 && (
+                        {memberAchs.length > 10 && (
                           <span className="text-sm text-text-muted">
-                            +{achievements.length - 10}개
+                            +{memberAchs.length - 10}개
                           </span>
                         )}
                       </div>
