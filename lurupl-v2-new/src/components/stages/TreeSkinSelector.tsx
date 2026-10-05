@@ -110,7 +110,7 @@ export function TreeSkinSelector({
                 <img
                   src={previewImage}
                   alt="스킨 프리뷰"
-                  className={`w-32 h-40 object-contain mx-auto drop-shadow-lg ml-10 ${isPreviewLocked ? 'opacity-70' : ''} ${previewSkin === 'planning' ? 'scale-[1.5]' : ''}`}
+                  className={`w-32 h-40 object-contain mx-auto drop-shadow-lg ml-8 ${isPreviewLocked ? 'opacity-70' : ''} ${previewSkin === 'planning' ? 'scale-[1.5]' : ''}`}
                 />
                 {isPreviewLocked && (
                   <div className="absolute top-0 right-0 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
