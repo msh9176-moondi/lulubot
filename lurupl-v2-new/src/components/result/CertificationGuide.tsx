@@ -175,13 +175,20 @@ export function CertificationGuide() {
           <h4 className="text-sm font-medium text-text flex items-center gap-2">
             <span>🏷️</span> 레벨별 타이틀 (10레벨 순환)
           </h4>
-          <div className="grid grid-cols-5 gap-2 ml-6">
-            {['새싹', '성장', '발전', '열정', '습관', '루틴', '마스터', '전문가', '영웅', '전설'].map((title, i) => (
-              <div key={title} className="text-center p-2 bg-bg-card rounded-lg border border-accent/30 shadow-sm">
-                <p className="text-xs text-accent">Lv.{i + 1}</p>
-                <p className="text-sm font-medium text-text">{title}</p>
-              </div>
-            ))}
+          <div className="overflow-x-auto ml-6">
+            <div className="flex gap-2 pb-2">
+              {['새싹', '성장', '발전', '열정', '습관', '루틴', '마스터', '전문가', '영웅', '전설'].map((title, i, arr) => (
+                <div key={title} className="flex items-center">
+                  <div className="text-center p-2 bg-bg-card rounded-lg border border-accent/30 shadow-sm min-w-[60px]">
+                    <p className="text-xs text-accent">Lv.{i + 1}</p>
+                    <p className="text-sm font-medium text-text whitespace-nowrap">{title}</p>
+                  </div>
+                  {i < arr.length - 1 && (
+                    <span className="text-accent mx-1">→</span>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
           <p className="text-xs text-text-muted ml-6">
             * Lv.11부터는 타이틀에 등급 추가 (예: 새싹 II, 성장 III...)
@@ -285,21 +292,25 @@ export function CertificationGuide() {
           <h4 className="text-sm font-medium text-text flex items-center gap-2">
             <span>🌳</span> 성장 단계
           </h4>
-          <div className="grid grid-cols-5 gap-2">
-            {GROWTH_STAGES.map((stage, idx) => (
-              <div
-                key={idx}
-                className="flex flex-col items-center p-2 bg-bg-card rounded-lg border border-green-500/20"
-              >
-                <img
-                  src={stage.image}
-                  alt={stage.name}
-                  className="w-10 h-12 object-contain"
-                />
-                <p className="text-xs font-medium text-text mt-1 text-center">{stage.name}</p>
-                <p className="text-[10px] text-green-600">{stage.minCount}회+</p>
-              </div>
-            ))}
+          <div className="overflow-x-auto">
+            <div className="flex gap-2 pb-2">
+              {GROWTH_STAGES.map((stage, idx, arr) => (
+                <div key={idx} className="flex items-center">
+                  <div className="flex flex-col items-center p-2 bg-bg-card rounded-lg border border-green-500/20 min-w-[72px]">
+                    <img
+                      src={stage.image}
+                      alt={stage.name}
+                      className="w-10 h-12 object-contain"
+                    />
+                    <p className="text-xs font-medium text-text mt-1 text-center whitespace-nowrap">{stage.name}</p>
+                    <p className="text-[10px] text-green-600">{stage.minCount}회+</p>
+                  </div>
+                  {idx < arr.length - 1 && (
+                    <span className="text-green-500 mx-1">→</span>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
