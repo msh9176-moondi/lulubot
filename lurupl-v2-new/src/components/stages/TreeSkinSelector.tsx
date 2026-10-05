@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Check, Lock, Sparkles } from 'lucide-react';
+import { Check, Lock, Sparkles, Eye } from 'lucide-react';
 import { Modal } from '@/components/common';
 import { useStageStore } from '@/stores/stageStore';
 import { updateMemberTreeSkin } from '@/lib/motivation-api';
@@ -35,6 +35,7 @@ export function TreeSkinSelector({
   onSkinChange,
 }: TreeSkinSelectorProps) {
   const [selectedSkin, setSelectedSkin] = useState<SkinId>(currentSkinId);
+  const [previewSkin, setPreviewSkin] = useState<SkinId>(currentSkinId);
   const [saving, setSaving] = useState(false);
 
   const { memberStatuses, fetchMemberStatus, fetchDefinitions } = useStageStore();
@@ -50,6 +51,7 @@ export function TreeSkinSelector({
   // 현재 스킨으로 초기화
   useEffect(() => {
     setSelectedSkin(currentSkinId);
+    setPreviewSkin(currentSkinId);
   }, [currentSkinId, isOpen]);
 
   // 카테고리별 현재 스테이지 가져오기
@@ -73,8 +75,6 @@ export function TreeSkinSelector({
     return unlocked;
   };
 
-  const unlockedSkinIds = getUnlockedSkinIds();
-
   // 스킨 저장
   const handleSave = async () => {
     if (selectedSkin === currentSkinId) {
@@ -92,8 +92,11 @@ export function TreeSkinSelector({
     }
   };
 
+  const unlockedSkinIds = getUnlockedSkinIds();
+  const isPreviewLocked = !unlockedSkinIds.has(previewSkin);
+
   // 스킨 프리뷰 이미지
-  const previewImage = getSkinImage(selectedSkin, totalCount);
+  const previewImage = getSkinImage(previewSkin, totalCount);
   const growthStage = getCurrentGrowthStage(totalCount);
 
   return (
@@ -103,20 +106,34 @@ export function TreeSkinSelector({
         <div className="mb-6 p-6 bg-gradient-to-b from-sky-100 to-green-100 dark:from-sky-900/30 dark:to-green-900/30 rounded-xl">
           <div className="flex items-center justify-center">
             <div className="text-center">
-              <img
-                src={previewImage}
-                alt="스킨 프리뷰"
-                className="w-32 h-40 object-contain mx-auto drop-shadow-lg"
-              />
+              <div className="relative inline-block">
+                <img
+                  src={previewImage}
+                  alt="스킨 프리뷰"
+                  className={`w-32 h-40 object-contain mx-auto drop-shadow-lg ${isPreviewLocked ? 'opacity-70' : ''}`}
+                />
+                {isPreviewLocked && (
+                  <div className="absolute top-0 right-0 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                    <Eye className="w-3 h-3" />
+                    미리보기
+                  </div>
+                )}
+              </div>
               <p className="mt-3 font-medium text-text">
-                {selectedSkin === 'default'
+                {previewSkin === 'default'
                   ? `${growthStage.name} (${growthStage.stage + 1}/10)`
-                  : CATEGORY_SKINS[selectedSkin as Exclude<CategoryKey, 'diary'>]?.name}
+                  : CATEGORY_SKINS[previewSkin as Exclude<CategoryKey, 'diary'>]?.name}
               </p>
-              {selectedSkin !== 'default' && (
+              {previewSkin !== 'default' && (
                 <p className="text-sm text-text-muted mt-1">
-                  {DEFAULT_CATEGORIES[selectedSkin as CategoryKey]?.emoji}{' '}
-                  {DEFAULT_CATEGORIES[selectedSkin as CategoryKey]?.name} 마스터
+                  {DEFAULT_CATEGORIES[previewSkin as CategoryKey]?.emoji}{' '}
+                  {DEFAULT_CATEGORIES[previewSkin as CategoryKey]?.name} 마스터
+                </p>
+              )}
+              {isPreviewLocked && (
+                <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2 flex items-center justify-center gap-1">
+                  <Lock className="w-3 h-3" />
+                  {categoryStages.get(previewSkin as CategoryKey) || 0}/5 단계 달성 시 획득
                 </p>
               )}
             </div>
@@ -129,7 +146,11 @@ export function TreeSkinSelector({
           <div>
             <h3 className="text-sm font-medium text-text-muted mb-2">기본 스킨</h3>
             <button
-              onClick={() => setSelectedSkin('default')}
+              onClick={() => {
+                setPreviewSkin('default');
+                setSelectedSkin('default');
+              }}
+              onMouseEnter={() => setPreviewSkin('default')}
               className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${
                 selectedSkin === 'default'
                   ? 'border-primary bg-primary/10'
@@ -171,11 +192,16 @@ export function TreeSkinSelector({
                 return (
                   <button
                     key={skin.id}
-                    onClick={() => isUnlocked && setSelectedSkin(skin.id)}
-                    disabled={!isUnlocked}
+                    onClick={() => {
+                      setPreviewSkin(skin.id);
+                      if (isUnlocked) {
+                        setSelectedSkin(skin.id);
+                      }
+                    }}
+                    onMouseEnter={() => setPreviewSkin(skin.id)}
                     className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all ${
                       !isUnlocked
-                        ? 'border-border bg-bg opacity-60 cursor-not-allowed'
+                        ? 'border-border bg-bg opacity-60 hover:opacity-80 cursor-pointer'
                         : selectedSkin === skin.id
                         ? 'border-primary bg-primary/10'
                         : 'border-border hover:border-primary/50 bg-bg'
