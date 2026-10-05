@@ -10,8 +10,6 @@ import { useStageStore } from '@/stores/stageStore';
 import { updateMemberTreeSkin } from '@/lib/motivation-api';
 import {
   type SkinId,
-  type TreeSkin,
-  ALL_SKINS,
   DEFAULT_SKIN,
   CATEGORY_SKINS,
   getSkinImage,

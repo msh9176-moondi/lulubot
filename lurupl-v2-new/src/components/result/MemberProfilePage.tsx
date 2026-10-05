@@ -16,13 +16,12 @@ import { supabase } from '@/lib/supabase';
 import { calculateLevel, getLevelTitle, getAccumulatedTitle, EXP_PER_LEVEL } from '@/domain/levels';
 import { DEFAULT_CATEGORIES, type CategoryKey } from '@/domain/categories';
 import { getCategoryTitle } from '@/domain/category-title';
-import { hasMemberPin, setMemberPin, verifyMemberPin, getMemberTreeSkin } from '@/lib/motivation-api';
+import { hasMemberPin, setMemberPin, verifyMemberPin } from '@/lib/motivation-api';
 import {
   type SkinId,
   getSkinImage,
   getCurrentGrowthStage,
   getSkinById,
-  CATEGORY_SKINS,
 } from '@/domain/tree-skins';
 
 interface Member {
