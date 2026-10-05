@@ -119,6 +119,13 @@ export function TreeSkinSelector({
 
   // 현재 보고 있는 스킨
   const currentSkin = allSkins[currentIndex];
+
+  // 캐러셀 이동 시 해금된 스킨이면 자동 선택
+  useEffect(() => {
+    if (unlockedSkinIds.has(currentSkin.id)) {
+      setSelectedSkin(currentSkin.id);
+    }
+  }, [currentIndex]);
   const isCurrentUnlocked = unlockedSkinIds.has(currentSkin.id);
   const currentSkinImage = getSkinImage(currentSkin.id, totalCount);
   const currentStageProgress = currentSkin.category
@@ -154,13 +161,6 @@ export function TreeSkinSelector({
       } else {
         goToPrev();
       }
-    }
-  };
-
-  // 스킨 선택
-  const handleSelect = () => {
-    if (isCurrentUnlocked) {
-      setSelectedSkin(currentSkin.id);
     }
   };
 
@@ -245,21 +245,6 @@ export function TreeSkinSelector({
                 </div>
               )}
 
-              {isCurrentUnlocked && selectedSkin !== currentSkin.id && (
-                <button
-                  onClick={handleSelect}
-                  className="mt-3 px-6 py-2 bg-primary/20 text-primary rounded-lg text-sm font-medium hover:bg-primary/30 transition-colors"
-                >
-                  이 스킨 선택
-                </button>
-              )}
-
-              {selectedSkin === currentSkin.id && (
-                <p className="mt-3 text-sm text-primary font-medium flex items-center justify-center gap-1">
-                  <Check className="w-4 h-4" />
-                  선택됨
-                </p>
-              )}
             </div>
           </div>
 
