@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
-import { ChatUploader, ParsePreview, MemberManagement, EventManager } from '@/components/admin';
+import {
+  ChatUploader,
+  ParsePreview,
+  MemberManagement,
+  EventManager,
+  SkinManagement,
+  StageManagement,
+  AchievementManagement,
+  CertificationManagement,
+} from '@/components/admin';
 import { Tabs, Spinner, ErrorBoundary } from '@/components/common';
 import type { ParseResult } from '@/domain/chat-parser';
 
@@ -107,6 +116,10 @@ export function AdminPage() {
     { id: 'upload', label: '채팅 업로드', icon: '📤' },
     { id: 'members', label: '멤버 관리', icon: '👥' },
     { id: 'events', label: '이벤트', icon: '🎉' },
+    { id: 'skins', label: '스킨 관리', icon: '🌳' },
+    { id: 'stages', label: '스테이지', icon: '📊' },
+    { id: 'achievements', label: '도전 과제', icon: '🏆' },
+    { id: 'certs', label: '인증 관리', icon: '📋' },
   ];
 
   return (
@@ -153,6 +166,10 @@ export function AdminPage() {
                 )}
                 {activeTab === 'members' && <MemberManagement />}
                 {activeTab === 'events' && <EventManager />}
+                {activeTab === 'skins' && <SkinManagement />}
+                {activeTab === 'stages' && <StageManagement />}
+                {activeTab === 'achievements' && <AchievementManagement />}
+                {activeTab === 'certs' && <CertificationManagement />}
               </div>
             )}
           </Tabs>

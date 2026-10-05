@@ -44,6 +44,16 @@ interface StageState {
   dismissCelebration: () => void;
   clearNewEmojis: (memberId: string, categoryKey: CategoryKey) => void;
   trackNewEmojis: (memberId: string, categoryKey: CategoryKey, previousCount: number, newCount: number) => void;
+  // 관리자 기능
+  updateStageDefinition: (id: string, data: Partial<StageDefinitionUpdate>) => Promise<boolean>;
+}
+
+// 스테이지 정의 업데이트용 타입
+interface StageDefinitionUpdate {
+  stage_name: string;
+  description: string;
+  required_count: number;
+  theme_color: string;
 }
 
 export const useStageStore = create<StageState>((set, get) => ({
@@ -262,8 +272,33 @@ export const useStageStore = create<StageState>((set, get) => ({
       newMap.set(key, { categoryKey, indices: newIndices });
       return { newEmojis: newMap };
     });
+  },
+
+  // 관리자: 스테이지 정의 업데이트
+  updateStageDefinition: async (id: string, data: Partial<StageDefinitionUpdate>) => {
+    try {
+      const updateData: Record<string, unknown> = {};
+      if (data.stage_name !== undefined) updateData.stage_name = data.stage_name;
+      if (data.description !== undefined) updateData.stage_description = data.description;
+      if (data.required_count !== undefined) updateData.required_count = data.required_count;
+      if (data.theme_color !== undefined) updateData.theme_color = data.theme_color;
+
+      const { error } = await supabase
+        .from('category_stage_definitions')
+        .update(updateData)
+        .eq('id', id);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Failed to update stage definition:', error);
+      return false;
+    }
   }
 }));
+
+// 타입 export (관리자 컴포넌트용)
+export type { StageDefinition, CategoryStageStatus } from '@/domain/stages';
 
 // 셀렉터
 export const selectDefinitionsForCategory = (categoryKey: CategoryKey) => (state: StageState) =>
