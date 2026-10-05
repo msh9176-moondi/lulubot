@@ -9,34 +9,14 @@ import { GrowthGarden } from '@/components/stages';
 import { PersonalMotivationHub } from '@/components/motivation';
 import { supabase } from '@/lib/supabase';
 import { calculateLevel, getLevelTitle, getAccumulatedTitle, EXP_PER_LEVEL } from '@/domain/levels';
-import { DEFAULT_CATEGORIES } from '@/domain/categories';
+import { DEFAULT_CATEGORIES, type CategoryKey } from '@/domain/categories';
 import { getCategoryTitle } from '@/domain/category-title';
-
-// SVG 이미지 import
-import Seed1 from '@/seed/seed-1.svg';
-import Seed2 from '@/seed/seed-2.svg';
-import Seed3 from '@/seed/seed-3.svg';
-import Seed4 from '@/seed/seed-4.svg';
-import Seed5 from '@/seed/seed-5.svg';
-import Seed6 from '@/seed/seed-6.svg';
-import Seed7 from '@/seed/seed-7.svg';
-import Seed8 from '@/seed/seed-8.svg';
-import Seed9 from '@/seed/seed-9.svg';
-import Seed10 from '@/seed/seed-10.svg';
-
-// 성장 단계별 이미지와 이름
-const GROWTH_STAGES = [
-  { image: Seed1, name: '씨앗', minCount: 0 },
-  { image: Seed2, name: '새싹', minCount: 10 },
-  { image: Seed3, name: '떡잎', minCount: 30 },
-  { image: Seed4, name: '어린 줄기', minCount: 60 },
-  { image: Seed5, name: '자라는 중', minCount: 100 },
-  { image: Seed6, name: '튼튼한 줄기', minCount: 150 },
-  { image: Seed7, name: '가지 뻗기', minCount: 210 },
-  { image: Seed8, name: '무성한 잎', minCount: 280 },
-  { image: Seed9, name: '풍성한 나무', minCount: 360 },
-  { image: Seed10, name: '열매 맺은 나무', minCount: 450 },
-];
+import {
+  type SkinId,
+  getSkinImage,
+  getCurrentGrowthStage,
+  getSkinById,
+} from '@/domain/tree-skins';
 
 interface MemberDetails {
   member_id: string;
@@ -51,6 +31,7 @@ interface MemberDetails {
   category_counts: Record<string, number>;
   total_category_counts: Record<string, number>;
   wake_up_time: string | null;
+  selected_tree_skin: SkinId;
 }
 
 interface ProfileModalProps {
@@ -86,25 +67,22 @@ export function ProfileModal({ isOpen, onClose, memberId, yearMonth }: ProfileMo
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, [isOpen, onClose]);
 
-  // 현재 성장 단계 계산 (details가 없으면 0)
-  const currentStage = useMemo(() => {
-    if (!details) return 0;
-    const totalCount = details.total_count;
-    let stage = 0;
-    for (let i = GROWTH_STAGES.length - 1; i >= 0; i--) {
-      if (totalCount >= GROWTH_STAGES[i].minCount) {
-        stage = i;
-        break;
-      }
-    }
-    return stage;
+  // 현재 성장 단계 계산 (tree-skins.ts 사용)
+  const growthStageInfo = useMemo(() => {
+    return getCurrentGrowthStage(details?.total_count || 0);
   }, [details?.total_count]);
 
-  const currentStageInfo = GROWTH_STAGES[currentStage];
-  const nextStage = currentStage < GROWTH_STAGES.length - 1 ? GROWTH_STAGES[currentStage + 1] : null;
-  const treeProgress = nextStage && details
-    ? ((details.total_count - currentStageInfo.minCount) / (nextStage.minCount - currentStageInfo.minCount)) * 100
-    : 100;
+  // 현재 선택된 스킨의 이미지
+  const currentTreeImage = useMemo(() => {
+    const skinId = details?.selected_tree_skin || 'default';
+    return getSkinImage(skinId, details?.total_count || 0);
+  }, [details?.selected_tree_skin, details?.total_count]);
+
+  // 현재 스킨 정보
+  const currentSkinInfo = useMemo(() => {
+    const skinId = details?.selected_tree_skin || 'default';
+    return getSkinById(skinId);
+  }, [details?.selected_tree_skin]);
 
   // Clear hash on close
   const handleClose = () => {
@@ -127,7 +105,7 @@ export function ProfileModal({ isOpen, onClose, memberId, yearMonth }: ProfileMo
       // Fetch member info
       const { data: memberData, error: memberError } = await supabase
         .from('members')
-        .select('id, display_name, accumulated_exp, wake_up_time')
+        .select('id, display_name, accumulated_exp, wake_up_time, selected_tree_skin')
         .eq('id', memberId)
         .single();
 
@@ -198,6 +176,7 @@ export function ProfileModal({ isOpen, onClose, memberId, yearMonth }: ProfileMo
         category_counts: categoryCounts,
         total_category_counts: totalCategoryCounts,
         wake_up_time: memberData.wake_up_time,
+        selected_tree_skin: (memberData.selected_tree_skin || 'default') as SkinId,
       });
 
       // Fetch recent certifications
@@ -256,8 +235,8 @@ export function ProfileModal({ isOpen, onClose, memberId, yearMonth }: ProfileMo
                 {/* 나무 이미지 */}
                 <div className="flex-shrink-0">
                   <img
-                    src={currentStageInfo.image}
-                    alt={currentStageInfo.name}
+                    src={currentTreeImage}
+                    alt={currentSkinInfo?.name || growthStageInfo.name}
                     className="w-32 h-40 object-contain drop-shadow-lg"
                   />
                 </div>
@@ -278,32 +257,47 @@ export function ProfileModal({ isOpen, onClose, memberId, yearMonth }: ProfileMo
                     )}
                   </div>
 
-                  {/* 성장 단계 뱃지 */}
+                  {/* 성장 단계/스킨 뱃지 */}
                   <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-white/80 dark:bg-black/40 rounded-full shadow-sm">
                     <Sparkles className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-bold text-primary">{currentStageInfo.name}</span>
-                    <span className="text-xs text-text-muted">({currentStage + 1}/10)</span>
+                    {details.selected_tree_skin === 'default' ? (
+                      <>
+                        <span className="text-sm font-bold text-primary">{growthStageInfo.name}</span>
+                        <span className="text-xs text-text-muted">({growthStageInfo.stage + 1}/10)</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-sm font-bold text-primary">{currentSkinInfo?.name}</span>
+                        <span className="text-xs text-text-muted">
+                          {DEFAULT_CATEGORIES[details.selected_tree_skin as CategoryKey]?.emoji}
+                        </span>
+                      </>
+                    )}
                   </div>
 
-                  {/* 다음 단계 진행바 */}
-                  {nextStage ? (
+                  {/* 다음 단계 진행바 (기본 스킨일 때만) */}
+                  {details.selected_tree_skin === 'default' && growthStageInfo.nextStage ? (
                     <div className="mt-3">
                       <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-text-muted">다음: {nextStage.name}</span>
+                        <span className="text-text-muted">다음: {growthStageInfo.nextStage.name}</span>
                         <span className="text-primary font-medium">
-                          {details.total_count} / {nextStage.minCount}
+                          {details.total_count} / {growthStageInfo.nextStage.minCount}
                         </span>
                       </div>
                       <div className="h-2 bg-white/50 dark:bg-black/30 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full transition-all duration-500"
-                          style={{ width: `${Math.min(100, treeProgress)}%` }}
+                          style={{ width: `${Math.min(100, growthStageInfo.progress)}%` }}
                         />
                       </div>
                     </div>
-                  ) : (
+                  ) : details.selected_tree_skin === 'default' ? (
                     <p className="mt-3 text-xs text-green-600 dark:text-green-400 font-medium">
                       최고 단계 달성!
+                    </p>
+                  ) : (
+                    <p className="mt-3 text-xs text-primary font-medium">
+                      {DEFAULT_CATEGORIES[details.selected_tree_skin as CategoryKey]?.name} 마스터 스킨
                     </p>
                   )}
                 </div>
