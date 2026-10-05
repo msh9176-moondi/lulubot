@@ -15,7 +15,7 @@ interface Certification {
   member_id: string;
   cert_date: string;
   cert_time: string;
-  category: CategoryKey;
+  category_key: CategoryKey;
   final_exp: number;
   is_over_limit: boolean;
   original_text: string;
@@ -90,7 +90,7 @@ export function CertificationManagement() {
         query = query.eq('member_id', filterMember);
       }
       if (filterCategory) {
-        query = query.eq('category', filterCategory);
+        query = query.eq('category_key', filterCategory);
       }
 
       const { data, error, count } = await query;
@@ -293,7 +293,7 @@ export function CertificationManagement() {
                         <td className="p-3 border-b border-border text-text-muted">{cert.cert_time}</td>
                         <td className="p-3 border-b border-border text-text">{getMemberName(cert.member_id)}</td>
                         <td className="p-3 border-b border-border text-text">
-                          {getCategoryInfo(cert.category)}
+                          {getCategoryInfo(cert.category_key)}
                         </td>
                         <td className="p-3 border-b border-border text-center">
                           <span className={`font-medium ${cert.final_exp > 0 ? 'text-green-500' : 'text-text-muted'}`}>
