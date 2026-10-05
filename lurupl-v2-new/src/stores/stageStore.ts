@@ -122,19 +122,31 @@ export const useStageStore = create<StageState>((set, get) => ({
     }
   },
 
-  // 스테이지 해금
+  // 스테이지 해금 (보상 아이템 자동 지급 포함)
   claimStage: async (memberId: string, categoryKey: CategoryKey, stageNumber: number) => {
     try {
-      const { data, error } = await supabase
-        .rpc('claim_stage', {
+      // claim_stage_with_reward를 시도하고, 없으면 기존 claim_stage 사용
+      let data, error;
+      ({ data, error } = await supabase
+        .rpc('claim_stage_with_reward', {
           p_member_id: memberId,
           p_category_key: categoryKey,
           p_stage_number: stageNumber
-        });
+        }));
+
+      // claim_stage_with_reward가 없으면 기존 함수 사용 (마이그레이션 전)
+      if (error?.code === '42883') {
+        ({ data, error } = await supabase
+          .rpc('claim_stage', {
+            p_member_id: memberId,
+            p_category_key: categoryKey,
+            p_stage_number: stageNumber
+          }));
+      }
 
       if (error) throw error;
 
-      const result = data as ClaimStageResult;
+      const result = data as ClaimStageResult & { reward_item_id?: string; reward_item_name?: string };
 
       if (result.success) {
         // 상태 업데이트

@@ -210,6 +210,169 @@ body {
   animation: shimmer 2s infinite;
 }
 
+/* ============================================
+   Garden & Character Animations
+   정원 및 캐릭터 애니메이션
+   ============================================ */
+
+/* 캐릭터 떠다니는 애니메이션 */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* 캐릭터 부드러운 점프 */
+@keyframes bounce-gentle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+.animate-bounce-gentle {
+  animation: bounce-gentle 0.6s ease-in-out;
+}
+
+/* 캐릭터 흔들기 */
+@keyframes wiggle {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-5deg);
+  }
+  75% {
+    transform: rotate(5deg);
+  }
+}
+
+.animate-wiggle {
+  animation: wiggle 0.5s ease-in-out;
+}
+
+/* 캐릭터 손 흔들기 */
+@keyframes wave {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(20deg);
+  }
+  50% {
+    transform: rotate(-10deg);
+  }
+  75% {
+    transform: rotate(20deg);
+  }
+}
+
+.animate-wave {
+  animation: wave 1s ease-in-out;
+}
+
+@keyframes wave-hand {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(30deg);
+  }
+}
+
+.animate-wave-hand {
+  animation: wave-hand 0.8s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+/* 눈 깜빡임 */
+@keyframes blink {
+  0%, 90%, 100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+
+.animate-blink {
+  animation: blink 4s ease-in-out infinite;
+}
+
+/* 위로 떠오르며 사라짐 (파티클용) */
+@keyframes float-up-fade {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-30px);
+    opacity: 0;
+  }
+}
+
+.animate-float-up-delayed {
+  animation: float-up-fade 1s ease-out forwards;
+  animation-delay: 0.2s;
+}
+
+/* 슬라이드 다운 (토스트 알림) */
+@keyframes slide-down {
+  0% {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-down {
+  animation: slide-down 0.3s ease-out forwards;
+}
+
+/* 스케일 인 */
+@keyframes scale-in {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out forwards;
+}
+
+/* 슬라이드 업 (모달용) */
+@keyframes slide-up {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out forwards;
+}
+
 /* 움직임 축소 모드 */
 @media (prefers-reduced-motion: reduce) {
   .animate-emoji-drop,
@@ -218,7 +381,17 @@ body {
   .animate-float-up,
   .animate-fade-in-up,
   .animate-pulse-subtle,
-  .animate-shimmer {
+  .animate-shimmer,
+  .animate-float,
+  .animate-bounce-gentle,
+  .animate-wiggle,
+  .animate-wave,
+  .animate-wave-hand,
+  .animate-blink,
+  .animate-float-up-delayed,
+  .animate-slide-down,
+  .animate-scale-in,
+  .animate-slide-up {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
