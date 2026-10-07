@@ -33,6 +33,8 @@ interface MembersState {
   fetchMembers: () => Promise<void>;
   fetchMonthlyStats: (yearMonth: string) => Promise<void>;
   updateMember: (id: string, data: Partial<Member>) => Promise<boolean>;
+  addMember: (displayName: string) => Promise<boolean>;
+  deleteMember: (memberId: string) => Promise<boolean>;
   setSelectedMonth: (month: string) => void;
 }
 
@@ -156,5 +158,44 @@ export const useMembersStore = create<MembersState>((set, get) => ({
 
   setSelectedMonth: (month: string) => {
     set({ selectedMonth: month });
+  },
+
+  addMember: async (displayName: string) => {
+    try {
+      const { error } = await supabase
+        .from('members')
+        .insert({
+          display_name: displayName,
+          wake_up_time: '07:00',
+          accumulated_exp: 0,
+          is_active: true,
+        });
+
+      if (error) throw error;
+      await get().fetchMembers();
+      return true;
+    } catch (error) {
+      console.error('Failed to add member:', error);
+      set({ error: 'Failed to add member' });
+      return false;
+    }
+  },
+
+  deleteMember: async (memberId: string) => {
+    try {
+      // Delete member (CASCADE will handle related records)
+      const { error } = await supabase
+        .from('members')
+        .delete()
+        .eq('id', memberId);
+
+      if (error) throw error;
+      await get().fetchMembers();
+      return true;
+    } catch (error) {
+      console.error('Failed to delete member:', error);
+      set({ error: 'Failed to delete member' });
+      return false;
+    }
   },
 }));

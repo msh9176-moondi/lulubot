@@ -4,14 +4,16 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Sparkles, User, Check } from 'lucide-react';
+import { Sparkles, User, Check, Settings } from 'lucide-react';
 import { Spinner } from '@/components/common';
 import {
   DEFAULT_GROWTH_STAGES,
   CATEGORY_SKINS,
+  BABY_SKINS,
 } from '@/domain/tree-skins';
 import { DEFAULT_CATEGORIES, type CategoryKey } from '@/domain/categories';
 import { supabase } from '@/lib/supabase';
+import { AdminSkinModal } from './AdminSkinModal';
 
 interface MemberSkinInfo {
   id: string;
@@ -27,6 +29,7 @@ export function SkinManagement() {
   const [activeTab, setActiveTab] = useState<TabType>('default');
   const [memberSkins, setMemberSkins] = useState<MemberSkinInfo[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<MemberSkinInfo | null>(null);
 
   // 멤버별 스킨 정보 로드
   useEffect(() => {
@@ -57,6 +60,20 @@ export function SkinManagement() {
 
           // 해금된 스킨 계산
           const unlockedSkins: string[] = ['default'];
+
+          // 베이비 스킨 (1단계)
+          for (const [categoryKey, skin] of Object.entries(BABY_SKINS)) {
+            if (!skin) continue;
+            const maxStage = memberUnlocks
+              .filter(u => u.category_key === categoryKey)
+              .reduce((max, u) => Math.max(max, u.stage_number), 0);
+
+            if (maxStage >= skin.requiredStage) {
+              unlockedSkins.push(skin.id);
+            }
+          }
+
+          // 마스터 스킨 (5단계)
           for (const [categoryKey, skin] of Object.entries(CATEGORY_SKINS)) {
             const maxStage = memberUnlocks
               .filter(u => u.category_key === categoryKey)
@@ -231,6 +248,9 @@ export function SkinManagement() {
                     <th className="text-right p-3 border-b border-border text-sm font-medium text-text-muted">
                       누적 경험치
                     </th>
+                    <th className="text-center p-3 border-b border-border text-sm font-medium text-text-muted">
+                      관리
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -256,6 +276,15 @@ export function SkinManagement() {
                       <td className="p-3 border-b border-border text-right text-text">
                         {member.accumulated_exp.toLocaleString()} EXP
                       </td>
+                      <td className="p-3 border-b border-border text-center">
+                        <button
+                          onClick={() => setSelectedMember(member)}
+                          className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-lg text-sm hover:bg-primary/20 transition-colors"
+                        >
+                          <Settings className="w-3 h-3" />
+                          스킨 관리
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -264,6 +293,18 @@ export function SkinManagement() {
           )}
         </div>
       )}
+
+      {/* 스킨 관리 모달 */}
+      <AdminSkinModal
+        isOpen={!!selectedMember}
+        onClose={() => setSelectedMember(null)}
+        member={selectedMember}
+        onUpdate={() => {
+          // 목록 새로고침
+          setActiveTab('default');
+          setTimeout(() => setActiveTab('members'), 100);
+        }}
+      />
     </div>
   );
 }
