@@ -110,7 +110,8 @@ export function WeeklyActivityChart({ yearMonth }: WeeklyActivityChartProps) {
         if (error) throw error;
 
         const expMap: Record<string, { name: string; exp: number }> = {};
-        certs?.forEach((cert: { member_id: string; final_exp: number; members: { display_name: string } }) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        certs?.forEach((cert: any) => {
           const id = cert.member_id;
           if (!expMap[id]) {
             expMap[id] = { name: cert.members.display_name, exp: 0 };

@@ -8,17 +8,11 @@ import {
   MonthlyAwardsHistory,
   DetailedRecords,
 } from '@/components/result';
-
-interface MemberStat {
-  id: string;
-  display_name: string;
-  monthly_exp: number;
-  cert_count: number;
-}
+import type { MemberStats } from '@/stores/membersStore';
 
 interface RankingTabProps {
   yearMonth: string;
-  monthlyStats: MemberStat[];
+  monthlyStats: MemberStats[];
   onMemberClick: (id: string) => void;
 }
 
