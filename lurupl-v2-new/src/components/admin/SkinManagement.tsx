@@ -172,48 +172,91 @@ export function SkinManagement() {
         </div>
       )}
 
-      {/* 특별 스킨 (카테고리 5단계 달성 보상) */}
+      {/* 특별 스킨 (베이비 + 마스터) */}
       {activeTab === 'special' && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-text-muted">
-            <Sparkles className="w-5 h-5" />
-            <h3 className="font-medium">특별 스킨 - 카테고리 마스터 보상 (8종)</h3>
-          </div>
-          <p className="text-sm text-text-muted">
-            각 카테고리에서 5단계를 달성하면 해금되는 특별 스킨입니다.
-          </p>
+        <div className="space-y-6">
+          {/* 베이비 스킨 (1단계) */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-text-muted">
+              <span className="text-lg">🌱</span>
+              <h3 className="font-medium">베이비 스킨 - 첫걸음마 보상 (8종)</h3>
+              <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded text-xs">1단계</span>
+            </div>
+            <p className="text-sm text-text-muted">
+              각 카테고리에서 1단계(첫걸음마)를 달성하면 해금되는 베이비 스킨입니다.
+            </p>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {Object.entries(CATEGORY_SKINS).map(([key, skin]) => {
-              const category = DEFAULT_CATEGORIES[key as CategoryKey];
-              return (
-                <div
-                  key={skin.id}
-                  className="flex flex-col items-center p-4 bg-bg rounded-xl border border-border"
-                >
-                  <img
-                    src={skin.image}
-                    alt={skin.name}
-                    className={`w-16 h-20 object-contain mb-2 ${
-                      skin.id === 'planning' ? 'scale-[1.5]' : ''
-                    }`}
-                  />
-                  <p className="text-sm font-medium text-text">{skin.name}</p>
-                  <p className="text-xs text-text-muted mt-1">
-                    {category?.emoji} {category?.name}
-                  </p>
-                  <span className="text-xs text-yellow-500 mt-1">
-                    5단계 달성 시 해금
-                  </span>
-                </div>
-              );
-            })}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {Object.entries(BABY_SKINS)
+                .filter(([, skin]) => skin !== undefined)
+                .map(([key, skin]) => {
+                  const category = DEFAULT_CATEGORIES[key as CategoryKey];
+                  return (
+                    <div
+                      key={skin!.id}
+                      className="flex flex-col items-center p-4 bg-bg rounded-xl border border-purple-500/30"
+                    >
+                      <img
+                        src={skin!.image}
+                        alt={skin!.name}
+                        className="w-16 h-20 object-contain mb-2"
+                      />
+                      <p className="text-sm font-medium text-text">{skin!.name}</p>
+                      <p className="text-xs text-text-muted mt-1">
+                        {category?.emoji} {category?.name}
+                      </p>
+                      <span className="text-xs text-purple-400 mt-1">
+                        1단계 달성 시 해금
+                      </span>
+                    </div>
+                  );
+                })}
+            </div>
           </div>
 
-          <div className="p-4 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
-            <p className="text-sm text-yellow-600 dark:text-yellow-400">
-              <strong>해금 조건:</strong> 해당 카테고리에서 5단계(마스터)를 달성하면 특별 스킨이 해금됩니다.
-              다이어리 카테고리는 특별 스킨이 없습니다.
+          {/* 마스터 스킨 (5단계) */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-text-muted">
+              <Sparkles className="w-5 h-5" />
+              <h3 className="font-medium">마스터 스킨 - 카테고리 마스터 보상 (8종)</h3>
+              <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 rounded text-xs">5단계</span>
+            </div>
+            <p className="text-sm text-text-muted">
+              각 카테고리에서 5단계(마스터)를 달성하면 해금되는 마스터 스킨입니다.
+            </p>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {Object.entries(CATEGORY_SKINS).map(([key, skin]) => {
+                const category = DEFAULT_CATEGORIES[key as CategoryKey];
+                return (
+                  <div
+                    key={skin.id}
+                    className="flex flex-col items-center p-4 bg-bg rounded-xl border border-yellow-500/30"
+                  >
+                    <img
+                      src={skin.image}
+                      alt={skin.name}
+                      className={`w-16 h-20 object-contain mb-2 ${
+                        skin.id === 'planning' ? 'scale-[1.5]' : ''
+                      }`}
+                    />
+                    <p className="text-sm font-medium text-text">{skin.name}</p>
+                    <p className="text-xs text-text-muted mt-1">
+                      {category?.emoji} {category?.name}
+                    </p>
+                    <span className="text-xs text-yellow-500 mt-1">
+                      5단계 달성 시 해금
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+            <p className="text-sm text-primary">
+              <strong>해금 조건:</strong> 1단계 달성 시 베이비 스킨, 5단계 달성 시 마스터 스킨이 해금됩니다.
+              다이어리 카테고리는 마스터 스킨이 없습니다.
             </p>
           </div>
         </div>
