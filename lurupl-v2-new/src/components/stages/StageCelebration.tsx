@@ -15,6 +15,7 @@ import { X, Volume2, VolumeX } from 'lucide-react';
 import { CATEGORIES } from '@/domain/categories';
 import { useStageStore } from '@/stores/stageStore';
 import { prefersReducedMotion } from '@/domain/stages';
+import { getSkinRewardForStage } from '@/domain/tree-skins';
 
 interface Particle {
   id: number;
@@ -40,6 +41,11 @@ export function StageCelebration() {
 
   const category = activeCelebration
     ? CATEGORIES.find(c => c.key === activeCelebration.categoryKey)
+    : null;
+
+  // 스킨 보상 확인
+  const skinReward = activeCelebration
+    ? getSkinRewardForStage(activeCelebration.categoryKey, activeCelebration.stageNumber)
     : null;
 
   // 파티클 생성
@@ -213,6 +219,31 @@ export function StageCelebration() {
           <span>새로운 단계에 도달했습니다!</span>
           <span>🎉</span>
         </div>
+
+        {/* 스킨 보상 */}
+        {skinReward && (
+          <div
+            className={`
+              mt-4 p-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20
+              border border-purple-500/30 w-full
+              ${!reducedMotion ? 'animate-fade-in-up' : ''}
+            `}
+            style={{ animationDelay: '800ms' }}
+          >
+            <p className="text-sm text-purple-300 mb-2 text-center">🎁 새로운 스킨 획득!</p>
+            <div className="flex items-center gap-3 justify-center">
+              <img
+                src={skinReward.image}
+                alt={skinReward.name}
+                className="w-16 h-16 object-contain"
+              />
+              <div className="text-left">
+                <p className="font-bold text-text">{skinReward.name}</p>
+                <p className="text-sm text-text-muted">{skinReward.description}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 컨트롤 버튼 */}

@@ -10,9 +10,9 @@ import { Modal } from '@/components/common';
 import { useStageStore } from '@/stores/stageStore';
 import { updateMemberTreeSkin } from '@/lib/motivation-api';
 import {
-  type SkinId,
   DEFAULT_SKIN,
   CATEGORY_SKINS,
+  BABY_SKINS,
   getSkinImage,
   getCurrentGrowthStage,
 } from '@/domain/tree-skins';
@@ -23,8 +23,8 @@ interface TreeSkinSelectorProps {
   onClose: () => void;
   memberId: string;
   totalCount: number;
-  currentSkinId: SkinId;
-  onSkinChange: (skinId: SkinId) => void;
+  currentSkinId: string;
+  onSkinChange: (skinId: string) => void;
 }
 
 export function TreeSkinSelector({
@@ -35,7 +35,7 @@ export function TreeSkinSelector({
   currentSkinId,
   onSkinChange,
 }: TreeSkinSelectorProps) {
-  const [selectedSkin, setSelectedSkin] = useState<SkinId>(currentSkinId);
+  const [selectedSkin, setSelectedSkin] = useState<string>(currentSkinId);
   const [saving, setSaving] = useState(false);
 
   const { memberStatuses, fetchMemberStatus, fetchDefinitions } = useStageStore();
@@ -61,9 +61,19 @@ export function TreeSkinSelector({
   });
 
   // 획득한 스킨 목록 계산
-  const getUnlockedSkinIds = (): Set<SkinId> => {
-    const unlocked = new Set<SkinId>(['default']);
+  const getUnlockedSkinIds = (): Set<string> => {
+    const unlocked = new Set<string>(['default']);
 
+    // 1단계 베이비 스킨 체크
+    for (const [categoryKey, skin] of Object.entries(BABY_SKINS)) {
+      if (!skin) continue;
+      const currentStage = categoryStages.get(categoryKey as CategoryKey) || 0;
+      if (currentStage >= skin.requiredStage) {
+        unlocked.add(skin.id);
+      }
+    }
+
+    // 5단계 마스터 스킨 체크
     for (const [categoryKey, skin] of Object.entries(CATEGORY_SKINS)) {
       const currentStage = categoryStages.get(categoryKey as CategoryKey) || 0;
       if (currentStage >= skin.requiredStage) {
@@ -94,14 +104,29 @@ export function TreeSkinSelector({
   const unlockedSkinIds = getUnlockedSkinIds();
   const growthStage = getCurrentGrowthStage(totalCount);
 
-  // 모든 스킨을 하나의 배열로 (기본 + 특별)
-  const allSkins: { id: SkinId; name: string; category?: CategoryKey; isDefault: boolean }[] = [
-    { id: 'default', name: DEFAULT_SKIN.name, isDefault: true },
+  // 모든 스킨을 하나의 배열로 (기본 + 베이비 + 마스터)
+  type SkinTier = 'default' | 'baby' | 'master';
+  const allSkins: { id: string; name: string; category?: CategoryKey; isDefault: boolean; tier: SkinTier; requiredStage: number }[] = [
+    { id: 'default', name: DEFAULT_SKIN.name, isDefault: true, tier: 'default', requiredStage: 0 },
+    // 베이비 스킨 (1단계)
+    ...Object.entries(BABY_SKINS)
+      .filter(([_, skin]) => skin !== undefined)
+      .map(([key, skin]) => ({
+        id: skin!.id,
+        name: skin!.name,
+        category: key as CategoryKey,
+        isDefault: false,
+        tier: 'baby' as SkinTier,
+        requiredStage: 1,
+      })),
+    // 마스터 스킨 (5단계)
     ...Object.entries(CATEGORY_SKINS).map(([key, skin]) => ({
       id: skin.id,
       name: skin.name,
       category: key as CategoryKey,
       isDefault: false,
+      tier: 'master' as SkinTier,
+      requiredStage: 5,
     })),
   ];
 
@@ -220,10 +245,17 @@ export function TreeSkinSelector({
                 <p className="text-sm text-text-muted mt-1">
                   현재: {growthStage.name} ({growthStage.stage + 1}/10)
                 </p>
+              ) : currentSkin.tier === 'baby' ? (
+                <p className="text-sm text-text-muted mt-1">
+                  {DEFAULT_CATEGORIES[currentSkin.category!]?.emoji}{' '}
+                  {DEFAULT_CATEGORIES[currentSkin.category!]?.name} 첫걸음마
+                  <span className="ml-1 px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded text-xs">1단계</span>
+                </p>
               ) : (
                 <p className="text-sm text-text-muted mt-1">
                   {DEFAULT_CATEGORIES[currentSkin.category!]?.emoji}{' '}
                   {DEFAULT_CATEGORIES[currentSkin.category!]?.name} 마스터
+                  <span className="ml-1 px-1.5 py-0.5 bg-gold/20 text-gold rounded text-xs">5단계</span>
                 </p>
               )}
 
@@ -232,12 +264,12 @@ export function TreeSkinSelector({
                 <div className="mt-3 px-4 py-2 bg-yellow-500/20 rounded-lg">
                   <p className="text-sm text-yellow-700 dark:text-yellow-400 flex items-center justify-center gap-1">
                     <Lock className="w-4 h-4" />
-                    {currentStageProgress}/5 단계 달성 시 해금
+                    {currentStageProgress}/{currentSkin.requiredStage} 단계 달성 시 해금
                   </p>
                   <div className="mt-2 w-32 mx-auto h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-yellow-500 transition-all"
-                      style={{ width: `${(currentStageProgress / 5) * 100}%` }}
+                      style={{ width: `${(currentStageProgress / currentSkin.requiredStage) * 100}%` }}
                     />
                   </div>
                 </div>

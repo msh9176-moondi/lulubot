@@ -9,7 +9,6 @@ import { Spinner } from '@/components/common';
 import {
   DEFAULT_GROWTH_STAGES,
   CATEGORY_SKINS,
-  type SkinId,
 } from '@/domain/tree-skins';
 import { DEFAULT_CATEGORIES, type CategoryKey } from '@/domain/categories';
 import { supabase } from '@/lib/supabase';
@@ -19,7 +18,7 @@ interface MemberSkinInfo {
   display_name: string;
   selected_tree_skin: string;
   accumulated_exp: number;
-  unlocked_skins: SkinId[];
+  unlocked_skins: string[];
 }
 
 type TabType = 'default' | 'special' | 'members';
@@ -57,7 +56,7 @@ export function SkinManagement() {
           const memberUnlocks = (unlocks || []).filter(u => u.member_id === member.id);
 
           // 해금된 스킨 계산
-          const unlockedSkins: SkinId[] = ['default'];
+          const unlockedSkins: string[] = ['default'];
           for (const [categoryKey, skin] of Object.entries(CATEGORY_SKINS)) {
             const maxStage = memberUnlocks
               .filter(u => u.category_key === categoryKey)

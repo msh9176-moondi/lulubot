@@ -9,8 +9,6 @@ import { Badge, ProgressBar } from '@/components/common';
 import { DEFAULT_CATEGORIES, type CategoryKey } from '@/domain/categories';
 import { calculateLevel, getLevelTitle, getAccumulatedTitle, EXP_PER_LEVEL } from '@/domain/levels';
 import { getCategoryTitle } from '@/domain/category-title';
-import type { SkinId } from '@/domain/tree-skins';
-
 interface ProfileHeaderProps {
   displayName: string;
   accumulatedExp: number;
@@ -21,7 +19,7 @@ interface ProfileHeaderProps {
   totalCount: number;
   totalCategoryCounts: Record<string, number>;
   wakeUpTime: string | null;
-  selectedTreeSkin: SkinId;
+  selectedTreeSkin: string;
   currentTreeImage: string;
   currentSkinInfo: { name: string } | undefined;
   growthStageInfo: {

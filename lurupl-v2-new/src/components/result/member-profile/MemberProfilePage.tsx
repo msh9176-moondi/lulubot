@@ -52,7 +52,7 @@ interface MemberDetails {
   category_counts: Record<string, number>;
   total_category_counts: Record<string, number>;
   wake_up_time: string | null;
-  selected_tree_skin: SkinId;
+  selected_tree_skin: string;
 }
 
 interface Certification {

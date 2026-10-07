@@ -112,7 +112,7 @@ export function ResultPage() {
                 루루플 성장 기록
               </h1>
               <p className="text-xs sm:text-sm text-text-muted mt-0.5 hidden sm:block">
-                ADHD 실행력 향상을 위한 인증 활동 리포트
+                실행력 향상을 위한 인증 활동 리포트
               </p>
             </div>
 

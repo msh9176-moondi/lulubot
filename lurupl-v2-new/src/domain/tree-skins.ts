@@ -17,7 +17,7 @@ import Seed8 from '@/seed/seed-8.svg';
 import Seed9 from '@/seed/seed-9.svg';
 import Seed10 from '@/seed/seed-10.svg';
 
-// 특별 스킨 import (seed2 폴더)
+// 특별 스킨 import (seed2 폴더 - 5단계 마스터 스킨)
 import SkinWeightTraining from '@/seed2/seed-Weight training.svg';
 import SkinSweeper from '@/seed2/seed-Sweeper.svg';
 import SkinStudy from '@/seed2/seed-Study.svg';
@@ -27,11 +27,23 @@ import SkinMeditation from '@/seed2/seed-Meditation.svg';
 import SkinReturn from '@/seed2/seed-Return.svg';
 import SkinPharmacist from '@/seed2/seed-Pharmacist.svg';
 
+// 베이비 스킨 import (seed3 폴더 - 1단계 첫걸음마 스킨)
+import BabySweeper from '@/seed3/seed-baby-Sweeper.svg';
+import BabyWeightTraining from '@/seed3/seed-baby-Weight training.svg';
+import BabyRising from '@/seed3/seed-baby-Rising.svg';
+import BabyPlaner from '@/seed3/seed-baby-planer.svg';
+import BabyStudy from '@/seed3/seed-baby-Study.svg';
+import BabyPharmacist from '@/seed3/seed-baby-Pharmacist.svg';
+import BabyDiary from '@/seed3/seed-baby-Diary.svg';
+import BabyMeditation from '@/seed3/seed-baby-Meditation.svg';
+
 // 스킨 타입 정의
-export type SkinId = 'default' | CategoryKey;
+export type BabySkinId = `${Exclude<CategoryKey, 'comeback'>}-baby`;
+export type MasterSkinId = Exclude<CategoryKey, 'diary'>;
+export type SkinId = 'default' | BabySkinId | MasterSkinId;
 
 export interface TreeSkin {
-  id: SkinId;
+  id: string;
   name: string;
   description: string;
   image: string; // 특별 스킨은 단일 이미지 사용
@@ -53,7 +65,76 @@ export const DEFAULT_GROWTH_STAGES = [
   { image: Seed10, name: '열매 맺은 나무', minCount: 450 },
 ];
 
-// 카테고리별 특별 스킨 정의
+// 1단계 베이비 스킨 정의 (첫걸음마 보상)
+export const BABY_SKINS: Partial<Record<CategoryKey, TreeSkin>> = {
+  cleaning: {
+    id: 'cleaning-baby',
+    name: '아기 청소부',
+    description: '청소 1단계(첫걸음마) 달성 보상',
+    image: BabySweeper,
+    categoryKey: 'cleaning',
+    requiredStage: 1,
+  },
+  exercise: {
+    id: 'exercise-baby',
+    name: '아기 운동선수',
+    description: '운동 1단계(첫걸음마) 달성 보상',
+    image: BabyWeightTraining,
+    categoryKey: 'exercise',
+    requiredStage: 1,
+  },
+  morning: {
+    id: 'morning-baby',
+    name: '아기 얼리버드',
+    description: '기상 1단계(첫걸음마) 달성 보상',
+    image: BabyRising,
+    categoryKey: 'morning',
+    requiredStage: 1,
+  },
+  planning: {
+    id: 'planning-baby',
+    name: '아기 계획가',
+    description: '계획 1단계(첫걸음마) 달성 보상',
+    image: BabyPlaner,
+    categoryKey: 'planning',
+    requiredStage: 1,
+  },
+  study: {
+    id: 'study-baby',
+    name: '아기 학생',
+    description: '공부 1단계(첫걸음마) 달성 보상',
+    image: BabyStudy,
+    categoryKey: 'study',
+    requiredStage: 1,
+  },
+  medicine: {
+    id: 'medicine-baby',
+    name: '아기 약사',
+    description: '약 1단계(첫걸음마) 달성 보상',
+    image: BabyPharmacist,
+    categoryKey: 'medicine',
+    requiredStage: 1,
+  },
+  diary: {
+    id: 'diary-baby',
+    name: '아기 작가',
+    description: '일기 1단계(첫걸음마) 달성 보상',
+    image: BabyDiary,
+    categoryKey: 'diary',
+    requiredStage: 1,
+  },
+  meditation: {
+    id: 'meditation-baby',
+    name: '아기 명상가',
+    description: '명상 1단계(첫걸음마) 달성 보상',
+    image: BabyMeditation,
+    categoryKey: 'meditation',
+    requiredStage: 1,
+  },
+  // comeback은 베이비 스킨 없음
+};
+
+// 5단계 마스터 스킨 정의
 export const CATEGORY_SKINS: Record<Exclude<CategoryKey, 'diary'>, TreeSkin> = {
   exercise: {
     id: 'exercise',
@@ -131,9 +212,10 @@ export const DEFAULT_SKIN: TreeSkin = {
   requiredStage: 0,
 };
 
-// 모든 스킨 목록 (기본 + 특별)
+// 모든 스킨 목록 (기본 + 베이비 + 마스터)
 export const ALL_SKINS: TreeSkin[] = [
   DEFAULT_SKIN,
+  ...Object.values(BABY_SKINS).filter((s): s is TreeSkin => s !== undefined),
   ...Object.values(CATEGORY_SKINS),
 ];
 
@@ -142,7 +224,7 @@ export const ALL_SKINS: TreeSkin[] = [
  * 기본 스킨: 총 인증 수에 따른 성장 단계 이미지
  * 특별 스킨: 해당 스킨의 단일 이미지
  */
-export function getSkinImage(skinId: SkinId, totalCount: number = 0): string {
+export function getSkinImage(skinId: string, totalCount: number = 0): string {
   if (skinId === 'default') {
     // 기본 스킨은 총 인증 수에 따른 성장 단계 이미지 반환
     let stageIndex = 0;
@@ -155,7 +237,14 @@ export function getSkinImage(skinId: SkinId, totalCount: number = 0): string {
     return DEFAULT_GROWTH_STAGES[stageIndex].image;
   }
 
-  // 특별 스킨은 해당 카테고리의 스킨 이미지 반환
+  // 베이비 스킨 체크
+  if (skinId.endsWith('-baby')) {
+    const categoryKey = skinId.replace('-baby', '') as CategoryKey;
+    const babySkin = BABY_SKINS[categoryKey];
+    if (babySkin) return babySkin.image;
+  }
+
+  // 마스터 스킨은 해당 카테고리의 스킨 이미지 반환
   const skin = CATEGORY_SKINS[skinId as Exclude<CategoryKey, 'diary'>];
   return skin?.image || DEFAULT_GROWTH_STAGES[0].image;
 }
@@ -173,6 +262,16 @@ export function getUnlockedSkins(
     ? Object.fromEntries(categoryStages)
     : categoryStages;
 
+  // 1단계 베이비 스킨 체크
+  for (const [categoryKey, skin] of Object.entries(BABY_SKINS)) {
+    if (!skin) continue;
+    const currentStage = stages[categoryKey as CategoryKey] || 0;
+    if (currentStage >= skin.requiredStage) {
+      unlocked.push(skin);
+    }
+  }
+
+  // 5단계 마스터 스킨 체크
   for (const [categoryKey, skin] of Object.entries(CATEGORY_SKINS)) {
     const currentStage = stages[categoryKey as CategoryKey] || 0;
     if (currentStage >= skin.requiredStage) {
@@ -186,9 +285,35 @@ export function getUnlockedSkins(
 /**
  * 스킨 ID로 스킨 정보 조회
  */
-export function getSkinById(skinId: SkinId): TreeSkin | undefined {
+export function getSkinById(skinId: string): TreeSkin | undefined {
   if (skinId === 'default') return DEFAULT_SKIN;
+
+  // 베이비 스킨 체크
+  if (skinId.endsWith('-baby')) {
+    const categoryKey = skinId.replace('-baby', '') as CategoryKey;
+    return BABY_SKINS[categoryKey];
+  }
+
+  // 마스터 스킨 체크
   return CATEGORY_SKINS[skinId as Exclude<CategoryKey, 'diary'>];
+}
+
+/**
+ * 특정 스테이지 해금 시 획득할 스킨 반환
+ */
+export function getSkinRewardForStage(
+  categoryKey: CategoryKey,
+  stageNumber: number
+): TreeSkin | null {
+  // 1단계 베이비 스킨
+  if (stageNumber === 1 && BABY_SKINS[categoryKey]) {
+    return BABY_SKINS[categoryKey] || null;
+  }
+  // 5단계 마스터 스킨
+  if (stageNumber === 5 && categoryKey !== 'diary') {
+    return CATEGORY_SKINS[categoryKey as Exclude<CategoryKey, 'diary'>] || null;
+  }
+  return null;
 }
 
 /**

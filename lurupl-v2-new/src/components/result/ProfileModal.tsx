@@ -20,7 +20,7 @@ interface MemberDetails {
   accumulated_exp: number;
   total_count: number;
   total_category_counts: Record<string, number>;
-  selected_tree_skin: SkinId;
+  selected_tree_skin: string;
 }
 
 interface ProfileModalProps {

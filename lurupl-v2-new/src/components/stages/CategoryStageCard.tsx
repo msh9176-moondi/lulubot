@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { CATEGORIES, type CategoryKey } from '@/domain/categories';
 import { type StageDefinition, type CategoryStageStatus } from '@/domain/stages';
+import { getSkinRewardForStage } from '@/domain/tree-skins';
 import { useStageStore } from '@/stores/stageStore';
 import { EmojiStack } from './EmojiStack';
 import { Lock, Unlock, ChevronRight, Sparkles } from 'lucide-react';
@@ -43,6 +44,9 @@ export function CategoryStageCard({
   const nextDefinition = definitions.find(
     d => d.categoryKey === categoryKey && d.stageNumber === status.nextStage
   );
+
+  // 스킨 보상 확인
+  const skinReward = getSkinRewardForStage(categoryKey, status.nextStage);
 
   // 다음 스테이지까지의 진행률
   const progressPercent = status.nextRequired
@@ -134,9 +138,9 @@ export function CategoryStageCard({
               handleUnlock();
             }}
             disabled={unlocking}
-            className="mt-2 w-full py-1.5 px-3 rounded-lg bg-primary text-white text-sm font-medium
-                       flex items-center justify-center gap-1.5 hover:bg-primary-dark transition-colors
-                       disabled:opacity-50"
+            className={`mt-2 w-full py-1.5 px-3 rounded-lg text-white text-sm font-medium
+                       flex items-center justify-center gap-1.5 hover:brightness-110 transition-all
+                       disabled:opacity-50 ${skinReward ? 'bg-gradient-to-r from-primary to-purple-500' : 'bg-primary'}`}
           >
             {unlocking ? (
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -144,6 +148,11 @@ export function CategoryStageCard({
               <>
                 <Unlock className="w-4 h-4" />
                 <span>해금하기</span>
+                {skinReward && (
+                  <span className="ml-1 px-1.5 py-0.5 bg-white/20 rounded text-xs">
+                    +🎁스킨
+                  </span>
+                )}
               </>
             )}
           </button>
@@ -253,11 +262,15 @@ export function CategoryStageCard({
           <button
             onClick={handleUnlock}
             disabled={unlocking}
-            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-primary to-primary-dark
+            className={`w-full py-3 px-4 rounded-xl
                        text-white font-semibold flex items-center justify-center gap-2
-                       hover:shadow-lg hover:shadow-primary/30 transition-all
+                       hover:shadow-lg transition-all
                        disabled:opacity-50 disabled:cursor-not-allowed
-                       animate-pulse-subtle"
+                       animate-pulse-subtle
+                       ${skinReward
+                         ? 'bg-gradient-to-r from-primary via-purple-500 to-pink-500 hover:shadow-purple-500/30'
+                         : 'bg-gradient-to-r from-primary to-primary-dark hover:shadow-primary/30'
+                       }`}
           >
             {unlocking ? (
               <>
@@ -268,6 +281,11 @@ export function CategoryStageCard({
               <>
                 <Unlock className="w-5 h-5" />
                 <span>스테이지 {status.nextStage} 해금하기</span>
+                {skinReward && (
+                  <span className="ml-1 px-2 py-0.5 bg-white/20 rounded text-sm">
+                    🎁 +스킨
+                  </span>
+                )}
               </>
             )}
           </button>

@@ -121,12 +121,13 @@ export function getStageScale(stageNumber: number): number {
 /**
  * 스테이지에 따른 배경 장식 레벨
  */
-export function getStageDecorationLevel(stageNumber: number): 'none' | 'basic' | 'enhanced' | 'premium' | 'legendary' {
+export function getStageDecorationLevel(stageNumber: number): 'none' | 'basic' | 'enhanced' | 'premium' | 'legendary' | 'mythic' {
   if (stageNumber === 0) return 'none';
-  if (stageNumber === 1) return 'basic';
-  if (stageNumber <= 2) return 'enhanced';
-  if (stageNumber <= 4) return 'premium';
-  return 'legendary';
+  if (stageNumber === 1) return 'basic';      // 첫걸음마
+  if (stageNumber <= 3) return 'enhanced';    // 2~3단계
+  if (stageNumber <= 6) return 'premium';     // 4~6단계
+  if (stageNumber <= 9) return 'legendary';   // 7~9단계
+  return 'mythic'; // 10~11단계
 }
 
 /**

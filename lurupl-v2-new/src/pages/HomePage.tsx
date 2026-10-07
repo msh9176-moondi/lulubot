@@ -8,7 +8,7 @@ export function HomePage() {
           루루플 인증 레벨 시스템
         </h1>
         <p className="text-text-muted text-lg mb-10">
-          ADHD 실행력 향상을 위한 과학적 설계 기반
+          실행력 향상을 위한 과학적 설계 기반
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">

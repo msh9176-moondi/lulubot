@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { CATEGORIES, CATEGORY_KEYS, type CategoryKey } from '@/domain/categories';
+import { getSkinRewardForStage } from '@/domain/tree-skins';
 import { useStageStore } from '@/stores/stageStore';
 import { CategoryStageCard } from './CategoryStageCard';
 import { CategoryDetailModal } from './CategoryDetailModal';
@@ -86,6 +87,11 @@ export function GrowthGarden({ memberId, isOwnProfile = false }: GrowthGardenPro
   const totalStages = statuses.reduce((sum, s) => sum + s.currentStage, 0);
   const totalCerts = statuses.reduce((sum, s) => sum + s.verifiedCount, 0);
 
+  // 스킨 보상이 있는 해금 가능 스테이지 개수
+  const skinRewardCount = statuses.filter(s =>
+    s.canUnlock && getSkinRewardForStage(s.categoryKey, s.nextStage)
+  ).length;
+
   if (loading && statuses.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -122,6 +128,14 @@ export function GrowthGarden({ memberId, isOwnProfile = false }: GrowthGardenPro
             <div className="px-3 py-1.5 bg-primary/10 rounded-lg border border-primary/30 animate-pulse-subtle">
               <span className="text-primary font-medium">
                 {unlockableCount}개 해금 가능!
+              </span>
+            </div>
+          )}
+          {skinRewardCount > 0 && isOwnProfile && (
+            <div className="px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 animate-pulse-subtle">
+              <span className="text-purple-400 font-medium flex items-center gap-1">
+                <span>🎁</span>
+                <span>스킨 {skinRewardCount}개 획득 가능!</span>
               </span>
             </div>
           )}
