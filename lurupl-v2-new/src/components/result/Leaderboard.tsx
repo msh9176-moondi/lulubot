@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { calculateLevel, getLevelTitle, getAccumulatedTitle, EXP_PER_LEVEL } from '@/domain/levels';
+import { getSkinImage } from '@/domain/tree-skins';
 import { Badge } from '@/components/common';
 import { supabase } from '@/lib/supabase';
 import type { MemberStats } from '@/stores/membersStore';
@@ -111,43 +112,52 @@ export function Leaderboard({ members, onMemberClick }: LeaderboardProps) {
           return 'text-text-muted';
         };
 
+        const skinImage = getSkinImage(member.selected_tree_skin, member.total_count);
+
         return (
           <div
             key={member.id}
             onClick={() => handleMemberClick(member.id)}
-            className={`group flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${getRankStyle()}`}
+            className={`group flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl border cursor-pointer transition-all ${getRankStyle()}`}
           >
-            {/* Rank */}
-            <div className="w-10 flex-shrink-0 text-center">
-              <span className={`text-2xl font-bold ${getRankColor()}`}>
+            {/* Rank + Skin combined for mobile */}
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              <span className={`text-base sm:text-xl font-bold w-5 sm:w-6 text-center ${getRankColor()}`}>
                 {rank}
               </span>
+              <div className="w-8 h-8 sm:w-10 sm:h-10">
+                <img
+                  src={skinImage}
+                  alt="스킨"
+                  className="w-full h-full object-contain"
+                />
+              </div>
             </div>
 
             {/* Member Info */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-base font-semibold text-text truncate group-hover:text-primary transition-colors">
+              <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                <span className="text-sm sm:text-base font-semibold text-text truncate group-hover:text-primary transition-colors max-w-[80px] sm:max-w-none">
                   {member.display_name}
                 </span>
                 <Badge variant="primary">Lv.{level}</Badge>
                 {newCount > 0 && (
-                  <span className="flex items-center gap-0.5 px-2 py-0.5 text-xs font-medium bg-primary text-white rounded-full">
+                  <span className="flex items-center gap-0.5 px-1.5 py-0.5 text-xs font-medium bg-primary text-white rounded-full">
                     <Sparkles className="w-3 h-3" />
                     {newCount}
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2 mt-1 text-sm text-text-muted">
-                <span>{levelTitle}</span>
+              <div className="flex items-center gap-1 sm:gap-2 mt-0.5 sm:mt-1 text-xs sm:text-sm text-text-muted">
+                <span className="truncate">{levelTitle}</span>
                 <span className="text-border">•</span>
-                <span>{accTitle.icon} {accTitle.title}</span>
+                <span className="truncate">{accTitle.icon} {accTitle.title}</span>
               </div>
 
               {/* Progress bar for top 3 */}
               {rank <= 3 && (
-                <div className="mt-2 flex items-center gap-2">
-                  <div className="flex-1 h-1.5 bg-border rounded-full overflow-hidden max-w-[200px]">
+                <div className="mt-1.5 sm:mt-2 flex items-center gap-1 sm:gap-2">
+                  <div className="flex-1 h-1 sm:h-1.5 bg-border rounded-full overflow-hidden max-w-[120px] sm:max-w-[200px]">
                     <div
                       className="h-full bg-primary rounded-full transition-all"
                       style={{ width: `${progressPercent}%` }}
@@ -160,14 +170,14 @@ export function Leaderboard({ members, onMemberClick }: LeaderboardProps) {
 
             {/* Stats */}
             <div className="text-right flex-shrink-0">
-              <p className="text-xl font-bold text-primary">{member.monthly_exp}</p>
-              <p className="text-sm text-text-muted">
+              <p className="text-base sm:text-xl font-bold text-primary">{member.monthly_exp}</p>
+              <p className="text-xs sm:text-sm text-text-muted whitespace-nowrap">
                 {member.cert_count}회 / {member.cert_days}일
               </p>
             </div>
 
-            {/* Arrow */}
-            <ChevronRight className="w-5 h-5 text-text-muted group-hover:text-primary transition-colors flex-shrink-0" />
+            {/* Arrow - hidden on very small screens */}
+            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-text-muted group-hover:text-primary transition-colors flex-shrink-0 hidden xs:block" />
           </div>
         );
       })}
