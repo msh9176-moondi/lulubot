@@ -31,7 +31,6 @@ import {
   CategoryTab,
   TimeTab,
   AchievementsTab,
-  RecordsTab,
 } from './tabs';
 
 interface Member {
@@ -72,7 +71,6 @@ const TABS = [
   { id: 'category', label: '카테고리', icon: '📁' },
   { id: 'time', label: '시간대', icon: '⏰' },
   { id: 'achievements', label: '도전과제', icon: '🏆' },
-  { id: 'records', label: '기록', icon: '📝' },
 ];
 
 export function MemberProfilePage() {
@@ -417,17 +415,18 @@ export function MemberProfilePage() {
             )}
 
             {activeTab === 'category' && (
-              <CategoryTab categoryCounts={details.category_counts} />
+              <CategoryTab
+                categoryCounts={details.category_counts}
+                totalCategoryCounts={details.total_category_counts}
+              />
             )}
 
-            {activeTab === 'time' && <TimeTab memberId={selectedMemberId} />}
+            {activeTab === 'time' && (
+              <TimeTab memberId={selectedMemberId} certifications={certifications} />
+            )}
 
             {activeTab === 'achievements' && (
               <AchievementsTab memberId={selectedMemberId} />
-            )}
-
-            {activeTab === 'records' && (
-              <RecordsTab certifications={certifications} />
             )}
           </div>
         </div>

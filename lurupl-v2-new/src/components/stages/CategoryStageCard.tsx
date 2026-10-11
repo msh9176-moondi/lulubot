@@ -105,10 +105,11 @@ export function CategoryStageCard({
           count={status.verifiedCount}
           newIndices={newEmojis}
           maxVisibleRows={3}
-          itemsPerRow={4}
-          emojiSize="sm"
+          itemsPerRow={6}
+          emojiSize="md"
           showCount={true}
           stageLevel={status.currentStage}
+          compact
         />
 
         {/* 진행 바 */}
@@ -159,7 +160,7 @@ export function CategoryStageCard({
         )}
 
         {/* 화살표 */}
-        <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+        <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
       </div>
     );
   }

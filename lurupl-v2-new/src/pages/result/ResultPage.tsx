@@ -211,6 +211,8 @@ export function ResultPage() {
         onClose={() => {
           setSelectedMemberId(null);
           window.location.hash = '';
+          // 프로필 닫을 때 랭킹 데이터 새로고침 (스킨 이미지 동기화)
+          fetchMonthlyStats(selectedMonth);
         }}
         memberId={selectedMemberId}
         yearMonth={selectedMonth}

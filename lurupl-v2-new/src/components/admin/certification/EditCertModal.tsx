@@ -8,6 +8,7 @@ import { Modal } from '@/components/common';
 import { useMembersStore } from '@/stores/membersStore';
 import { supabase } from '@/lib/supabase';
 import { DEFAULT_CATEGORIES, type CategoryKey } from '@/domain/categories';
+import { checkAchievements, type AchievementContext } from '@/domain/achievement-checker';
 import type { Certification } from './types';
 
 interface EditCertModalProps {
@@ -45,14 +46,71 @@ export function EditCertModal({ certification, onClose, onSaved }: EditCertModal
 
     if (error) {
       alert('수정 실패: ' + error.message);
-    } else {
-      onSaved({
-        ...certification,
-        final_exp: editForm.final_exp,
-        is_over_limit: editForm.is_over_limit,
-      });
-      onClose();
+      return;
     }
+
+    // 도전과제 자동 갱신
+    try {
+      const { data: memberCertsData } = await supabase
+        .from('certifications')
+        .select('category_key, cert_date, cert_time, final_exp')
+        .eq('member_id', certification.member_id)
+        .gt('final_exp', 0);
+
+      const memberCerts = (memberCertsData || []).map(c => ({
+        memberId: certification.member_id,
+        category: c.category_key as CategoryKey,
+        certDate: c.cert_date,
+        certTime: c.cert_time || '00:00',
+        finalExp: c.final_exp || 0,
+      }));
+
+      const { data: existingAchs } = await supabase
+        .from('member_achievements')
+        .select('achievement_key')
+        .eq('member_id', certification.member_id);
+
+      const existingSet = new Set((existingAchs || []).map(a => a.achievement_key));
+
+      const ctx: AchievementContext = {
+        certifications: memberCerts,
+        memberCerts,
+        existingAchievements: existingSet,
+      };
+
+      const newAchievements = checkAchievements(ctx);
+
+      for (const ach of newAchievements) {
+        if (ach.achieved) {
+          await supabase
+            .from('member_achievements')
+            .upsert({
+              member_id: certification.member_id,
+              achievement_key: ach.key,
+              achieved_at: new Date().toISOString(),
+            }, {
+              onConflict: 'member_id,achievement_key',
+              ignoreDuplicates: true,
+            });
+        }
+      }
+
+      // 누적 경험치 업데이트
+      const totalExp = memberCerts.reduce((sum, c) => sum + c.finalExp, 0);
+      await supabase
+        .from('members')
+        .update({ accumulated_exp: totalExp })
+        .eq('id', certification.member_id);
+    } catch (err) {
+      console.error('Achievement check error:', err);
+    }
+
+    onSaved({
+      ...certification,
+      final_exp: editForm.final_exp,
+      is_over_limit: editForm.is_over_limit,
+    });
+    onClose();
   };
 
   return (

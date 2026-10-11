@@ -54,6 +54,7 @@ export function ProfileHeader({
   const [savingWakeTime, setSavingWakeTime] = useState(false);
 
   const monthlyLevel = calculateLevel(monthlyExp);
+  const accumulatedLevel = calculateLevel(accumulatedExp);
   const categoryTitle = getCategoryTitle(totalCategoryCounts);
 
   const handleSaveWakeTime = async () => {
@@ -171,9 +172,9 @@ export function ProfileHeader({
             <p className="text-[10px] sm:text-xs text-text-muted">EXP · {lastMonthCount}회</p>
           </div>
           <div className="text-center">
-            <p className="text-[10px] sm:text-xs text-text-muted mb-0.5">누적</p>
-            <p className="text-base sm:text-lg font-bold text-accent">{accumulatedExp}</p>
-            <p className="text-[10px] sm:text-xs text-text-muted">EXP · {totalCount}회</p>
+            <p className="text-[10px] sm:text-xs text-text-muted mb-0.5">누적 레벨</p>
+            <p className="text-base sm:text-lg font-bold text-accent">Lv.{accumulatedLevel}</p>
+            <p className="text-[10px] sm:text-xs text-text-muted">{accumulatedExp} EXP</p>
           </div>
         </div>
 

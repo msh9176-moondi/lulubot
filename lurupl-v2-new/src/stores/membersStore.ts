@@ -36,6 +36,7 @@ interface MembersState {
   addMember: (displayName: string) => Promise<boolean>;
   deleteMember: (memberId: string) => Promise<boolean>;
   setSelectedMonth: (month: string) => void;
+  updateMemberTotalCount: (memberId: string, totalCount: number, selectedTreeSkin?: string) => void;
 }
 
 export const useMembersStore = create<MembersState>((set, get) => ({
@@ -89,18 +90,27 @@ export const useMembersStore = create<MembersState>((set, get) => ({
 
       if (certsError) throw certsError;
 
-      // Fetch all-time certification counts
-      const { data: allCertsData, error: allCertsError } = await supabase
-        .from('certifications')
-        .select('member_id')
-        .gt('final_exp', 0);
-
-      if (allCertsError) throw allCertsError;
-
-      // Calculate total counts per member
+      // Fetch all-time certification counts using pagination to avoid 1000 row limit
       const totalCountMap: Record<string, number> = {};
-      for (const cert of allCertsData || []) {
-        totalCountMap[cert.member_id] = (totalCountMap[cert.member_id] || 0) + 1;
+      let offset = 0;
+      const pageSize = 1000;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data: pageData, error: pageError } = await supabase
+          .from('certifications')
+          .select('member_id')
+          .gt('final_exp', 0)
+          .range(offset, offset + pageSize - 1);
+
+        if (pageError) throw pageError;
+
+        for (const cert of pageData || []) {
+          totalCountMap[cert.member_id] = (totalCountMap[cert.member_id] || 0) + 1;
+        }
+
+        hasMore = (pageData?.length || 0) === pageSize;
+        offset += pageSize;
       }
 
       // Calculate monthly stats per member
@@ -197,5 +207,19 @@ export const useMembersStore = create<MembersState>((set, get) => ({
       set({ error: 'Failed to delete member' });
       return false;
     }
+  },
+
+  updateMemberTotalCount: (memberId: string, totalCount: number, selectedTreeSkin?: string) => {
+    set((state) => ({
+      monthlyStats: state.monthlyStats.map((m) =>
+        m.id === memberId
+          ? {
+              ...m,
+              total_count: totalCount,
+              ...(selectedTreeSkin !== undefined && { selected_tree_skin: selectedTreeSkin }),
+            }
+          : m
+      ),
+    }));
   },
 }));

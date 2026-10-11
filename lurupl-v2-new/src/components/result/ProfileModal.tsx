@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { Modal, Badge, Spinner } from '@/components/common';
 import { supabase } from '@/lib/supabase';
+import { useMembersStore } from '@/stores/membersStore';
 import { calculateLevel, getAccumulatedTitle } from '@/domain/levels';
 import { DEFAULT_CATEGORIES, type CategoryKey } from '@/domain/categories';
 import { getCategoryTitle } from '@/domain/category-title';
@@ -33,6 +34,7 @@ interface ProfileModalProps {
 export function ProfileModal({ isOpen, onClose, memberId, yearMonth }: ProfileModalProps) {
   const [details, setDetails] = useState<MemberDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const updateMemberTotalCount = useMembersStore((state) => state.updateMemberTotalCount);
 
   useEffect(() => {
     if (isOpen && memberId) {
@@ -126,16 +128,21 @@ export function ProfileModal({ isOpen, onClose, memberId, yearMonth }: ProfileMo
         totalCategoryCounts[cert.category_key] = (totalCategoryCounts[cert.category_key] || 0) + 1;
       }
 
+      const totalCount = allCertsData?.length || 0;
+
       setDetails({
         member_id: memberData.id,
         display_name: memberData.display_name,
         monthly_exp: monthlyExp,
         monthly_count: certsData?.length || 0,
         accumulated_exp: memberData.accumulated_exp || 0,
-        total_count: allCertsData?.length || 0,
+        total_count: totalCount,
         total_category_counts: totalCategoryCounts,
         selected_tree_skin: (memberData.selected_tree_skin || 'default') as SkinId,
       });
+
+      // 랭킹 리스트의 스킨 이미지도 동기화
+      updateMemberTotalCount(memberData.id, totalCount, memberData.selected_tree_skin || 'default');
     } catch (error) {
       console.error('Failed to fetch member details:', error);
     } finally {
@@ -146,6 +153,7 @@ export function ProfileModal({ isOpen, onClose, memberId, yearMonth }: ProfileMo
   if (!isOpen) return null;
 
   const monthlyLevel = details ? calculateLevel(details.monthly_exp) : 1;
+  const accumulatedLevel = details ? calculateLevel(details.accumulated_exp) : 1;
   const categoryTitle = details ? getCategoryTitle(details.total_category_counts) : null;
 
   return (
@@ -233,8 +241,10 @@ export function ProfileModal({ isOpen, onClose, memberId, yearMonth }: ProfileMo
               </div>
               <div className="w-px h-8 bg-border" />
               <div>
-                <p className="text-xs text-text-muted">누적</p>
-                <p className="text-lg font-bold text-accent">{details.accumulated_exp} EXP</p>
+                <p className="text-xs text-text-muted">누적 레벨</p>
+                <p className="text-lg font-bold text-text">
+                  <Badge variant="success">Lv.{accumulatedLevel}</Badge>
+                </p>
               </div>
             </div>
           </div>

@@ -19,6 +19,7 @@ interface EmojiStackProps {
   interactive?: boolean;
   onEmojiClick?: (index: number) => void;
   className?: string;
+  compact?: boolean; // 컴팩트 모드 (스케일 효과 제거)
 }
 
 const EMOJI_SIZES = {
@@ -38,7 +39,8 @@ export const EmojiStack = memo(function EmojiStack({
   stageLevel = 0,
   interactive = false,
   onEmojiClick,
-  className = ''
+  className = '',
+  compact = false
 }: EmojiStackProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [animatedIndices, setAnimatedIndices] = useState<Set<number>>(new Set());
@@ -155,10 +157,12 @@ export const EmojiStack = memo(function EmojiStack({
         ${className}
       `}
       style={{
-        minWidth: containerWidth + 24,
+        // compact 모드: 100% 너비로 카드에 맞춤
+        width: compact ? '100%' : undefined,
+        minWidth: compact ? undefined : containerWidth + 24,
         minHeight: containerHeight + 24,
-        // 스테이지에 따른 스케일 효과
-        transform: `scale(${1 + stageLevel * 0.02})`
+        // 스테이지에 따른 스케일 효과 (compact 모드에서는 비활성화)
+        transform: compact ? undefined : `scale(${1 + stageLevel * 0.02})`
       }}
     >
       {/* 바닥 라인 (쌓이는 느낌) */}

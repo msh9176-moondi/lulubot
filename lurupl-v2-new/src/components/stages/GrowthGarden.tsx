@@ -4,7 +4,7 @@
  * 각 카테고리가 독립적인 "화분"처럼 이모티콘이 쌓임
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { CATEGORIES, CATEGORY_KEYS, type CategoryKey } from '@/domain/categories';
 import { getSkinRewardForStage } from '@/domain/tree-skins';
 import { useStageStore } from '@/stores/stageStore';
@@ -25,6 +25,7 @@ export function GrowthGarden({ memberId, isOwnProfile = false }: GrowthGardenPro
   const [selectedCategory, setSelectedCategory] = useState<CategoryKey | null>(null);
   const [sortMode, setSortMode] = useState<SortMode>('default');
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const {
     definitions,
@@ -92,6 +93,36 @@ export function GrowthGarden({ memberId, isOwnProfile = false }: GrowthGardenPro
     s.canUnlock && getSkinRewardForStage(s.categoryKey, s.nextStage)
   ).length;
 
+  // 해금 가능한 카테고리로 스크롤
+  const scrollToUnlockable = () => {
+    const unlockableStatus = statuses.find(s => s.canUnlock);
+    if (unlockableStatus && cardRefs.current[unlockableStatus.categoryKey]) {
+      setFilterMode('all'); // 필터를 전체로 변경
+      setTimeout(() => {
+        cardRefs.current[unlockableStatus.categoryKey]?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }, 100);
+    }
+  };
+
+  // 스킨 보상이 있는 카테고리로 스크롤
+  const scrollToSkinReward = () => {
+    const skinRewardStatus = statuses.find(s =>
+      s.canUnlock && getSkinRewardForStage(s.categoryKey, s.nextStage)
+    );
+    if (skinRewardStatus && cardRefs.current[skinRewardStatus.categoryKey]) {
+      setFilterMode('all'); // 필터를 전체로 변경
+      setTimeout(() => {
+        cardRefs.current[skinRewardStatus.categoryKey]?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }, 100);
+    }
+  };
+
   if (loading && statuses.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -114,29 +145,43 @@ export function GrowthGarden({ memberId, isOwnProfile = false }: GrowthGardenPro
           </p>
         </div>
 
-        {/* 통계 요약 */}
-        <div className="flex items-center gap-4 text-sm">
-          <div className="px-3 py-1.5 bg-bg rounded-lg border border-border">
-            <span className="text-text-muted">총 인증</span>
-            <span className="ml-2 font-bold text-text">{totalCerts}</span>
-          </div>
-          <div className="px-3 py-1.5 bg-bg rounded-lg border border-border">
-            <span className="text-text-muted">스테이지</span>
-            <span className="ml-2 font-bold text-primary">{totalStages}</span>
-          </div>
-          {unlockableCount > 0 && isOwnProfile && (
-            <div className="px-3 py-1.5 bg-primary/10 rounded-lg border border-primary/30 animate-pulse-subtle">
-              <span className="text-primary font-medium">
-                {unlockableCount}개 해금 가능!
-              </span>
+        {/* 통계 요약 - 모바일 반응형 */}
+        <div className="flex flex-col gap-2">
+          {/* 기본 통계 */}
+          <div className="flex items-center gap-2 text-xs sm:text-sm">
+            <div className="px-2 py-1 sm:px-3 sm:py-1.5 bg-bg rounded-lg border border-border">
+              <span className="text-text-muted">총 인증</span>
+              <span className="ml-1.5 sm:ml-2 font-bold text-text">{totalCerts}</span>
             </div>
-          )}
-          {skinRewardCount > 0 && isOwnProfile && (
-            <div className="px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 animate-pulse-subtle">
-              <span className="text-purple-400 font-medium flex items-center gap-1">
-                <span>🎁</span>
-                <span>스킨 {skinRewardCount}개 획득 가능!</span>
-              </span>
+            <div className="px-2 py-1 sm:px-3 sm:py-1.5 bg-bg rounded-lg border border-border">
+              <span className="text-text-muted">스테이지</span>
+              <span className="ml-1.5 sm:ml-2 font-bold text-primary">{totalStages}</span>
+            </div>
+          </div>
+
+          {/* 알림 배지 */}
+          {(unlockableCount > 0 || skinRewardCount > 0) && isOwnProfile && (
+            <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+              {unlockableCount > 0 && (
+                <button
+                  onClick={scrollToUnlockable}
+                  className="px-2 py-1 sm:px-3 sm:py-1.5 bg-primary/10 rounded-lg border border-primary/30 animate-pulse-subtle hover:bg-primary/20 transition-colors cursor-pointer"
+                >
+                  <span className="text-primary font-medium">
+                    🔓 스테이지 {unlockableCount}개 해금 가능!
+                  </span>
+                </button>
+              )}
+              {skinRewardCount > 0 && (
+                <button
+                  onClick={scrollToSkinReward}
+                  className="px-2 py-1 sm:px-3 sm:py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 animate-pulse-subtle hover:from-purple-500/30 hover:to-pink-500/30 transition-colors cursor-pointer"
+                >
+                  <span className="text-purple-400 font-medium">
+                    🎁 스킨 {skinRewardCount}개 획득 가능!
+                  </span>
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -194,24 +239,28 @@ export function GrowthGarden({ memberId, isOwnProfile = false }: GrowthGardenPro
       {/* 카테고리 그리드 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {sortedCategories.map(({ key, status }) => (
-          <CategoryStageCard
+          <div
             key={key}
-            memberId={memberId}
-            categoryKey={key}
-            status={status || {
-              categoryKey: key,
-              verifiedCount: 0,
-              currentStage: 0,
-              nextStage: 1,
-              nextRequired: definitions.find(d => d.categoryKey === key && d.stageNumber === 1)?.requiredCount || null,
-              canUnlock: false,
-              unlocks: []
-            }}
-            definitions={definitions}
-            isOwnProfile={isOwnProfile}
-            onDetailClick={() => setSelectedCategory(key)}
-            compact
-          />
+            ref={(el) => { cardRefs.current[key] = el; }}
+          >
+            <CategoryStageCard
+              memberId={memberId}
+              categoryKey={key}
+              status={status || {
+                categoryKey: key,
+                verifiedCount: 0,
+                currentStage: 0,
+                nextStage: 1,
+                nextRequired: definitions.find(d => d.categoryKey === key && d.stageNumber === 1)?.requiredCount || null,
+                canUnlock: false,
+                unlocks: []
+              }}
+              definitions={definitions}
+              isOwnProfile={isOwnProfile}
+              onDetailClick={() => setSelectedCategory(key)}
+              compact
+            />
+          </div>
         ))}
       </div>
 

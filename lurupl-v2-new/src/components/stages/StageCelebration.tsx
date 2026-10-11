@@ -17,6 +17,57 @@ import { useStageStore } from '@/stores/stageStore';
 import { prefersReducedMotion } from '@/domain/stages';
 import { getSkinRewardForStage } from '@/domain/tree-skins';
 
+// 축하 사운드 재생 함수
+function playCelebrationSound(hasSkinReward: boolean = false) {
+  try {
+    const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+
+    // 기본 해금 사운드: 상승하는 음계
+    const notes = hasSkinReward
+      ? [523.25, 659.25, 783.99, 1046.50, 1318.51] // C5, E5, G5, C6, E6 (스킨 보상시 더 화려하게)
+      : [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+
+    notes.forEach((freq, i) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.type = 'sine';
+      oscillator.frequency.value = freq;
+
+      const startTime = audioContext.currentTime + i * 0.12;
+      const duration = 0.3;
+
+      gainNode.gain.setValueAtTime(0, startTime);
+      gainNode.gain.linearRampToValueAtTime(0.15, startTime + 0.02);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+
+      oscillator.start(startTime);
+      oscillator.stop(startTime + duration);
+    });
+
+    // 스킨 보상시 추가 반짝 사운드
+    if (hasSkinReward) {
+      setTimeout(() => {
+        const sparkle = audioContext.createOscillator();
+        const sparkleGain = audioContext.createGain();
+        sparkle.connect(sparkleGain);
+        sparkleGain.connect(audioContext.destination);
+        sparkle.type = 'sine';
+        sparkle.frequency.value = 2093; // C7
+        sparkleGain.gain.setValueAtTime(0.1, audioContext.currentTime);
+        sparkleGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+        sparkle.start();
+        sparkle.stop(audioContext.currentTime + 0.2);
+      }, 600);
+    }
+  } catch (e) {
+    console.log('Audio not supported:', e);
+  }
+}
+
 interface Particle {
   id: number;
   x: number;
@@ -76,6 +127,11 @@ export function StageCelebration() {
     setPhase('enter');
     setParticles(generateParticles(category.color));
 
+    // 사운드 재생
+    if (config.soundEnabled) {
+      playCelebrationSound(!!skinReward);
+    }
+
     // Phase 2: Main (콘텐츠 표시)
     const mainTimer = setTimeout(() => {
       setPhase('main');
@@ -97,7 +153,7 @@ export function StageCelebration() {
       clearTimeout(exitTimer);
       clearTimeout(closeTimer);
     };
-  }, [activeCelebration, category, config.duration, generateParticles, reducedMotion, dismissCelebration]);
+  }, [activeCelebration, category, config.duration, config.soundEnabled, skinReward, generateParticles, reducedMotion, dismissCelebration]);
 
   // 건너뛰기
   const handleSkip = () => {
