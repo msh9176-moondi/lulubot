@@ -101,7 +101,7 @@ export function ResultPage() {
   const activeMembers = monthlyStats.filter(m => m.cert_count > 0).length;
 
   return (
-    <div className="min-h-screen bg-bg overflow-x-hidden">
+    <div className="min-h-screen bg-bg">
       {/* Header */}
       <header className="bg-bg-card border-b border-border sticky top-0 z-20 shadow-sm">
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
