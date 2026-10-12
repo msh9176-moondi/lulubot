@@ -9,6 +9,7 @@ import { Badge, ProgressBar } from '@/components/common';
 import { DEFAULT_CATEGORIES, type CategoryKey } from '@/domain/categories';
 import { calculateLevel, getLevelTitle, getAccumulatedTitle, EXP_PER_LEVEL } from '@/domain/levels';
 import { getCategoryTitle } from '@/domain/category-title';
+import { shouldScaleSkin } from '@/domain/tree-skins';
 interface ProfileHeaderProps {
   displayName: string;
   accumulatedExp: number;
@@ -78,11 +79,11 @@ export function ProfileHeader({
         {/* 메인 컨텐츠: 나무 + 정보 */}
         <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
           {/* 나무 이미지 */}
-          <div className={`flex-shrink-0 ${selectedTreeSkin === 'planning' ? 'sm:mr-6' : ''}`}>
+          <div className={`flex-shrink-0 ${shouldScaleSkin(selectedTreeSkin) ? 'sm:mr-6' : ''}`}>
             <img
               src={currentTreeImage}
               alt={currentSkinInfo?.name || growthStageInfo.name}
-              className={`w-24 h-32 sm:w-32 sm:h-40 object-contain drop-shadow-lg ${selectedTreeSkin === 'planning' ? 'scale-[1.5]' : ''}`}
+              className={`w-24 h-32 sm:w-32 sm:h-40 object-contain drop-shadow-lg ${shouldScaleSkin(selectedTreeSkin) ? 'scale-[1.5]' : ''}`}
             />
           </div>
 

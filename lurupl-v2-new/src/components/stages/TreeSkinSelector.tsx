@@ -246,7 +246,7 @@ export function TreeSkinSelector({
                 alt={currentSkin.name}
                 className={`w-36 h-44 object-contain drop-shadow-xl transition-all duration-300 ${
                   !isCurrentUnlocked ? 'grayscale opacity-60' : ''
-                } ${currentSkin.id === 'planning' ? 'scale-[1.5]' : ''}`}
+                } ${!currentSkin.isDefault && currentSkin.stageNumber >= 2 && currentSkin.stageNumber <= 4 ? 'scale-[1.5]' : ''}`}
               />
               {!isCurrentUnlocked && (
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -350,7 +350,7 @@ export function TreeSkinSelector({
                     alt={skin.name}
                     className={`w-full h-full object-contain ${
                       !isUnlocked ? 'grayscale opacity-50' : ''
-                    } ${skin.id === 'planning' ? 'scale-[1.3]' : ''}`}
+                    } ${!skin.isDefault && skin.stageNumber >= 2 && skin.stageNumber <= 4 ? 'scale-[1.3]' : ''}`}
                   />
                   {!isUnlocked && (
                     <div className="absolute inset-0 flex items-center justify-center">

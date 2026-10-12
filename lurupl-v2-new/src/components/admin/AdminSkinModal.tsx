@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase';
 import {
   CATEGORY_SKIN_CONFIG,
   getSkinImage,
+  shouldScaleSkin,
 } from '@/domain/tree-skins';
 import { DEFAULT_CATEGORIES, type CategoryKey } from '@/domain/categories';
 
@@ -295,7 +296,7 @@ export function AdminSkinModal({ isOpen, onClose, member, onUpdate }: AdminSkinM
                             <img
                               src={skinImage}
                               alt={skin.name}
-                              className="w-12 h-16 object-contain"
+                              className={`w-12 h-16 object-contain ${shouldScaleSkin(skin.id) ? 'scale-[1.3]' : ''}`}
                             />
                           </div>
                           <p className="text-xs font-medium text-text truncate text-center">{skin.name}</p>

@@ -11,6 +11,7 @@ import {
   getSkinImage,
   getCurrentGrowthStage,
   getSkinById,
+  shouldScaleSkin,
 } from '@/domain/tree-skins';
 
 interface MemberDetails {
@@ -179,7 +180,7 @@ export function ProfileModal({ isOpen, onClose, memberId, yearMonth }: ProfileMo
               <img
                 src={currentTreeImage}
                 alt={currentSkinInfo?.name || growthStageInfo.name}
-                className={`w-40 h-52 object-contain drop-shadow-xl ${details.selected_tree_skin === 'planning' ? 'scale-[1.5]' : ''}`}
+                className={`w-40 h-52 object-contain drop-shadow-xl ${shouldScaleSkin(details.selected_tree_skin) ? 'scale-[1.5]' : ''}`}
               />
 
               {/* 이름 */}

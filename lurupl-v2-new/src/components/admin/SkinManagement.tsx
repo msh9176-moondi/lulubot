@@ -10,6 +10,7 @@ import {
   DEFAULT_GROWTH_STAGES,
   CATEGORY_SKIN_CONFIG,
   getSkinImage,
+  shouldScaleSkin,
 } from '@/domain/tree-skins';
 import { DEFAULT_CATEGORIES, type CategoryKey } from '@/domain/categories';
 import { supabase } from '@/lib/supabase';
@@ -218,7 +219,7 @@ export function SkinManagement() {
                         <img
                           src={skinImage}
                           alt={skinName}
-                          className="w-16 h-20 object-contain mb-2"
+                          className={`w-16 h-20 object-contain mb-2 ${shouldScaleSkin(skinId) ? 'scale-[1.3]' : ''}`}
                         />
                         <p className="text-sm font-medium text-text">{skinName}</p>
                         <span className={`text-xs mt-1 px-1.5 py-0.5 rounded ${
