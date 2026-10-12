@@ -1,53 +1,84 @@
 /**
  * Tree Skins Domain
- * 나무 스킨 시스템 - 파일 기반 자동 감지
- *
- * 스킨 추가 방법:
- *   1. 파일만 추가하면 자동 감지됨!
- *   2. 파일 경로: /src/assets/skins/{카테고리}/{스테이지번호}.svg
- *   3. 예: /src/assets/skins/exercise/03.svg
- *
- * 폴더 구조:
- *   /src/assets/skins/
- *     /default/           - 기본 성장 스킨 (01.svg ~ 10.svg)
- *     /exercise/          - 운동 스킨
- *     /cleaning/          - 청소 스킨
- *     /morning/           - 기상 스킨
- *     /planning/          - 계획 스킨
- *     /study/             - 공부 스킨
- *     /medicine/          - 약 스킨
- *     /diary/             - 일기 스킨
- *     /meditation/        - 명상 스킨
- *     /comeback/          - 복귀 스킨
+ * 나무 스킨 시스템 - 명시적 import 방식
  */
 
 import type { CategoryKey } from './categories';
 
 // ============================================================
-// Vite의 import.meta.glob으로 모든 스킨 자동 감지
+// 명시적 SVG 파일 import (프로덕션 빌드 호환성 보장)
 // ============================================================
 
-// 기본 스킨 (default 폴더)
-const defaultSkinModules = import.meta.glob<{ default: string }>(
-  '/src/assets/skins/default/*.svg',
-  { eager: true }
-);
+// 기본 스킨
+import default01 from '@/assets/skins/default/01.svg';
+import default02 from '@/assets/skins/default/02.svg';
+import default03 from '@/assets/skins/default/03.svg';
+import default04 from '@/assets/skins/default/04.svg';
+import default05 from '@/assets/skins/default/05.svg';
+import default06 from '@/assets/skins/default/06.svg';
+import default07 from '@/assets/skins/default/07.svg';
+import default08 from '@/assets/skins/default/08.svg';
+import default09 from '@/assets/skins/default/09.svg';
+import default10 from '@/assets/skins/default/10.svg';
 
-// 카테고리별 스킨 - 각 폴더 명시적 지정 (negation 패턴 대신)
-const categorySkinModules = import.meta.glob<{ default: string }>(
-  [
-    '/src/assets/skins/exercise/*.svg',
-    '/src/assets/skins/cleaning/*.svg',
-    '/src/assets/skins/morning/*.svg',
-    '/src/assets/skins/planning/*.svg',
-    '/src/assets/skins/study/*.svg',
-    '/src/assets/skins/medicine/*.svg',
-    '/src/assets/skins/diary/*.svg',
-    '/src/assets/skins/meditation/*.svg',
-    '/src/assets/skins/comeback/*.svg',
-  ],
-  { eager: true }
-);
+// 운동 스킨
+import exercise01 from '@/assets/skins/exercise/01.svg';
+import exercise02 from '@/assets/skins/exercise/02.svg';
+import exercise03 from '@/assets/skins/exercise/03.svg';
+import exercise04 from '@/assets/skins/exercise/04.svg';
+import exercise05 from '@/assets/skins/exercise/05.svg';
+
+// 청소 스킨
+import cleaning01 from '@/assets/skins/cleaning/01.svg';
+import cleaning02 from '@/assets/skins/cleaning/02.svg';
+import cleaning03 from '@/assets/skins/cleaning/03.svg';
+import cleaning04 from '@/assets/skins/cleaning/04.svg';
+import cleaning05 from '@/assets/skins/cleaning/05.svg';
+
+// 기상 스킨
+import morning01 from '@/assets/skins/morning/01.svg';
+import morning02 from '@/assets/skins/morning/02.svg';
+import morning03 from '@/assets/skins/morning/03.svg';
+import morning04 from '@/assets/skins/morning/04.svg';
+import morning05 from '@/assets/skins/morning/05.svg';
+
+// 계획 스킨
+import planning01 from '@/assets/skins/planning/01.svg';
+import planning02 from '@/assets/skins/planning/02.svg';
+import planning03 from '@/assets/skins/planning/03.svg';
+import planning04 from '@/assets/skins/planning/04.svg';
+import planning05 from '@/assets/skins/planning/05.svg';
+
+// 공부 스킨
+import study01 from '@/assets/skins/study/01.svg';
+import study02 from '@/assets/skins/study/02.svg';
+import study03 from '@/assets/skins/study/03.svg';
+import study04 from '@/assets/skins/study/04.svg';
+import study05 from '@/assets/skins/study/05.svg';
+
+// 약 스킨
+import medicine01 from '@/assets/skins/medicine/01.svg';
+import medicine02 from '@/assets/skins/medicine/02.svg';
+import medicine03 from '@/assets/skins/medicine/03.svg';
+import medicine04 from '@/assets/skins/medicine/04.svg';
+import medicine05 from '@/assets/skins/medicine/05.svg';
+
+// 일기 스킨
+import diary01 from '@/assets/skins/diary/01.svg';
+import diary02 from '@/assets/skins/diary/02.svg';
+import diary03 from '@/assets/skins/diary/03.svg';
+import diary04 from '@/assets/skins/diary/04.svg';
+import diary05 from '@/assets/skins/diary/05.svg';
+
+// 명상 스킨
+import meditation01 from '@/assets/skins/meditation/01.svg';
+import meditation02 from '@/assets/skins/meditation/02.svg';
+import meditation03 from '@/assets/skins/meditation/03.svg';
+import meditation04 from '@/assets/skins/meditation/04.svg';
+import meditation05 from '@/assets/skins/meditation/05.svg';
+
+// 복귀 스킨
+import comeback05 from '@/assets/skins/comeback/05.svg';
 
 // ============================================================
 // 타입 정의
@@ -63,55 +94,40 @@ export interface TreeSkin {
 }
 
 // ============================================================
+// 스킨 데이터 정의
+// ============================================================
+
+const DEFAULT_SKINS: Record<number, string> = {
+  1: default01, 2: default02, 3: default03, 4: default04, 5: default05,
+  6: default06, 7: default07, 8: default08, 9: default09, 10: default10,
+};
+
+const CATEGORY_SKINS: Record<CategoryKey, Record<number, string>> = {
+  exercise: { 1: exercise01, 2: exercise02, 3: exercise03, 4: exercise04, 5: exercise05 },
+  cleaning: { 1: cleaning01, 2: cleaning02, 3: cleaning03, 4: cleaning04, 5: cleaning05 },
+  morning: { 1: morning01, 2: morning02, 3: morning03, 4: morning04, 5: morning05 },
+  planning: { 1: planning01, 2: planning02, 3: planning03, 4: planning04, 5: planning05 },
+  study: { 1: study01, 2: study02, 3: study03, 4: study04, 5: study05 },
+  medicine: { 1: medicine01, 2: medicine02, 3: medicine03, 4: medicine04, 5: medicine05 },
+  diary: { 1: diary01, 2: diary02, 3: diary03, 4: diary04, 5: diary05 },
+  meditation: { 1: meditation01, 2: meditation02, 3: meditation03, 4: meditation04, 5: meditation05 },
+  comeback: { 5: comeback05 },
+};
+
+// ============================================================
 // 스테이지별 이름 정의
 // ============================================================
 
 const STAGE_NAMES: Record<CategoryKey, Record<number, string>> = {
-  exercise: {
-    1: '아기 운동선수', 2: '운동 새싹', 3: '러너', 4: '운동 습관화',
-    5: '피트니스 마스터', 6: '운동선수', 7: '스포츠맨', 8: '철인',
-    9: '체력왕', 10: '운동의 화신', 11: '피트니스 레전드',
-  },
-  cleaning: {
-    1: '아기 청소부', 2: '청소 새싹', 3: '깔끔러', 4: '청소 습관화',
-    5: '청소 달인', 6: '청소 마스터', 7: '미니멀리스트', 8: '정리왕',
-    9: '청결의 화신', 10: '청소 레전드', 11: '빛나는 공간',
-  },
-  morning: {
-    1: '아기 얼리버드', 2: '기상 새싹', 3: '아침형 인간', 4: '기상 습관화',
-    5: '얼리버드', 6: '새벽의 주인', 7: '아침 마스터', 8: '여명의 수호자',
-    9: '기상의 화신', 10: '새벽별', 11: '태양의 아이',
-  },
-  planning: {
-    1: '아기 계획가', 2: '계획 새싹', 3: '플래너', 4: '계획 습관화',
-    5: '계획의 신', 6: '전략가', 7: '계획 마스터', 8: '시간 관리자',
-    9: '계획의 화신', 10: '스케줄러', 11: '인생 설계자',
-  },
-  study: {
-    1: '아기 학생', 2: '공부 새싹', 3: '학습자', 4: '공부 습관화',
-    5: '공부 박사', 6: '학자', 7: '공부 마스터', 8: '지식인',
-    9: '공부의 화신', 10: '석학', 11: '지혜의 등불',
-  },
-  medicine: {
-    1: '아기 약사', 2: '복약 새싹', 3: '건강 지킴이', 4: '복약 습관화',
-    5: '약사', 6: '건강 마스터', 7: '웰니스 전문가', 8: '건강의 수호자',
-    9: '복약의 화신', 10: '건강 대사', 11: '불로장생',
-  },
-  diary: {
-    1: '아기 작가', 2: '일기 새싹', 3: '기록자', 4: '일기 습관화',
-    5: '작가', 6: '일기 마스터', 7: '스토리텔러', 8: '기록의 수호자',
-    9: '일기의 화신', 10: '문필가', 11: '인생 기록자',
-  },
-  meditation: {
-    1: '아기 명상가', 2: '명상 새싹', 3: '수행자', 4: '명상 습관화',
-    5: '명상 마스터', 6: '선인', 7: '마음 수련자', 8: '고요의 수호자',
-    9: '명상의 화신', 10: '도인', 11: '깨달음의 경지',
-  },
-  comeback: {
-    1: '복귀 첫걸음', 2: '복귀 새싹', 3: '다시 시작', 4: '복귀 습관화',
-    5: '불사조', 6: '복귀 마스터', 7: '불굴의 의지', 8: '재기의 수호자',
-    9: '복귀의 화신', 10: '피닉스', 11: '영원한 복귀자',
-  },
+  exercise: { 1: '아기 운동선수', 2: '운동 새싹', 3: '러너', 4: '운동 습관화', 5: '피트니스 마스터' },
+  cleaning: { 1: '아기 청소부', 2: '청소 새싹', 3: '깔끔러', 4: '청소 습관화', 5: '청소 달인' },
+  morning: { 1: '아기 얼리버드', 2: '기상 새싹', 3: '아침형 인간', 4: '기상 습관화', 5: '얼리버드' },
+  planning: { 1: '아기 계획가', 2: '계획 새싹', 3: '플래너', 4: '계획 습관화', 5: '계획의 신' },
+  study: { 1: '아기 학생', 2: '공부 새싹', 3: '학습자', 4: '공부 습관화', 5: '공부 박사' },
+  medicine: { 1: '아기 약사', 2: '복약 새싹', 3: '건강 지킴이', 4: '복약 습관화', 5: '약사' },
+  diary: { 1: '아기 작가', 2: '일기 새싹', 3: '기록자', 4: '일기 습관화', 5: '작가' },
+  meditation: { 1: '아기 명상가', 2: '명상 새싹', 3: '수행자', 4: '명상 습관화', 5: '명상 마스터' },
+  comeback: { 5: '불사조' },
 };
 
 const CATEGORY_NAMES: Record<CategoryKey, string> = {
@@ -120,71 +136,20 @@ const CATEGORY_NAMES: Record<CategoryKey, string> = {
 };
 
 // ============================================================
-// 파일 경로에서 스킨 정보 파싱
-// ============================================================
-
-function parseDefaultSkins(): Map<number, string> {
-  const skins = new Map<number, string>();
-
-  for (const [path, module] of Object.entries(defaultSkinModules)) {
-    // /src/assets/skins/default/01.svg -> 01
-    const match = path.match(/\/(\d+)\.svg$/);
-    if (match && module?.default) {
-      const stage = parseInt(match[1], 10);
-      skins.set(stage, module.default);
-    }
-  }
-
-  return skins;
-}
-
-function parseCategorySkins(): Map<CategoryKey, Map<number, string>> {
-  const skins = new Map<CategoryKey, Map<number, string>>();
-
-  for (const [path, module] of Object.entries(categorySkinModules)) {
-    // /src/assets/skins/exercise/03.svg -> exercise, 03
-    const match = path.match(/\/([a-z]+)\/(\d+)\.svg$/);
-    if (match && module?.default) {
-      const category = match[1] as CategoryKey;
-      const stage = parseInt(match[2], 10);
-
-      if (!skins.has(category)) {
-        skins.set(category, new Map());
-      }
-      skins.get(category)!.set(stage, module.default);
-    }
-  }
-
-  return skins;
-}
-
-// 파싱된 스킨 데이터
-const DEFAULT_SKINS_MAP = parseDefaultSkins();
-const CATEGORY_SKINS_MAP = parseCategorySkins();
-
-// 디버깅: 감지된 스킨 출력
-console.log('=== 스킨 자동 감지 결과 ===');
-console.log('기본 스킨:', DEFAULT_SKINS_MAP.size, '개');
-console.log('카테고리별 스킨:');
-for (const [cat, stages] of CATEGORY_SKINS_MAP) {
-  console.log(`  ${cat}: ${Array.from(stages.keys()).sort((a,b)=>a-b).join(', ')}단계`);
-}
-
-// ============================================================
 // 기본 성장 단계 (총 인증 수 기준, 카테고리 무관)
 // ============================================================
 
 export const DEFAULT_GROWTH_STAGES = [
-  { stage: 1, image: DEFAULT_SKINS_MAP.get(1) || '', name: '씨앗', minCount: 0 },
-  { stage: 2, image: DEFAULT_SKINS_MAP.get(2) || '', name: '새싹', minCount: 10 },
-  { stage: 3, image: DEFAULT_SKINS_MAP.get(3) || '', name: '떡잎', minCount: 30 },
-  { stage: 4, image: DEFAULT_SKINS_MAP.get(4) || '', name: '어린 줄기', minCount: 60 },
-  { stage: 5, image: DEFAULT_SKINS_MAP.get(5) || '', name: '자라는 중', minCount: 100 },
-  { stage: 6, image: DEFAULT_SKINS_MAP.get(6) || '', name: '튼튼한 줄기', minCount: 150 },
-  { stage: 7, image: DEFAULT_SKINS_MAP.get(7) || '', name: '가지 뻗기', minCount: 210 },
-  { stage: 8, image: DEFAULT_SKINS_MAP.get(8) || '', name: '무성한 잎', minCount: 280 },
-  { stage: 9, image: DEFAULT_SKINS_MAP.get(9) || '', name: '풍성한 나무', minCount: 360 },
-  { stage: 10, image: DEFAULT_SKINS_MAP.get(10) || '', name: '열매 맺은 나무', minCount: 450 },
+  { stage: 1, image: DEFAULT_SKINS[1], name: '씨앗', minCount: 0 },
+  { stage: 2, image: DEFAULT_SKINS[2], name: '새싹', minCount: 10 },
+  { stage: 3, image: DEFAULT_SKINS[3], name: '떡잎', minCount: 30 },
+  { stage: 4, image: DEFAULT_SKINS[4], name: '어린 줄기', minCount: 60 },
+  { stage: 5, image: DEFAULT_SKINS[5], name: '자라는 중', minCount: 100 },
+  { stage: 6, image: DEFAULT_SKINS[6], name: '튼튼한 줄기', minCount: 150 },
+  { stage: 7, image: DEFAULT_SKINS[7], name: '가지 뻗기', minCount: 210 },
+  { stage: 8, image: DEFAULT_SKINS[8], name: '무성한 잎', minCount: 280 },
+  { stage: 9, image: DEFAULT_SKINS[9], name: '풍성한 나무', minCount: 360 },
+  { stage: 10, image: DEFAULT_SKINS[10], name: '열매 맺은 나무', minCount: 450 },
 ];
 
 // ============================================================
@@ -195,7 +160,7 @@ export const DEFAULT_SKIN: TreeSkin = {
   id: 'default',
   name: '기본 나무',
   description: '기본 성장 나무',
-  image: DEFAULT_SKINS_MAP.get(10) || '',
+  image: DEFAULT_SKINS[10],
   categoryKey: null,
   stageNumber: 0,
 };
@@ -204,23 +169,11 @@ export const DEFAULT_SKIN: TreeSkin = {
 // 헬퍼 함수들
 // ============================================================
 
-/**
- * 특정 카테고리의 특정 스테이지 스킨 이미지 반환
- */
-export function getCategorySkinImage(
-  categoryKey: CategoryKey,
-  stageNumber: number
-): string | null {
-  return CATEGORY_SKINS_MAP.get(categoryKey)?.get(stageNumber) || null;
+export function getCategorySkinImage(categoryKey: CategoryKey, stageNumber: number): string | null {
+  return CATEGORY_SKINS[categoryKey]?.[stageNumber] || null;
 }
 
-/**
- * 특정 카테고리의 특정 스테이지 스킨 정보 반환
- */
-export function getCategorySkin(
-  categoryKey: CategoryKey,
-  stageNumber: number
-): TreeSkin | null {
+export function getCategorySkin(categoryKey: CategoryKey, stageNumber: number): TreeSkin | null {
   const image = getCategorySkinImage(categoryKey, stageNumber);
   if (!image) return null;
 
@@ -237,9 +190,6 @@ export function getCategorySkin(
   };
 }
 
-/**
- * 기본 스킨 이미지 반환 (총 인증수 기준)
- */
 export function getDefaultSkinImage(totalCount: number): string {
   for (let i = DEFAULT_GROWTH_STAGES.length - 1; i >= 0; i--) {
     if (totalCount >= DEFAULT_GROWTH_STAGES[i].minCount) {
@@ -249,9 +199,6 @@ export function getDefaultSkinImage(totalCount: number): string {
   return DEFAULT_GROWTH_STAGES[0].image;
 }
 
-/**
- * 스킨 ID로 이미지 반환
- */
 export function getSkinImage(skinId: string, totalCount: number = 0): string {
   if (skinId === 'default') {
     return getDefaultSkinImage(totalCount);
@@ -266,11 +213,11 @@ export function getSkinImage(skinId: string, totalCount: number = 0): string {
     if (image) return image;
   }
 
-  // 레거시 호환: 이전 형식 지원 (categoryKey만 있는 경우 = 5단계 마스터)
+  // 레거시 호환: categoryKey만 (= 5단계)
   const legacyImage = getCategorySkinImage(skinId as CategoryKey, 5);
   if (legacyImage) return legacyImage;
 
-  // 레거시 호환: baby 스킨
+  // 레거시 호환: baby 스킨 (= 1단계)
   if (skinId.endsWith('-baby')) {
     const categoryKey = skinId.replace('-baby', '') as CategoryKey;
     const babyImage = getCategorySkinImage(categoryKey, 1);
@@ -280,9 +227,6 @@ export function getSkinImage(skinId: string, totalCount: number = 0): string {
   return getDefaultSkinImage(totalCount);
 }
 
-/**
- * 획득한 스킨 목록 계산
- */
 export function getUnlockedSkins(
   categoryStages: Map<CategoryKey, number> | Record<CategoryKey, number>
 ): TreeSkin[] {
@@ -292,12 +236,13 @@ export function getUnlockedSkins(
     ? Object.fromEntries(categoryStages)
     : categoryStages;
 
-  for (const [categoryKey, stagesMap] of CATEGORY_SKINS_MAP.entries()) {
-    const currentStage = stages[categoryKey] || 0;
+  for (const [categoryKey, stagesObj] of Object.entries(CATEGORY_SKINS)) {
+    const currentStage = stages[categoryKey as CategoryKey] || 0;
 
-    for (const [stageNumber] of stagesMap) {
+    for (const stageStr of Object.keys(stagesObj)) {
+      const stageNumber = parseInt(stageStr, 10);
       if (currentStage >= stageNumber) {
-        const skin = getCategorySkin(categoryKey, stageNumber);
+        const skin = getCategorySkin(categoryKey as CategoryKey, stageNumber);
         if (skin) unlocked.push(skin);
       }
     }
@@ -306,13 +251,9 @@ export function getUnlockedSkins(
   return unlocked;
 }
 
-/**
- * 스킨 ID로 스킨 정보 조회
- */
 export function getSkinById(skinId: string): TreeSkin | undefined {
   if (skinId === 'default') return DEFAULT_SKIN;
 
-  // categoryKey-stageNumber 형식
   const match = skinId.match(/^([a-z]+)-(\d+)$/);
   if (match) {
     const [, categoryKey, stageStr] = match;
@@ -320,11 +261,10 @@ export function getSkinById(skinId: string): TreeSkin | undefined {
     return getCategorySkin(categoryKey as CategoryKey, stageNumber) || undefined;
   }
 
-  // 레거시 호환: categoryKey만 (= 5단계)
+  // 레거시 호환
   const legacySkin = getCategorySkin(skinId as CategoryKey, 5);
   if (legacySkin) return legacySkin;
 
-  // 레거시 호환: baby 스킨 (= 1단계)
   if (skinId.endsWith('-baby')) {
     const categoryKey = skinId.replace('-baby', '') as CategoryKey;
     return getCategorySkin(categoryKey, 1) || undefined;
@@ -333,19 +273,10 @@ export function getSkinById(skinId: string): TreeSkin | undefined {
   return undefined;
 }
 
-/**
- * 특정 스테이지 해금 시 획득할 스킨 반환
- */
-export function getSkinRewardForStage(
-  categoryKey: CategoryKey,
-  stageNumber: number
-): TreeSkin | null {
+export function getSkinRewardForStage(categoryKey: CategoryKey, stageNumber: number): TreeSkin | null {
   return getCategorySkin(categoryKey, stageNumber);
 }
 
-/**
- * 현재 성장 단계 계산 (기본 스킨용)
- */
 export function getCurrentGrowthStage(totalCount: number): {
   stage: number;
   name: string;
@@ -379,24 +310,19 @@ export function getCurrentGrowthStage(totalCount: number): {
   };
 }
 
-/**
- * 카테고리에서 사용 가능한 스킨 스테이지 목록
- */
 export function getAvailableSkinStages(categoryKey: CategoryKey): number[] {
-  const stagesMap = CATEGORY_SKINS_MAP.get(categoryKey);
-  if (!stagesMap) return [];
-  return Array.from(stagesMap.keys()).sort((a, b) => a - b);
+  const stagesObj = CATEGORY_SKINS[categoryKey];
+  if (!stagesObj) return [];
+  return Object.keys(stagesObj).map(s => parseInt(s, 10)).sort((a, b) => a - b);
 }
 
-/**
- * 모든 스킨 목록
- */
 export function getAllSkins(): TreeSkin[] {
   const skins: TreeSkin[] = [DEFAULT_SKIN];
 
-  for (const [categoryKey, stagesMap] of CATEGORY_SKINS_MAP.entries()) {
-    for (const [stageNumber] of stagesMap) {
-      const skin = getCategorySkin(categoryKey, stageNumber);
+  for (const [categoryKey, stagesObj] of Object.entries(CATEGORY_SKINS)) {
+    for (const stageStr of Object.keys(stagesObj)) {
+      const stageNumber = parseInt(stageStr, 10);
+      const skin = getCategorySkin(categoryKey as CategoryKey, stageNumber);
       if (skin) skins.push(skin);
     }
   }
@@ -404,7 +330,6 @@ export function getAllSkins(): TreeSkin[] {
   return skins;
 }
 
-// 레거시 호환
 export const ALL_SKINS = getAllSkins();
 
 // ============================================================
@@ -419,36 +344,20 @@ export interface CategorySkinConfig {
 }
 
 function buildCategorySkinConfig(): Record<CategoryKey, CategorySkinConfig> {
-  const config: Partial<Record<CategoryKey, CategorySkinConfig>> = {};
+  const config: Record<CategoryKey, CategorySkinConfig> = {} as Record<CategoryKey, CategorySkinConfig>;
 
-  for (const [categoryKey, stagesMap] of CATEGORY_SKINS_MAP.entries()) {
-    const stages: Record<number, string> = {};
-    for (const [stageNumber, image] of stagesMap) {
-      stages[stageNumber] = image;
-    }
+  const allCategories: CategoryKey[] = ['exercise', 'cleaning', 'morning', 'planning', 'study', 'medicine', 'diary', 'meditation', 'comeback'];
 
-    config[categoryKey] = {
-      categoryKey,
-      categoryName: CATEGORY_NAMES[categoryKey] || categoryKey,
-      stages,
-      stageNames: STAGE_NAMES[categoryKey] || {},
+  for (const cat of allCategories) {
+    config[cat] = {
+      categoryKey: cat,
+      categoryName: CATEGORY_NAMES[cat] || cat,
+      stages: CATEGORY_SKINS[cat] || {},
+      stageNames: STAGE_NAMES[cat] || {},
     };
   }
 
-  // 스킨이 없는 카테고리도 빈 config로 추가
-  const allCategories: CategoryKey[] = ['exercise', 'cleaning', 'morning', 'planning', 'study', 'medicine', 'diary', 'meditation', 'comeback'];
-  for (const cat of allCategories) {
-    if (!config[cat]) {
-      config[cat] = {
-        categoryKey: cat,
-        categoryName: CATEGORY_NAMES[cat] || cat,
-        stages: {},
-        stageNames: STAGE_NAMES[cat] || {},
-      };
-    }
-  }
-
-  return config as Record<CategoryKey, CategorySkinConfig>;
+  return config;
 }
 
 export const CATEGORY_SKIN_CONFIG = buildCategorySkinConfig();
@@ -469,15 +378,15 @@ export interface LegacyTreeSkin {
 function buildBabySkins(): Partial<Record<CategoryKey, LegacyTreeSkin>> {
   const skins: Partial<Record<CategoryKey, LegacyTreeSkin>> = {};
 
-  for (const [categoryKey, stagesMap] of CATEGORY_SKINS_MAP.entries()) {
-    const image = stagesMap.get(1);
+  for (const [categoryKey, stagesObj] of Object.entries(CATEGORY_SKINS)) {
+    const image = stagesObj[1];
     if (image) {
-      skins[categoryKey] = {
+      skins[categoryKey as CategoryKey] = {
         id: `${categoryKey}-baby`,
-        name: STAGE_NAMES[categoryKey]?.[1] || `${CATEGORY_NAMES[categoryKey]} 1단계`,
-        description: `${CATEGORY_NAMES[categoryKey]} 1단계(첫걸음마) 달성 보상`,
+        name: STAGE_NAMES[categoryKey as CategoryKey]?.[1] || `${CATEGORY_NAMES[categoryKey as CategoryKey]} 1단계`,
+        description: `${CATEGORY_NAMES[categoryKey as CategoryKey]} 1단계(첫걸음마) 달성 보상`,
         image,
-        categoryKey,
+        categoryKey: categoryKey as CategoryKey,
         requiredStage: 1,
       };
     }
@@ -486,18 +395,18 @@ function buildBabySkins(): Partial<Record<CategoryKey, LegacyTreeSkin>> {
   return skins;
 }
 
-function buildCategorySkins(): Partial<Record<CategoryKey, LegacyTreeSkin>> {
+function buildLegacyCategorySkins(): Partial<Record<CategoryKey, LegacyTreeSkin>> {
   const skins: Partial<Record<CategoryKey, LegacyTreeSkin>> = {};
 
-  for (const [categoryKey, stagesMap] of CATEGORY_SKINS_MAP.entries()) {
-    const image = stagesMap.get(5);
+  for (const [categoryKey, stagesObj] of Object.entries(CATEGORY_SKINS)) {
+    const image = stagesObj[5];
     if (image) {
-      skins[categoryKey] = {
+      skins[categoryKey as CategoryKey] = {
         id: categoryKey,
-        name: STAGE_NAMES[categoryKey]?.[5] || `${CATEGORY_NAMES[categoryKey]} 마스터`,
-        description: `${CATEGORY_NAMES[categoryKey]} 카테고리 5단계 달성 보상`,
+        name: STAGE_NAMES[categoryKey as CategoryKey]?.[5] || `${CATEGORY_NAMES[categoryKey as CategoryKey]} 마스터`,
+        description: `${CATEGORY_NAMES[categoryKey as CategoryKey]} 카테고리 5단계 달성 보상`,
         image,
-        categoryKey,
+        categoryKey: categoryKey as CategoryKey,
         requiredStage: 5,
       };
     }
@@ -510,7 +419,7 @@ function buildCategorySkins(): Partial<Record<CategoryKey, LegacyTreeSkin>> {
 export const BABY_SKINS = buildBabySkins();
 
 /** @deprecated */
-export const CATEGORY_SKINS = buildCategorySkins() as Record<Exclude<CategoryKey, 'diary'>, LegacyTreeSkin>;
+export const CATEGORY_SKINS_LEGACY = buildLegacyCategorySkins() as Record<Exclude<CategoryKey, 'diary'>, LegacyTreeSkin>;
 
 // SkinId 타입 (레거시 호환)
 export type SkinId = string;
