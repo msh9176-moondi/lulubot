@@ -1,27 +1,5 @@
 import { DEFAULT_CATEGORIES, CATEGORY_COLORS, type CategoryKey } from '@/domain/categories';
-import Seed1 from '@/seed/seed-1.svg';
-import Seed2 from '@/seed/seed-2.svg';
-import Seed3 from '@/seed/seed-3.svg';
-import Seed4 from '@/seed/seed-4.svg';
-import Seed5 from '@/seed/seed-5.svg';
-import Seed6 from '@/seed/seed-6.svg';
-import Seed7 from '@/seed/seed-7.svg';
-import Seed8 from '@/seed/seed-8.svg';
-import Seed9 from '@/seed/seed-9.svg';
-import Seed10 from '@/seed/seed-10.svg';
-
-const GROWTH_STAGES = [
-  { image: Seed1, name: '씨앗', minCount: 0 },
-  { image: Seed2, name: '새싹', minCount: 10 },
-  { image: Seed3, name: '떡잎', minCount: 30 },
-  { image: Seed4, name: '어린 줄기', minCount: 60 },
-  { image: Seed5, name: '자라는 중', minCount: 100 },
-  { image: Seed6, name: '튼튼한 줄기', minCount: 150 },
-  { image: Seed7, name: '가지 뻗기', minCount: 210 },
-  { image: Seed8, name: '무성한 잎', minCount: 280 },
-  { image: Seed9, name: '풍성한 나무', minCount: 360 },
-  { image: Seed10, name: '열매 맺은 나무', minCount: 450 },
-];
+import { DEFAULT_GROWTH_STAGES } from '@/domain/tree-skins';
 
 const CATEGORY_DESCRIPTIONS: Record<CategoryKey, string> = {
   cleaning: '집안일, 정리정돈, 청소 관련 활동',
@@ -294,7 +272,7 @@ export function CertificationGuide() {
           </h4>
           <div className="overflow-x-auto">
             <div className="flex gap-2 pb-2">
-              {GROWTH_STAGES.map((stage, idx, arr) => (
+              {DEFAULT_GROWTH_STAGES.map((stage, idx, arr) => (
                 <div key={idx} className="flex items-center">
                   <div className="flex flex-col items-center p-2 bg-bg-card rounded-lg border border-green-500/20 min-w-[72px]">
                     <img

@@ -22,6 +22,7 @@ import {
   getSkinById,
 } from '@/domain/tree-skins';
 
+import { useMembersStore } from '@/stores/membersStore';
 import { MemberSelector } from './MemberSelector';
 import { PinVerification } from './PinVerification';
 import { ProfileHeader } from './ProfileHeader';
@@ -80,6 +81,9 @@ export function MemberProfilePage() {
   const [selectedMemberName, setSelectedMemberName] = useState<string>('');
   const [details, setDetails] = useState<MemberDetails | null>(null);
   const [certifications, setCertifications] = useState<Certification[]>([]);
+
+  // Members store (for updating skin in leaderboard)
+  const { updateMemberTotalCount } = useMembersStore();
 
   // Loading state
   const [loading, setLoading] = useState(true);
@@ -441,6 +445,10 @@ export function MemberProfilePage() {
         currentSkinId={details.selected_tree_skin}
         onSkinChange={(newSkinId) => {
           setDetails((prev) => prev ? { ...prev, selected_tree_skin: newSkinId } : null);
+          // Update leaderboard store
+          if (details) {
+            updateMemberTotalCount(selectedMemberId!, details.total_count, newSkinId);
+          }
         }}
       />
     </div>

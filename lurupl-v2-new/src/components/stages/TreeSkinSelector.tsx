@@ -11,8 +11,7 @@ import { useStageStore } from '@/stores/stageStore';
 import { updateMemberTreeSkin } from '@/lib/motivation-api';
 import {
   DEFAULT_SKIN,
-  CATEGORY_SKINS,
-  BABY_SKINS,
+  CATEGORY_SKIN_CONFIG,
   getSkinImage,
   getCurrentGrowthStage,
 } from '@/domain/tree-skins';
@@ -27,6 +26,26 @@ interface TreeSkinSelectorProps {
   onSkinChange: (skinId: string) => void;
 }
 
+// 레거시 스킨 ID를 새 형식으로 변환
+function normalizeSkinId(skinId: string): string {
+  if (skinId === 'default') return 'default';
+
+  // 이미 새 형식인 경우 (categoryKey-number)
+  if (/^[a-z]+-\d+$/.test(skinId)) return skinId;
+
+  // 레거시 baby 형식 (예: 'exercise-baby' -> 'exercise-1')
+  if (skinId.endsWith('-baby')) {
+    return skinId.replace('-baby', '-1');
+  }
+
+  // 레거시 마스터 형식 (예: 'study' -> 'study-5')
+  if (/^[a-z]+$/.test(skinId)) {
+    return `${skinId}-5`;
+  }
+
+  return skinId;
+}
+
 export function TreeSkinSelector({
   isOpen,
   onClose,
@@ -35,7 +54,10 @@ export function TreeSkinSelector({
   currentSkinId,
   onSkinChange,
 }: TreeSkinSelectorProps) {
-  const [selectedSkin, setSelectedSkin] = useState<string>(currentSkinId);
+  // 레거시 형식 변환
+  const normalizedCurrentSkinId = normalizeSkinId(currentSkinId);
+
+  const [selectedSkin, setSelectedSkin] = useState<string>(normalizedCurrentSkinId);
   const [saving, setSaving] = useState(false);
 
   const { memberStatuses, fetchMemberStatus, fetchDefinitions } = useStageStore();
@@ -50,8 +72,8 @@ export function TreeSkinSelector({
 
   // 현재 스킨으로 초기화
   useEffect(() => {
-    setSelectedSkin(currentSkinId);
-  }, [currentSkinId, isOpen]);
+    setSelectedSkin(normalizedCurrentSkinId);
+  }, [normalizedCurrentSkinId, isOpen]);
 
   // 카테고리별 현재 스테이지 가져오기
   const statuses = memberStatuses.get(memberId) || [];
@@ -64,20 +86,15 @@ export function TreeSkinSelector({
   const getUnlockedSkinIds = (): Set<string> => {
     const unlocked = new Set<string>(['default']);
 
-    // 1단계 베이비 스킨 체크
-    for (const [categoryKey, skin] of Object.entries(BABY_SKINS)) {
-      if (!skin) continue;
+    // 모든 카테고리의 모든 스테이지 스킨 체크
+    for (const [categoryKey, config] of Object.entries(CATEGORY_SKIN_CONFIG)) {
       const currentStage = categoryStages.get(categoryKey as CategoryKey) || 0;
-      if (currentStage >= skin.requiredStage) {
-        unlocked.add(skin.id);
-      }
-    }
 
-    // 5단계 마스터 스킨 체크
-    for (const [categoryKey, skin] of Object.entries(CATEGORY_SKINS)) {
-      const currentStage = categoryStages.get(categoryKey as CategoryKey) || 0;
-      if (currentStage >= skin.requiredStage) {
-        unlocked.add(skin.id);
+      for (const stageStr of Object.keys(config.stages)) {
+        const stageNumber = parseInt(stageStr, 10);
+        if (currentStage >= stageNumber) {
+          unlocked.add(`${categoryKey}-${stageNumber}`);
+        }
       }
     }
 
@@ -86,7 +103,7 @@ export function TreeSkinSelector({
 
   // 스킨 저장
   const handleSave = async () => {
-    if (selectedSkin === currentSkinId) {
+    if (selectedSkin === normalizedCurrentSkinId) {
       onClose();
       return;
     }
@@ -104,49 +121,56 @@ export function TreeSkinSelector({
   const unlockedSkinIds = getUnlockedSkinIds();
   const growthStage = getCurrentGrowthStage(totalCount);
 
-  // 모든 스킨을 하나의 배열로 (기본 + 베이비 + 마스터)
-  type SkinTier = 'default' | 'baby' | 'master';
-  const allSkins: { id: string; name: string; category?: CategoryKey; isDefault: boolean; tier: SkinTier; requiredStage: number }[] = [
-    { id: 'default', name: DEFAULT_SKIN.name, isDefault: true, tier: 'default', requiredStage: 0 },
-    // 베이비 스킨 (1단계)
-    ...Object.entries(BABY_SKINS)
-      .filter(([_, skin]) => skin !== undefined)
-      .map(([key, skin]) => ({
-        id: skin!.id,
-        name: skin!.name,
-        category: key as CategoryKey,
-        isDefault: false,
-        tier: 'baby' as SkinTier,
-        requiredStage: 1,
-      })),
-    // 마스터 스킨 (5단계)
-    ...Object.entries(CATEGORY_SKINS).map(([key, skin]) => ({
-      id: skin.id,
-      name: skin.name,
-      category: key as CategoryKey,
-      isDefault: false,
-      tier: 'master' as SkinTier,
-      requiredStage: 5,
-    })),
+  // 모든 스킨을 하나의 배열로 (기본 + 카테고리별 모든 스테이지)
+  const allSkins: { id: string; name: string; category?: CategoryKey; isDefault: boolean; stageNumber: number }[] = [
+    { id: 'default', name: DEFAULT_SKIN.name, isDefault: true, stageNumber: 0 },
+    // 모든 카테고리의 모든 스테이지 스킨
+    ...Object.entries(CATEGORY_SKIN_CONFIG).flatMap(([categoryKey, config]) =>
+      Object.keys(config.stages)
+        .map(stageStr => parseInt(stageStr, 10))
+        .sort((a, b) => a - b)
+        .map(stageNumber => ({
+          id: `${categoryKey}-${stageNumber}`,
+          name: config.stageNames[stageNumber] || `${config.categoryName} ${stageNumber}단계`,
+          category: categoryKey as CategoryKey,
+          isDefault: false,
+          stageNumber,
+        }))
+    ),
   ];
 
   // 현재 인덱스
   const [currentIndex, setCurrentIndex] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
+  const thumbnailContainerRef = useRef<HTMLDivElement>(null);
+  const thumbnailRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   // 스킨 변경 시 인덱스 초기화
   useEffect(() => {
-    const idx = allSkins.findIndex(s => s.id === currentSkinId);
+    const idx = allSkins.findIndex(s => s.id === normalizedCurrentSkinId);
     setCurrentIndex(idx >= 0 ? idx : 0);
-  }, [currentSkinId, isOpen]);
+  }, [normalizedCurrentSkinId, isOpen]);
 
   // 현재 보고 있는 스킨
   const currentSkin = allSkins[currentIndex];
 
   // 캐러셀 이동 시 해금된 스킨이면 자동 선택
   useEffect(() => {
-    if (unlockedSkinIds.has(currentSkin.id)) {
-      setSelectedSkin(currentSkin.id);
+    const skin = allSkins[currentIndex];
+    if (skin && unlockedSkinIds.has(skin.id)) {
+      setSelectedSkin(skin.id);
+    }
+  }, [currentIndex, unlockedSkinIds.size]);
+
+  // 캐러셀 이동 시 썸네일도 같이 스크롤
+  useEffect(() => {
+    const thumbnail = thumbnailRefs.current[currentIndex];
+    if (thumbnail && thumbnailContainerRef.current) {
+      thumbnail.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      });
     }
   }, [currentIndex]);
   const isCurrentUnlocked = unlockedSkinIds.has(currentSkin.id);
@@ -245,17 +269,19 @@ export function TreeSkinSelector({
                 <p className="text-sm text-text-muted mt-1">
                   현재: {growthStage.name} ({growthStage.stage + 1}/10)
                 </p>
-              ) : currentSkin.tier === 'baby' ? (
-                <p className="text-sm text-text-muted mt-1">
-                  {DEFAULT_CATEGORIES[currentSkin.category!]?.emoji}{' '}
-                  {DEFAULT_CATEGORIES[currentSkin.category!]?.name} 첫걸음마
-                  <span className="ml-1 px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded text-xs">1단계</span>
-                </p>
               ) : (
                 <p className="text-sm text-text-muted mt-1">
                   {DEFAULT_CATEGORIES[currentSkin.category!]?.emoji}{' '}
-                  {DEFAULT_CATEGORIES[currentSkin.category!]?.name} 마스터
-                  <span className="ml-1 px-1.5 py-0.5 bg-gold/20 text-gold rounded text-xs">5단계</span>
+                  {DEFAULT_CATEGORIES[currentSkin.category!]?.name}
+                  <span className={`ml-1 px-1.5 py-0.5 rounded text-xs ${
+                    currentSkin.stageNumber === 1
+                      ? 'bg-purple-500/20 text-purple-400'
+                      : currentSkin.stageNumber >= 5
+                        ? 'bg-gold/20 text-gold'
+                        : 'bg-primary/20 text-primary'
+                  }`}>
+                    {currentSkin.stageNumber}단계
+                  </span>
                 </p>
               )}
 
@@ -264,12 +290,12 @@ export function TreeSkinSelector({
                 <div className="mt-3 px-4 py-2 bg-yellow-500/20 rounded-lg">
                   <p className="text-sm text-yellow-700 dark:text-yellow-400 flex items-center justify-center gap-1">
                     <Lock className="w-4 h-4" />
-                    {currentStageProgress}/{currentSkin.requiredStage} 단계 달성 시 해금
+                    {currentStageProgress}/{currentSkin.stageNumber} 단계 달성 시 해금
                   </p>
                   <div className="mt-2 w-32 mx-auto h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-yellow-500 transition-all"
-                      style={{ width: `${(currentStageProgress / currentSkin.requiredStage) * 100}%` }}
+                      style={{ width: `${(currentStageProgress / currentSkin.stageNumber) * 100}%` }}
                     />
                   </div>
                 </div>
@@ -297,7 +323,7 @@ export function TreeSkinSelector({
         </div>
 
         {/* 스킨 썸네일 목록 (가로 스크롤) */}
-        <div className="mt-4 overflow-x-auto pb-2">
+        <div ref={thumbnailContainerRef} className="mt-4 overflow-x-auto pb-2">
           <div className="flex gap-2 px-1">
             {allSkins.map((skin, idx) => {
               const isUnlocked = unlockedSkinIds.has(skin.id);
@@ -306,7 +332,13 @@ export function TreeSkinSelector({
               return (
                 <button
                   key={skin.id}
-                  onClick={() => setCurrentIndex(idx)}
+                  ref={(el) => { thumbnailRefs.current[idx] = el; }}
+                  onClick={() => {
+                    setCurrentIndex(idx);
+                    if (isUnlocked) {
+                      setSelectedSkin(skin.id);
+                    }
+                  }}
                   className={`flex-shrink-0 relative w-16 h-20 rounded-lg border-2 p-1 transition-all ${
                     idx === currentIndex
                       ? 'border-primary bg-primary/10'
@@ -346,7 +378,7 @@ export function TreeSkinSelector({
           </button>
           <button
             onClick={handleSave}
-            disabled={saving || selectedSkin === currentSkinId}
+            disabled={saving || selectedSkin === normalizedCurrentSkinId}
             className="flex-1 py-3 px-4 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? '저장 중...' : '적용하기'}
