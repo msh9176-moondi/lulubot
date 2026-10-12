@@ -27,14 +27,26 @@ import type { CategoryKey } from './categories';
 // Vite의 import.meta.glob으로 모든 스킨 자동 감지
 // ============================================================
 
-const defaultSkinModules = import.meta.glob<string>(
+// 기본 스킨 (default 폴더)
+const defaultSkinModules = import.meta.glob<{ default: string }>(
   '/src/assets/skins/default/*.svg',
-  { eager: true, import: 'default' }
+  { eager: true }
 );
 
-const categorySkinModules = import.meta.glob<string>(
-  '/src/assets/skins/!(default)/*.svg',
-  { eager: true, import: 'default' }
+// 카테고리별 스킨 - 각 폴더 명시적 지정 (negation 패턴 대신)
+const categorySkinModules = import.meta.glob<{ default: string }>(
+  [
+    '/src/assets/skins/exercise/*.svg',
+    '/src/assets/skins/cleaning/*.svg',
+    '/src/assets/skins/morning/*.svg',
+    '/src/assets/skins/planning/*.svg',
+    '/src/assets/skins/study/*.svg',
+    '/src/assets/skins/medicine/*.svg',
+    '/src/assets/skins/diary/*.svg',
+    '/src/assets/skins/meditation/*.svg',
+    '/src/assets/skins/comeback/*.svg',
+  ],
+  { eager: true }
 );
 
 // ============================================================
@@ -114,12 +126,12 @@ const CATEGORY_NAMES: Record<CategoryKey, string> = {
 function parseDefaultSkins(): Map<number, string> {
   const skins = new Map<number, string>();
 
-  for (const [path, image] of Object.entries(defaultSkinModules)) {
+  for (const [path, module] of Object.entries(defaultSkinModules)) {
     // /src/assets/skins/default/01.svg -> 01
     const match = path.match(/\/(\d+)\.svg$/);
-    if (match) {
+    if (match && module?.default) {
       const stage = parseInt(match[1], 10);
-      skins.set(stage, image);
+      skins.set(stage, module.default);
     }
   }
 
@@ -129,17 +141,17 @@ function parseDefaultSkins(): Map<number, string> {
 function parseCategorySkins(): Map<CategoryKey, Map<number, string>> {
   const skins = new Map<CategoryKey, Map<number, string>>();
 
-  for (const [path, image] of Object.entries(categorySkinModules)) {
+  for (const [path, module] of Object.entries(categorySkinModules)) {
     // /src/assets/skins/exercise/03.svg -> exercise, 03
     const match = path.match(/\/([a-z]+)\/(\d+)\.svg$/);
-    if (match) {
+    if (match && module?.default) {
       const category = match[1] as CategoryKey;
       const stage = parseInt(match[2], 10);
 
       if (!skins.has(category)) {
         skins.set(category, new Map());
       }
-      skins.get(category)!.set(stage, image);
+      skins.get(category)!.set(stage, module.default);
     }
   }
 
