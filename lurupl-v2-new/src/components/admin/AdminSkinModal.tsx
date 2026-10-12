@@ -8,8 +8,8 @@ import { Check, Gift, X } from 'lucide-react';
 import { Modal, Spinner } from '@/components/common';
 import { supabase } from '@/lib/supabase';
 import {
-  CATEGORY_SKINS,
-  BABY_SKINS,
+  CATEGORY_SKIN_CONFIG,
+  getSkinImage,
 } from '@/domain/tree-skins';
 import { DEFAULT_CATEGORIES, type CategoryKey } from '@/domain/categories';
 
@@ -26,15 +26,12 @@ interface AdminSkinModalProps {
   onUpdate: () => void;
 }
 
-// 모든 스킨 타입 정의
-type SkinTier = 'baby' | 'master';
-
+// 스킨 아이템 타입
 interface SkinItem {
   id: string;
   name: string;
   categoryKey: CategoryKey;
-  tier: SkinTier;
-  requiredStage: number;
+  stageNumber: number;
 }
 
 export function AdminSkinModal({ isOpen, onClose, member, onUpdate }: AdminSkinModalProps) {
@@ -43,27 +40,18 @@ export function AdminSkinModal({ isOpen, onClose, member, onUpdate }: AdminSkinM
   const [unlockedSkins, setUnlockedSkins] = useState<Set<string>>(new Set());
   const [selectedSkin, setSelectedSkin] = useState<string>('default');
 
-  // 모든 스킨 목록 생성
-  const allSkins: SkinItem[] = [
-    // 베이비 스킨 (1단계)
-    ...Object.entries(BABY_SKINS)
-      .filter(([, skin]) => skin !== undefined)
-      .map(([key, skin]) => ({
-        id: skin!.id,
-        name: skin!.name,
-        categoryKey: key as CategoryKey,
-        tier: 'baby' as SkinTier,
-        requiredStage: 1,
-      })),
-    // 마스터 스킨 (5단계)
-    ...Object.entries(CATEGORY_SKINS).map(([key, skin]) => ({
-      id: skin.id,
-      name: skin.name,
-      categoryKey: key as CategoryKey,
-      tier: 'master' as SkinTier,
-      requiredStage: 5,
-    })),
-  ];
+  // 모든 스킨 목록 생성 (카테고리별, 단계별)
+  const allSkins: SkinItem[] = Object.entries(CATEGORY_SKIN_CONFIG).flatMap(([categoryKey, config]) =>
+    Object.keys(config.stages)
+      .map(stageStr => parseInt(stageStr, 10))
+      .sort((a, b) => a - b)
+      .map(stageNumber => ({
+        id: `${categoryKey}-${stageNumber}`,
+        name: config.stageNames[stageNumber] || `${config.categoryName} ${stageNumber}단계`,
+        categoryKey: categoryKey as CategoryKey,
+        stageNumber,
+      }))
+  );
 
   // 멤버 스킨 정보 로드
   useEffect(() => {
@@ -88,15 +76,16 @@ export function AdminSkinModal({ isOpen, onClose, member, onUpdate }: AdminSkinM
 
         for (const unlock of unlocks || []) {
           const categoryKey = unlock.category_key as CategoryKey;
+          const config = CATEGORY_SKIN_CONFIG[categoryKey];
 
-          // 1단계 이상이면 베이비 스킨 해금
-          if (unlock.stage_number >= 1 && BABY_SKINS[categoryKey]) {
-            unlocked.add(BABY_SKINS[categoryKey]!.id);
-          }
-
-          // 5단계 이상이면 마스터 스킨 해금
-          if (unlock.stage_number >= 5 && CATEGORY_SKINS[categoryKey as Exclude<CategoryKey, 'diary'>]) {
-            unlocked.add(CATEGORY_SKINS[categoryKey as Exclude<CategoryKey, 'diary'>].id);
+          if (config) {
+            // 해당 카테고리의 해금된 단계까지 모든 스킨 추가
+            for (const stageStr of Object.keys(config.stages)) {
+              const stageNumber = parseInt(stageStr, 10);
+              if (unlock.stage_number >= stageNumber) {
+                unlocked.add(`${categoryKey}-${stageNumber}`);
+              }
+            }
           }
         }
 
@@ -111,29 +100,41 @@ export function AdminSkinModal({ isOpen, onClose, member, onUpdate }: AdminSkinM
     loadMemberSkins();
   }, [isOpen, member]);
 
-  // 스킨 부여
+  // 스킨 부여 (해당 단계까지 모든 스테이지 해금)
   const handleGrantSkin = async (skin: SkinItem) => {
     if (!member) return;
     setSaving(true);
 
     try {
-      // category_stage_unlocks에 해당 스테이지 추가
-      const { error } = await supabase
-        .from('category_stage_unlocks')
-        .upsert({
-          member_id: member.id,
-          category_key: skin.categoryKey,
-          stage_number: skin.requiredStage,
-          verified_count_at_unlock: 0, // 관리자 부여
-          unlocked_at: new Date().toISOString(),
-        }, {
-          onConflict: 'member_id,category_key,stage_number',
-        });
+      // 1단계부터 해당 단계까지 모두 해금
+      for (let stage = 1; stage <= skin.stageNumber; stage++) {
+        const { error } = await supabase
+          .from('category_stage_unlocks')
+          .upsert({
+            member_id: member.id,
+            category_key: skin.categoryKey,
+            stage_number: stage,
+            verified_count_at_unlock: 0, // 관리자 부여
+            unlocked_at: new Date().toISOString(),
+          }, {
+            onConflict: 'member_id,category_key,stage_number',
+          });
 
-      if (error) throw error;
+        if (error) throw error;
+      }
 
       // 해금 상태 업데이트
-      setUnlockedSkins(prev => new Set([...prev, skin.id]));
+      const newUnlocked = new Set(unlockedSkins);
+      const config = CATEGORY_SKIN_CONFIG[skin.categoryKey];
+      if (config) {
+        for (const stageStr of Object.keys(config.stages)) {
+          const stageNumber = parseInt(stageStr, 10);
+          if (skin.stageNumber >= stageNumber) {
+            newUnlocked.add(`${skin.categoryKey}-${stageNumber}`);
+          }
+        }
+      }
+      setUnlockedSkins(newUnlocked);
       onUpdate();
     } catch (error) {
       console.error('Failed to grant skin:', error);
@@ -142,7 +143,7 @@ export function AdminSkinModal({ isOpen, onClose, member, onUpdate }: AdminSkinM
     }
   };
 
-  // 스킨 수거
+  // 스킨 수거 (해당 단계 이상 모두 수거)
   const handleRevokeSkin = async (skin: SkinItem) => {
     if (!member) return;
     setSaving(true);
@@ -154,31 +155,38 @@ export function AdminSkinModal({ isOpen, onClose, member, onUpdate }: AdminSkinM
         .delete()
         .eq('member_id', member.id)
         .eq('category_key', skin.categoryKey)
-        .gte('stage_number', skin.requiredStage);
+        .gte('stage_number', skin.stageNumber);
 
       if (deleteError) throw deleteError;
 
-      // 해당 스킨 선택 중이면 기본으로 변경
-      if (selectedSkin === skin.id) {
-        const { error: updateError } = await supabase
-          .from('members')
-          .update({ selected_tree_skin: 'default' })
-          .eq('id', member.id);
+      // 해당 스킨 또는 상위 스킨 선택 중이면 기본으로 변경
+      const selectedMatch = selectedSkin.match(/^([a-z]+)-(\d+)$/);
+      if (selectedMatch) {
+        const [, selCategory, selStageStr] = selectedMatch;
+        const selStage = parseInt(selStageStr, 10);
+        if (selCategory === skin.categoryKey && selStage >= skin.stageNumber) {
+          const { error: updateError } = await supabase
+            .from('members')
+            .update({ selected_tree_skin: 'default' })
+            .eq('id', member.id);
 
-        if (updateError) throw updateError;
-        setSelectedSkin('default');
+          if (updateError) throw updateError;
+          setSelectedSkin('default');
+        }
       }
 
       // 해금 상태 업데이트
-      setUnlockedSkins(prev => {
-        const next = new Set(prev);
-        next.delete(skin.id);
-        // 마스터 스킨 수거 시 베이비 스킨도 수거 (같은 카테고리)
-        if (skin.tier === 'baby' && CATEGORY_SKINS[skin.categoryKey as Exclude<CategoryKey, 'diary'>]) {
-          next.delete(CATEGORY_SKINS[skin.categoryKey as Exclude<CategoryKey, 'diary'>].id);
+      const newUnlocked = new Set(unlockedSkins);
+      const config = CATEGORY_SKIN_CONFIG[skin.categoryKey];
+      if (config) {
+        for (const stageStr of Object.keys(config.stages)) {
+          const stageNumber = parseInt(stageStr, 10);
+          if (stageNumber >= skin.stageNumber) {
+            newUnlocked.delete(`${skin.categoryKey}-${stageNumber}`);
+          }
         }
-        return next;
-      });
+      }
+      setUnlockedSkins(newUnlocked);
       onUpdate();
     } catch (error) {
       console.error('Failed to revoke skin:', error);
@@ -193,10 +201,10 @@ export function AdminSkinModal({ isOpen, onClose, member, onUpdate }: AdminSkinM
     setSaving(true);
 
     try {
-      const { error } = await supabase
-        .from('members')
-        .update({ selected_tree_skin: skinId })
-        .eq('id', member.id);
+      const { error } = await supabase.rpc('update_member_tree_skin', {
+        p_member_id: member.id,
+        p_skin_id: skinId,
+      });
 
       if (error) throw error;
       setSelectedSkin(skinId);
@@ -209,6 +217,13 @@ export function AdminSkinModal({ isOpen, onClose, member, onUpdate }: AdminSkinM
   };
 
   if (!member) return null;
+
+  // 카테고리별로 그룹화
+  const skinsByCategory = Object.entries(CATEGORY_SKIN_CONFIG).map(([categoryKey, config]) => ({
+    categoryKey: categoryKey as CategoryKey,
+    categoryName: config.categoryName,
+    skins: allSkins.filter(s => s.categoryKey === categoryKey),
+  }));
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`🌳 ${member.display_name} 스킨 관리`} size="lg">
@@ -235,115 +250,81 @@ export function AdminSkinModal({ isOpen, onClose, member, onUpdate }: AdminSkinM
                   .filter(skin => unlockedSkins.has(skin.id))
                   .map(skin => (
                     <option key={skin.id} value={skin.id}>
-                      {skin.name} ({skin.tier === 'baby' ? '베이비' : '마스터'})
+                      {skin.name} ({skin.stageNumber}단계)
                     </option>
                   ))}
               </select>
             </div>
 
-            {/* 베이비 스킨 (1단계) */}
-            <div>
-              <h4 className="text-sm font-medium text-text mb-3 flex items-center gap-2">
-                <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded text-xs">1단계</span>
-                베이비 스킨
-              </h4>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {allSkins
-                  .filter(s => s.tier === 'baby')
-                  .map(skin => {
-                    const isUnlocked = unlockedSkins.has(skin.id);
-                    const category = DEFAULT_CATEGORIES[skin.categoryKey];
-                    return (
-                      <div
-                        key={skin.id}
-                        className={`p-3 rounded-lg border ${
-                          isUnlocked
-                            ? 'bg-success/10 border-success/30'
-                            : 'bg-bg border-border'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-lg">{category?.emoji}</span>
-                          {isUnlocked && <Check className="w-4 h-4 text-success" />}
-                        </div>
-                        <p className="text-sm font-medium text-text truncate">{skin.name}</p>
-                        <p className="text-xs text-text-muted">{category?.name}</p>
-                        <button
-                          onClick={() => isUnlocked ? handleRevokeSkin(skin) : handleGrantSkin(skin)}
-                          disabled={saving}
-                          className={`mt-2 w-full px-2 py-1 rounded text-xs font-medium transition-colors ${
-                            isUnlocked
-                              ? 'bg-error/10 text-error hover:bg-error/20'
-                              : 'bg-primary/10 text-primary hover:bg-primary/20'
-                          } disabled:opacity-50`}
-                        >
-                          {isUnlocked ? (
-                            <span className="flex items-center justify-center gap-1">
-                              <X className="w-3 h-3" /> 수거
-                            </span>
-                          ) : (
-                            <span className="flex items-center justify-center gap-1">
-                              <Gift className="w-3 h-3" /> 부여
-                            </span>
-                          )}
-                        </button>
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
+            {/* 카테고리별 스킨 목록 */}
+            {skinsByCategory.map(({ categoryKey, categoryName, skins }) => {
+              const category = DEFAULT_CATEGORIES[categoryKey];
+              return (
+                <div key={categoryKey}>
+                  <h4 className="text-sm font-medium text-text mb-3 flex items-center gap-2">
+                    <span className="text-lg">{category?.emoji}</span>
+                    {categoryName}
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    {skins.map(skin => {
+                      const isUnlocked = unlockedSkins.has(skin.id);
+                      const skinImage = getSkinImage(skin.id, 100);
 
-            {/* 마스터 스킨 (5단계) */}
-            <div>
-              <h4 className="text-sm font-medium text-text mb-3 flex items-center gap-2">
-                <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 rounded text-xs">5단계</span>
-                마스터 스킨
-              </h4>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {allSkins
-                  .filter(s => s.tier === 'master')
-                  .map(skin => {
-                    const isUnlocked = unlockedSkins.has(skin.id);
-                    const category = DEFAULT_CATEGORIES[skin.categoryKey];
-                    return (
-                      <div
-                        key={skin.id}
-                        className={`p-3 rounded-lg border ${
-                          isUnlocked
-                            ? 'bg-success/10 border-success/30'
-                            : 'bg-bg border-border'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-lg">{category?.emoji}</span>
-                          {isUnlocked && <Check className="w-4 h-4 text-success" />}
-                        </div>
-                        <p className="text-sm font-medium text-text truncate">{skin.name}</p>
-                        <p className="text-xs text-text-muted">{category?.name}</p>
-                        <button
-                          onClick={() => isUnlocked ? handleRevokeSkin(skin) : handleGrantSkin(skin)}
-                          disabled={saving}
-                          className={`mt-2 w-full px-2 py-1 rounded text-xs font-medium transition-colors ${
+                      return (
+                        <div
+                          key={skin.id}
+                          className={`p-3 rounded-lg border ${
                             isUnlocked
-                              ? 'bg-error/10 text-error hover:bg-error/20'
-                              : 'bg-primary/10 text-primary hover:bg-primary/20'
-                          } disabled:opacity-50`}
+                              ? 'bg-success/10 border-success/30'
+                              : 'bg-bg border-border'
+                          }`}
                         >
-                          {isUnlocked ? (
-                            <span className="flex items-center justify-center gap-1">
-                              <X className="w-3 h-3" /> 수거
+                          <div className="flex items-center justify-between mb-2">
+                            <span className={`text-xs px-1.5 py-0.5 rounded ${
+                              skin.stageNumber === 1
+                                ? 'bg-purple-500/20 text-purple-400'
+                                : skin.stageNumber === 5
+                                ? 'bg-yellow-500/20 text-yellow-400'
+                                : 'bg-primary/20 text-primary'
+                            }`}>
+                              {skin.stageNumber}단계
                             </span>
-                          ) : (
-                            <span className="flex items-center justify-center gap-1">
-                              <Gift className="w-3 h-3" /> 부여
-                            </span>
-                          )}
-                        </button>
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
+                            {isUnlocked && <Check className="w-4 h-4 text-success" />}
+                          </div>
+                          <div className="flex justify-center mb-2">
+                            <img
+                              src={skinImage}
+                              alt={skin.name}
+                              className="w-12 h-16 object-contain"
+                            />
+                          </div>
+                          <p className="text-xs font-medium text-text truncate text-center">{skin.name}</p>
+                          <button
+                            onClick={() => isUnlocked ? handleRevokeSkin(skin) : handleGrantSkin(skin)}
+                            disabled={saving}
+                            className={`mt-2 w-full px-2 py-1 rounded text-xs font-medium transition-colors ${
+                              isUnlocked
+                                ? 'bg-error/10 text-error hover:bg-error/20'
+                                : 'bg-primary/10 text-primary hover:bg-primary/20'
+                            } disabled:opacity-50`}
+                          >
+                            {isUnlocked ? (
+                              <span className="flex items-center justify-center gap-1">
+                                <X className="w-3 h-3" /> 수거
+                              </span>
+                            ) : (
+                              <span className="flex items-center justify-center gap-1">
+                                <Gift className="w-3 h-3" /> 부여
+                              </span>
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
 
             {/* 닫기 버튼 */}
             <div className="flex justify-end pt-4 border-t border-border">

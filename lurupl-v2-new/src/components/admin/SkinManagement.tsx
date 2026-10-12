@@ -8,8 +8,8 @@ import { Sparkles, User, Check, Settings } from 'lucide-react';
 import { Spinner } from '@/components/common';
 import {
   DEFAULT_GROWTH_STAGES,
-  CATEGORY_SKINS,
-  BABY_SKINS,
+  CATEGORY_SKIN_CONFIG,
+  getSkinImage,
 } from '@/domain/tree-skins';
 import { DEFAULT_CATEGORIES, type CategoryKey } from '@/domain/categories';
 import { supabase } from '@/lib/supabase';
@@ -61,26 +61,18 @@ export function SkinManagement() {
           // 해금된 스킨 계산
           const unlockedSkins: string[] = ['default'];
 
-          // 베이비 스킨 (1단계)
-          for (const [categoryKey, skin] of Object.entries(BABY_SKINS)) {
-            if (!skin) continue;
+          // 모든 카테고리의 모든 스테이지 스킨 체크
+          for (const [categoryKey, config] of Object.entries(CATEGORY_SKIN_CONFIG)) {
             const maxStage = memberUnlocks
               .filter(u => u.category_key === categoryKey)
               .reduce((max, u) => Math.max(max, u.stage_number), 0);
 
-            if (maxStage >= skin.requiredStage) {
-              unlockedSkins.push(skin.id);
-            }
-          }
-
-          // 마스터 스킨 (5단계)
-          for (const [categoryKey, skin] of Object.entries(CATEGORY_SKINS)) {
-            const maxStage = memberUnlocks
-              .filter(u => u.category_key === categoryKey)
-              .reduce((max, u) => Math.max(max, u.stage_number), 0);
-
-            if (maxStage >= skin.requiredStage) {
-              unlockedSkins.push(skin.id);
+            // 해당 카테고리의 모든 스테이지 스킨 체크
+            for (const stageStr of Object.keys(config.stages)) {
+              const stageNumber = parseInt(stageStr, 10);
+              if (maxStage >= stageNumber) {
+                unlockedSkins.push(`${categoryKey}-${stageNumber}`);
+              }
             }
           }
 
@@ -104,9 +96,27 @@ export function SkinManagement() {
     loadMemberSkins();
   }, [activeTab]);
 
+  // 스킨 ID에서 이름 가져오기
+  const getSkinName = (skinId: string): string => {
+    if (skinId === 'default') return '기본 스킨';
+
+    // category-stage 형식
+    const match = skinId.match(/^([a-z]+)-(\d+)$/);
+    if (match) {
+      const [, categoryKey, stageStr] = match;
+      const config = CATEGORY_SKIN_CONFIG[categoryKey as CategoryKey];
+      if (config) {
+        const stageNumber = parseInt(stageStr, 10);
+        return config.stageNames[stageNumber] || `${config.categoryName} ${stageNumber}단계`;
+      }
+    }
+
+    return skinId;
+  };
+
   const tabs = [
     { id: 'default' as TabType, label: '기본 스킨', icon: '🌱' },
-    { id: 'special' as TabType, label: '특별 스킨', icon: '✨' },
+    { id: 'special' as TabType, label: '카테고리 스킨', icon: '✨' },
     { id: 'members' as TabType, label: '멤버별 현황', icon: '👥' },
   ];
 
@@ -172,91 +182,65 @@ export function SkinManagement() {
         </div>
       )}
 
-      {/* 특별 스킨 (베이비 + 마스터) */}
+      {/* 카테고리별 스킨 (1-5단계) */}
       {activeTab === 'special' && (
         <div className="space-y-6">
-          {/* 베이비 스킨 (1단계) */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-text-muted">
-              <span className="text-lg">🌱</span>
-              <h3 className="font-medium">베이비 스킨 - 첫걸음마 보상 (8종)</h3>
-              <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded text-xs">1단계</span>
-            </div>
-            <p className="text-sm text-text-muted">
-              각 카테고리에서 1단계(첫걸음마)를 달성하면 해금되는 베이비 스킨입니다.
-            </p>
+          {Object.entries(CATEGORY_SKIN_CONFIG).map(([categoryKey, config]) => {
+            const category = DEFAULT_CATEGORIES[categoryKey as CategoryKey];
+            const stages = Object.keys(config.stages)
+              .map(s => parseInt(s, 10))
+              .sort((a, b) => a - b);
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {Object.entries(BABY_SKINS)
-                .filter(([, skin]) => skin !== undefined)
-                .map(([key, skin]) => {
-                  const category = DEFAULT_CATEGORIES[key as CategoryKey];
-                  return (
-                    <div
-                      key={skin!.id}
-                      className="flex flex-col items-center p-4 bg-bg rounded-xl border border-purple-500/30"
-                    >
-                      <img
-                        src={skin!.image}
-                        alt={skin!.name}
-                        className="w-16 h-20 object-contain mb-2"
-                      />
-                      <p className="text-sm font-medium text-text">{skin!.name}</p>
-                      <p className="text-xs text-text-muted mt-1">
-                        {category?.emoji} {category?.name}
-                      </p>
-                      <span className="text-xs text-purple-400 mt-1">
-                        1단계 달성 시 해금
-                      </span>
-                    </div>
-                  );
-                })}
-            </div>
-          </div>
+            return (
+              <div key={categoryKey} className="space-y-4">
+                <div className="flex items-center gap-2 text-text-muted">
+                  <span className="text-lg">{category?.emoji}</span>
+                  <h3 className="font-medium">{config.categoryName} 스킨 ({stages.length}종)</h3>
+                </div>
 
-          {/* 마스터 스킨 (5단계) */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-text-muted">
-              <Sparkles className="w-5 h-5" />
-              <h3 className="font-medium">마스터 스킨 - 카테고리 마스터 보상 (8종)</h3>
-              <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 rounded text-xs">5단계</span>
-            </div>
-            <p className="text-sm text-text-muted">
-              각 카테고리에서 5단계(마스터)를 달성하면 해금되는 마스터 스킨입니다.
-            </p>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  {stages.map(stageNumber => {
+                    const skinId = `${categoryKey}-${stageNumber}`;
+                    const skinImage = getSkinImage(skinId, 100);
+                    const skinName = config.stageNames[stageNumber] || `${stageNumber}단계`;
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {Object.entries(CATEGORY_SKINS).map(([key, skin]) => {
-                const category = DEFAULT_CATEGORIES[key as CategoryKey];
-                return (
-                  <div
-                    key={skin.id}
-                    className="flex flex-col items-center p-4 bg-bg rounded-xl border border-yellow-500/30"
-                  >
-                    <img
-                      src={skin.image}
-                      alt={skin.name}
-                      className={`w-16 h-20 object-contain mb-2 ${
-                        skin.id === 'planning' ? 'scale-[1.5]' : ''
-                      }`}
-                    />
-                    <p className="text-sm font-medium text-text">{skin.name}</p>
-                    <p className="text-xs text-text-muted mt-1">
-                      {category?.emoji} {category?.name}
-                    </p>
-                    <span className="text-xs text-yellow-500 mt-1">
-                      5단계 달성 시 해금
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+                    return (
+                      <div
+                        key={skinId}
+                        className={`flex flex-col items-center p-4 bg-bg rounded-xl border ${
+                          stageNumber === 1
+                            ? 'border-purple-500/30'
+                            : stageNumber === 5
+                            ? 'border-yellow-500/30'
+                            : 'border-border'
+                        }`}
+                      >
+                        <img
+                          src={skinImage}
+                          alt={skinName}
+                          className="w-16 h-20 object-contain mb-2"
+                        />
+                        <p className="text-sm font-medium text-text">{skinName}</p>
+                        <span className={`text-xs mt-1 px-1.5 py-0.5 rounded ${
+                          stageNumber === 1
+                            ? 'bg-purple-500/20 text-purple-400'
+                            : stageNumber === 5
+                            ? 'bg-yellow-500/20 text-yellow-400'
+                            : 'bg-primary/20 text-primary'
+                        }`}>
+                          {stageNumber}단계 해금
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
 
           <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
             <p className="text-sm text-primary">
-              <strong>해금 조건:</strong> 1단계 달성 시 베이비 스킨, 5단계 달성 시 마스터 스킨이 해금됩니다.
-              다이어리 카테고리는 마스터 스킨이 없습니다.
+              <strong>해금 조건:</strong> 각 카테고리의 스테이지를 달성하면 해당 단계의 스킨이 해금됩니다.
             </p>
           </div>
         </div>
@@ -305,16 +289,11 @@ export function SkinManagement() {
                       <td className="p-3 border-b border-border">
                         <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-full text-sm">
                           <Check className="w-3 h-3" />
-                          {member.selected_tree_skin === 'default'
-                            ? '기본 스킨'
-                            : CATEGORY_SKINS[member.selected_tree_skin as keyof typeof CATEGORY_SKINS]?.name || member.selected_tree_skin}
+                          {getSkinName(member.selected_tree_skin)}
                         </span>
                       </td>
                       <td className="p-3 border-b border-border text-text-muted text-sm">
                         {member.unlocked_skins.length}개
-                        <span className="ml-2 text-xs">
-                          ({member.unlocked_skins.join(', ')})
-                        </span>
                       </td>
                       <td className="p-3 border-b border-border text-right text-text">
                         {member.accumulated_exp.toLocaleString()} EXP
