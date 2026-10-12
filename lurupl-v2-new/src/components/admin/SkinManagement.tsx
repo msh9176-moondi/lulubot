@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Sparkles, User, Check, Settings } from 'lucide-react';
+import { User, Check, Settings } from 'lucide-react';
 import { Spinner } from '@/components/common';
 import {
   DEFAULT_GROWTH_STAGES,
