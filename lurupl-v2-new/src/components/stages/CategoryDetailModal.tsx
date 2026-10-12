@@ -102,7 +102,7 @@ export function CategoryDetailModal({
         </div>
 
         {/* 스테이지 진행 현황 */}
-        <div className="px-6 py-4 border-b border-border bg-bg">
+        <div className="flex-1 overflow-y-auto px-6 py-4 border-b border-border bg-bg">
           <h3 className="text-sm font-medium text-text-muted mb-3">스테이지 진행</h3>
           <div className="space-y-2">
             {categoryDefinitions.map(def => {
