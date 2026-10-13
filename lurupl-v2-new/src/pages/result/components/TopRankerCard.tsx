@@ -4,7 +4,7 @@
  */
 
 import { calculateLevel, getLevelTitle, getExpForNextLevel, EXP_PER_LEVEL } from '@/domain/levels';
-import { getSkinImage, type SkinId } from '@/domain/tree-skins';
+import { getSkinImage, shouldScaleSkin, type SkinId } from '@/domain/tree-skins';
 
 interface TopRankerCardProps {
   member: {
@@ -22,10 +22,9 @@ export function TopRankerCard({ member, onMemberClick }: TopRankerCardProps) {
   const level = calculateLevel(member.monthly_exp);
   const levelTitle = getLevelTitle(level);
   const expProgress = getExpForNextLevel(member.monthly_exp);
-  const treeSkinImage = getSkinImage(
-    (member.selected_tree_skin || 'default') as SkinId,
-    member.total_count || 0
-  );
+  const skinId = (member.selected_tree_skin || 'default') as SkinId;
+  const treeSkinImage = getSkinImage(skinId, member.total_count || 0);
+  const needsScale = shouldScaleSkin(skinId);
 
   return (
     <div
@@ -35,11 +34,12 @@ export function TopRankerCard({ member, onMemberClick }: TopRankerCardProps) {
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         {/* Left: Tree Skin & Info */}
         <div className="flex items-center gap-4 flex-1">
-          <div className="relative">
+          <div className="relative w-16 h-20 overflow-hidden">
             <img
               src={treeSkinImage}
               alt="나무 스킨"
-              className="w-16 h-20 object-contain drop-shadow-lg"
+              className="w-full h-full object-contain drop-shadow-lg"
+              style={needsScale ? { transform: 'scale(1.3)' } : undefined}
             />
             <div className="absolute -top-1 -right-1 text-lg">👑</div>
           </div>

@@ -425,16 +425,11 @@ export const CATEGORY_SKINS_LEGACY = buildLegacyCategorySkins() as Record<Exclud
 export type SkinId = string;
 
 /**
- * 스킨이 확대 표시가 필요한지 확인 (2-4단계 카테고리 스킨)
+ * 스킨이 확대 표시가 필요한지 확인 (default 외 모든 카테고리 스킨)
  */
 export function shouldScaleSkin(skinId: string): boolean {
-  if (skinId === 'default') return false;
+  if (!skinId || skinId === 'default') return false;
 
-  const match = skinId.match(/^([a-z]+)-(\d+)$/);
-  if (match) {
-    const stageNumber = parseInt(match[2], 10);
-    return stageNumber >= 2 && stageNumber <= 4;
-  }
-
-  return false;
+  // 모든 카테고리 스킨은 확대 필요
+  return true;
 }

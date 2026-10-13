@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { calculateLevel, getLevelTitle, getAccumulatedTitle, EXP_PER_LEVEL } from '@/domain/levels';
-import { getSkinImage } from '@/domain/tree-skins';
+import { getSkinImage, shouldScaleSkin } from '@/domain/tree-skins';
 import { Badge } from '@/components/common';
 import { supabase } from '@/lib/supabase';
 import type { MemberStats } from '@/stores/membersStore';
@@ -113,6 +113,7 @@ export function Leaderboard({ members, onMemberClick }: LeaderboardProps) {
         };
 
         const skinImage = getSkinImage(member.selected_tree_skin, member.total_count);
+        const needsScale = shouldScaleSkin(member.selected_tree_skin || 'default');
 
         return (
           <div
@@ -125,11 +126,12 @@ export function Leaderboard({ members, onMemberClick }: LeaderboardProps) {
               <span className={`text-base sm:text-xl font-bold w-5 sm:w-6 text-center ${getRankColor()}`}>
                 {rank}
               </span>
-              <div className="w-8 h-8 sm:w-10 sm:h-10">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 overflow-hidden">
                 <img
                   src={skinImage}
                   alt="스킨"
                   className="w-full h-full object-contain"
+                  style={needsScale ? { transform: 'scale(1.3)' } : undefined}
                 />
               </div>
             </div>

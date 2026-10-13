@@ -11,7 +11,7 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
-import { X, Volume2, VolumeX } from 'lucide-react';
+import { X, Volume2, VolumeX, ArrowRight } from 'lucide-react';
 import { CATEGORIES } from '@/domain/categories';
 import { useStageStore } from '@/stores/stageStore';
 import { prefersReducedMotion } from '@/domain/stages';
@@ -213,9 +213,9 @@ export function StageCelebration() {
       {/* 메인 콘텐츠 */}
       <div
         className={`
-          relative z-10 flex flex-col items-center p-8 rounded-2xl
+          relative z-10 flex flex-col items-center p-6 rounded-2xl
           bg-bg-card/95 backdrop-blur-md border border-border
-          max-w-sm w-full mx-4
+          max-w-sm w-full mx-4 max-h-[85vh] overflow-y-auto
           transition-all duration-500
           ${showContent ? 'scale-100 opacity-100' : 'scale-90 opacity-0'}
         `}
@@ -279,23 +279,56 @@ export function StageCelebration() {
         {/* 스킨 보상 */}
         {skinReward && (
           <div
-            className={`
-              mt-4 p-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20
-              border border-purple-500/30 w-full
-              ${!reducedMotion ? 'animate-fade-in-up' : ''}
-            `}
+            className={`mt-5 w-full ${!reducedMotion ? 'animate-fade-in-up' : ''}`}
             style={{ animationDelay: '800ms' }}
           >
-            <p className="text-sm text-purple-300 mb-2 text-center">🎁 새로운 스킨 획득!</p>
-            <div className="flex items-center gap-3 justify-center">
-              <img
-                src={skinReward.image}
-                alt={skinReward.name}
-                className="w-16 h-16 object-contain"
-              />
-              <div className="text-left">
-                <p className="font-bold text-text">{skinReward.name}</p>
-                <p className="text-sm text-text-muted">{skinReward.description}</p>
+            {/* 헤더 배지 */}
+            <div className="flex justify-center mb-3">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-amber-400 to-orange-400 text-white text-sm font-bold rounded-full shadow-md">
+                <span>🎁</span>
+                <span>새로운 스킨 획득!</span>
+              </span>
+            </div>
+
+            {/* 스킨 카드 */}
+            <div className="relative p-5 rounded-2xl bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-2 border-amber-200 dark:border-amber-500/30 shadow-lg overflow-hidden">
+              {/* 배경 장식 */}
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400 rounded-full blur-3xl" />
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-orange-400 rounded-full blur-2xl" />
+              </div>
+
+              <div className="relative flex flex-col items-center gap-4">
+                {/* 스킨 이미지 */}
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-amber-200 to-orange-200 dark:from-amber-500/20 dark:to-orange-500/20 rounded-2xl blur-xl scale-75" />
+                  <div className="relative w-28 h-28 p-3 bg-white dark:bg-gray-800 rounded-2xl shadow-inner border border-gray-100 dark:border-gray-700">
+                    <img
+                      src={skinReward.image}
+                      alt={skinReward.name}
+                      className="w-full h-full object-contain drop-shadow-md"
+                    />
+                  </div>
+                </div>
+
+                {/* 스킨 정보 */}
+                <div className="text-center">
+                  <p className="font-bold text-gray-900 dark:text-white text-lg">{skinReward.name}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{skinReward.description}</p>
+                </div>
+
+                {/* 스킨 변경 버튼 */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    dismissCelebration();
+                    window.location.href = '/result?tab=myinfo';
+                  }}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  지금 적용하기
+                  <ArrowRight className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
