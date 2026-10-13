@@ -425,11 +425,24 @@ export const CATEGORY_SKINS_LEGACY = buildLegacyCategorySkins() as Record<Exclud
 export type SkinId = string;
 
 /**
- * 스킨이 확대 표시가 필요한지 확인 (default 외 모든 카테고리 스킨)
+ * 스킨이 확대 표시가 필요한지 확인
+ * - default: 확대 불필요 (이미 적절한 크기)
+ * - 카테고리 1, 5단계: 확대 필요 (벡터 SVG라 선명함)
+ * - 카테고리 2, 3, 4단계: 확대 불필요 (비트맵 내장 SVG라 확대 시 흐릿함)
  */
 export function shouldScaleSkin(skinId: string): boolean {
   if (!skinId || skinId === 'default') return false;
 
-  // 모든 카테고리 스킨은 확대 필요
+  // 카테고리-단계 형식 확인 (예: exercise-3)
+  const match = skinId.match(/^([a-z]+)-(\d+)$/);
+  if (match) {
+    const stageNumber = parseInt(match[2], 10);
+    // 2~4단계는 비트맵 SVG이므로 확대하지 않음
+    if (stageNumber >= 2 && stageNumber <= 4) {
+      return false;
+    }
+  }
+
+  // 1, 5단계는 벡터 SVG이므로 확대
   return true;
 }
